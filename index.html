@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Bop Disc</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Bop Disc">
+<meta name="theme-color" content="#EDEDF1">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
@@ -49,8 +56,8 @@ body{display:flex;justify-content:center;align-items:center;}
 .cut-handle{cursor:grab;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25));}
 /* Playhead triangle — fixed at disc bottom, points up */
 .playhead{position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);z-index:10;display:flex;flex-direction:column;align-items:center;gap:0;pointer-events:none;}
-.playhead-tri{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:11px solid var(--t1);}
-.playhead-line{width:1px;height:8px;background:var(--t1);opacity:0.35;}
+.playhead-tri{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:11px solid #fff;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.35));}
+.playhead-line{width:1px;height:8px;background:#fff;opacity:0.55;}
 
 /* Loops removed */
 
@@ -162,6 +169,26 @@ body{display:flex;justify-content:center;align-items:center;}
 .fx-ch{padding:12px 20px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);background:white;
   color:var(--t2);font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;}
 .fx-ch.on{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+
+/* PWA Install Screen */
+.pwa-screen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;transition:opacity .4s,transform .4s;}
+.pwa-screen.hidden{opacity:0;transform:scale(1.04);pointer-events:none;}
+.pwa-vinyl{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,#222225,#101012);margin-bottom:32px;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.15);}
+.pwa-vinyl::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:42px;height:42px;border-radius:50%;background:#fff;}
+.pwa-vinyl-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:none;}
+.pwa-title{font-size:26px;font-weight:700;color:var(--t1);letter-spacing:-0.5px;margin-bottom:8px;}
+.pwa-sub{font-size:14px;color:var(--t3);text-align:center;line-height:1.5;margin-bottom:36px;}
+.pwa-steps{width:100%;display:flex;flex-direction:column;gap:16px;margin-bottom:36px;}
+.pwa-step{display:flex;align-items:flex-start;gap:14px;background:rgba(255,255,255,0.6);border-radius:14px;padding:14px 16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.5);}
+.pwa-step-num{width:24px;height:24px;border-radius:50%;background:var(--t1);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.pwa-step-text{font-size:13px;color:var(--t2);line-height:1.45;}
+.pwa-step-text strong{color:var(--t1);font-weight:600;}
+.pwa-os-tabs{display:flex;background:rgba(0,0,0,0.04);border-radius:10px;padding:2px;margin-bottom:20px;width:100%;}
+.pwa-os-tab{flex:1;padding:7px;text-align:center;font-size:11px;font-weight:600;color:var(--t3);cursor:pointer;border-radius:8px;transition:all .2s;}
+.pwa-os-tab.on{background:white;color:var(--t1);box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+.pwa-dismiss{width:100%;padding:14px;border-radius:14px;border:none;background:var(--t1);color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:0.2px;}
+.pwa-already{margin-top:12px;font-size:12px;color:var(--t4);cursor:pointer;}
+
 </style>
 </head>
 <body>
@@ -543,5 +570,49 @@ function App(){
 }
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
+
+<div class="pwa-screen" id="pwaScreen">
+  <div class="pwa-vinyl">
+    <div class="pwa-vinyl-ring" style="width:74%;height:74%;border:12px solid rgba(139,115,85,0.4)"></div>
+    <div class="pwa-vinyl-ring" style="width:58%;height:58%;border:11px solid rgba(160,96,122,0.4)"></div>
+    <div class="pwa-vinyl-ring" style="width:44%;height:44%;border:10px solid rgba(74,158,152,0.4)"></div>
+  </div>
+  <div class="pwa-title">Bop Disc</div>
+  <div class="pwa-sub">Install the app to remix vinyl records from your home screen.</div>
+  <div class="pwa-os-tabs">
+    <div class="pwa-os-tab on" id="tabIos" onclick="switchTab('ios')">iOS</div>
+    <div class="pwa-os-tab" id="tabAndroid" onclick="switchTab('android')">Android</div>
+  </div>
+  <div class="pwa-steps" id="iosSteps">
+    <div class="pwa-step"><div class="pwa-step-num">1</div><div class="pwa-step-text">Open this page in <strong>Safari</strong> on your iPhone or iPad</div></div>
+    <div class="pwa-step"><div class="pwa-step-num">2</div><div class="pwa-step-text">Tap the <strong>Share</strong> button <span style="font-size:15px">⎙</span> at the bottom of the screen</div></div>
+    <div class="pwa-step"><div class="pwa-step-num">3</div><div class="pwa-step-text">Scroll down and tap <strong>"Add to Home Screen"</strong></div></div>
+  </div>
+  <div class="pwa-steps" id="androidSteps" style="display:none">
+    <div class="pwa-step"><div class="pwa-step-num">1</div><div class="pwa-step-text">Open this page in <strong>Chrome</strong> on Android</div></div>
+    <div class="pwa-step"><div class="pwa-step-num">2</div><div class="pwa-step-text">Tap the <strong>⋮ menu</strong> in the top-right corner</div></div>
+    <div class="pwa-step"><div class="pwa-step-num">3</div><div class="pwa-step-text">Tap <strong>"Add to Home screen"</strong> and confirm</div></div>
+  </div>
+  <button class="pwa-dismiss" onclick="dismissPWA()">Got it — take me in</button>
+  <div class="pwa-already" onclick="dismissPWA()">Already installed? Skip this</div>
+</div>
+<script>
+// Show install screen only on first visit (not if running as installed PWA)
+function isStandalone(){return window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;}
+function dismissPWA(){localStorage.setItem('pwa-seen','1');var s=document.getElementById('pwaScreen');s.classList.add('hidden');setTimeout(function(){s.style.display='none';},400);}
+function switchTab(os){
+  document.getElementById('tabIos').classList.toggle('on',os==='ios');
+  document.getElementById('tabAndroid').classList.toggle('on',os==='android');
+  document.getElementById('iosSteps').style.display=os==='ios'?'':'none';
+  document.getElementById('androidSteps').style.display=os==='android'?'':'none';
+}
+// Auto-detect OS
+if(/android/i.test(navigator.userAgent))switchTab('android');
+// Hide if already installed or already seen
+if(isStandalone()||localStorage.getItem('pwa-seen')){dismissPWA();}
+// Register service worker
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js');}
+</script>
+
 </body>
 </html>
