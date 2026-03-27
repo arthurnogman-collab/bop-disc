@@ -42,15 +42,9 @@ body{display:flex;justify-content:center;align-items:center;}
 .dot.add-d{border:1.5px solid var(--t4);background:transparent;}
 
 .main{flex:1;position:relative;overflow:hidden;min-height:0;z-index:1;}
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@keyframes slideLeft{from{transform:translate(-50%,-50%) scale(1);opacity:1}to{transform:translate(-120%,-50%) scale(0.85);opacity:0}}
-@keyframes slideIn{from{transform:translate(70%,-50%) scale(0.85);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
 .v-anchor{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);}
-.v-anchor.anim-out{animation:slideLeft .35s ease-in forwards;}
-.v-anchor.anim-in{animation:slideIn .35s ease-out forwards;}
 .v-wrap{width:340px;height:340px;position:relative;}
-.v-svg{overflow:visible;}
-.v-svg.spin{animation:spin linear infinite;}
+.v-svg{overflow:visible;transform-origin:50% 50%;will-change:transform;touch-action:none;}
 .ring-hit{cursor:pointer;}
 .v-label-group{cursor:pointer;}
 .cut-handle{cursor:grab;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25));}
@@ -254,18 +248,98 @@ function App(){
   /* loops removed */
   const [fi,setFi]=useState(0);
   const [fsi,setFsi]=useState(0); /* feed slide index */
-  const [slideAnim,setSlideAnim]=useState('');
   const sr=useRef(null);const dr=useRef(false);const lr=useRef(null);
   const touchRef=useRef({x:null,y:null});
   const svgRef=useRef(null);
+  /* RAF rotation */
+  const rotRef=useRef(0);        /* current angle in degrees */
+  const angVelRef=useRef(0);     /* current speed deg/sec */
+  const rafRef=useRef(null);
+  const lastTRef=useRef(null);
+  const plRef=useRef(false);
+  const spRef=useRef(1);
+  const discDragRef=useRef(null);/* {startAngle, startRot} or null */
 
   const feedItem=FEED[fi];
   const feedSlide=feedItem.slides[fsi]||feedItem.slides[0];
   const disc=mm?discs[ad]:{ts:feedSlide.s,fx:new Set(),lb:null,samps:[0,0,0,0],cuts:[[0,1],[0,1],[0,1],[0,1]],color:0};
   const discColor=DISC_COLORS[disc.color||0];
-  const isSpin=pl;
-  const sDur=sp>0?5/sp:999;
   const po=mm&&st>=0;
+
+  /* Sync pl/sp to refs so RAF always has latest */
+  useEffect(()=>{plRef.current=pl;},[pl]);
+  useEffect(()=>{spRef.current=sp;},[sp]);
+
+  /* RAF rotation engine */
+  useEffect(()=>{
+    function targetSpeed(){return plRef.current&&spRef.current>0?72*spRef.current:0;}
+    function tick(ts){
+      if(!lastTRef.current)lastTRef.current=ts;
+      const dt=Math.min((ts-lastTRef.current)/1000,0.1);
+      lastTRef.current=ts;
+      const tgt=targetSpeed();
+      const diff=tgt-angVelRef.current;
+      const accel=400; /* deg/sec² — how fast speed changes */
+      if(Math.abs(diff)>0.5){
+        angVelRef.current+=Math.sign(diff)*Math.min(Math.abs(diff),accel*dt);
+      }else{angVelRef.current=tgt;}
+      if(!discDragRef.current){
+        rotRef.current=(rotRef.current+angVelRef.current*dt)%360;
+        if(svgRef.current)svgRef.current.style.transform=`rotate(${rotRef.current}deg)`;
+      }
+      rafRef.current=requestAnimationFrame(tick);
+    }
+    rafRef.current=requestAnimationFrame(tick);
+    return()=>{if(rafRef.current)cancelAnimationFrame(rafRef.current);};
+  },[]);
+
+  /* Disc switch → spin burst (speeds up then eases back) */
+  const prevAdRef=useRef(ad);
+  const prevFiRef=useRef(fi);
+  const prevFsiRef=useRef(fsi);
+  useEffect(()=>{
+    const changed=ad!==prevAdRef.current||fi!==prevFiRef.current||fsi!==prevFsiRef.current;
+    prevAdRef.current=ad;prevFiRef.current=fi;prevFsiRef.current=fsi;
+    if(changed){
+      /* kick speed up to ~3× current target so it visually "spins" to next */
+      const base=Math.max(angVelRef.current,72*Math.max(spRef.current,1));
+      angVelRef.current=base*3;
+    }
+  },[ad,fi,fsi]);
+
+  /* Disc drag-rotation helpers */
+  function discAngleFromEvent(e){
+    if(!svgRef.current)return 0;
+    const rect=svgRef.current.getBoundingClientRect();
+    const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+    const ex=e.touches?e.touches[0].clientX:e.clientX;
+    const ey=e.touches?e.touches[0].clientY:e.clientY;
+    return Math.atan2(ey-cy,ex-cx)*180/Math.PI;
+  }
+  const onDiscDragStart=(e)=>{
+    if(po)return; /* don't steal cut-handle drags */
+    e.preventDefault();
+    discDragRef.current={startAngle:discAngleFromEvent(e),startRot:rotRef.current};
+    angVelRef.current=0; /* freeze spin while dragging */
+    function onMove(ev){
+      if(!discDragRef.current)return;
+      const delta=discAngleFromEvent(ev)-discDragRef.current.startAngle;
+      rotRef.current=discDragRef.current.startRot+delta;
+      if(svgRef.current)svgRef.current.style.transform=`rotate(${rotRef.current}deg)`;
+      ev.preventDefault();
+    }
+    function onUp(){
+      discDragRef.current=null;
+      window.removeEventListener('mousemove',onMove);
+      window.removeEventListener('mouseup',onUp);
+      window.removeEventListener('touchmove',onMove);
+      window.removeEventListener('touchend',onUp);
+    }
+    window.addEventListener('mousemove',onMove);
+    window.addEventListener('mouseup',onUp);
+    window.addEventListener('touchmove',onMove,{passive:false});
+    window.addEventListener('touchend',onUp);
+  };
 
   /* Slider */
   const hs=useCallback((e)=>{if(!sr.current)return;const r=sr.current.getBoundingClientRect();const cx=e.touches?e.touches[0].clientX:e.clientX;const p=Math.max(0,Math.min(1,(cx-r.left)/r.width));setSp(Math.round(p*20)/10);},[]);
@@ -290,24 +364,13 @@ function App(){
     touchRef.current={x:null,y:null};
 
     if(mm){
-      /* Mix mode — horizontal swipe changes slides/discs */
+      /* Mix mode — horizontal swipe changes discs (spin burst animates the switch) */
       if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)){
         if(dx<0){
-          /* Swipe left — next slide. If doesn't exist, copy current */
-          setSlideAnim('anim-out');
-          setTimeout(()=>{
-            if(ad<discs.length-1){setAd(ad+1);}else{addD();}
-            setSt(-1);
-            setSlideAnim('anim-in');
-            setTimeout(()=>setSlideAnim(''),350);
-          },300);
+          if(ad<discs.length-1){setAd(ad+1);}else{addD();}
+          setSt(-1);
         }else if(dx>0&&ad>0){
-          setSlideAnim('anim-out');
-          setTimeout(()=>{
-            setAd(ad-1);setSt(-1);
-            setSlideAnim('anim-in');
-            setTimeout(()=>setSlideAnim(''),350);
-          },300);
+          setAd(ad-1);setSt(-1);
         }
       }
     }else{
@@ -317,15 +380,10 @@ function App(){
         if(dy<0&&fi<FEED.length-1){setFi(fi+1);setFsi(0);}
         if(dy>0&&fi>0){setFi(fi-1);setFsi(0);}
       }else if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)){
-        /* Horizontal — change slide within feed item */
+        /* Horizontal — change slide within feed item (spin burst) */
         const maxS=feedItem.slides.length-1;
-        setSlideAnim('anim-out');
-        setTimeout(()=>{
-          if(dx<0&&fsi<maxS)setFsi(fsi+1);
-          else if(dx>0&&fsi>0)setFsi(fsi-1);
-          setSlideAnim('anim-in');
-          setTimeout(()=>setSlideAnim(''),350);
-        },300);
+        if(dx<0&&fsi<maxS)setFsi(fsi+1);
+        else if(dx>0&&fsi>0)setFsi(fsi-1);
       }
     }
   };
@@ -372,7 +430,7 @@ function App(){
   for(let i=0;i<30;i++){const r=LABEL_R+2+i*3.5;if(r<DISC_R-2)grooves.push(r);}
 
   const discSvg=(
-    <svg ref={svgRef} className={"v-svg"+(isSpin&&!po?" spin":"")} style={{animationDuration:sDur+"s"}} width={SVS} height={SVS} viewBox={"0 0 "+SVS+" "+SVS}>
+    <svg ref={svgRef} className="v-svg" onMouseDown={onDiscDragStart} onTouchStart={onDiscDragStart} width={SVS} height={SVS} viewBox={"0 0 "+SVS+" "+SVS}>
       <defs>
         {C.map((src,i)=><pattern key={i} id={"cp"+i} patternUnits="userSpaceOnUse" x="0" y="0" width={SVS} height={SVS}>
           <image href={src} x="0" y="0" width={SVS} height={SVS} preserveAspectRatio="xMidYMid slice"/>
@@ -468,7 +526,7 @@ function App(){
     }
 
     <div className="main" onTouchStart={onTS} onTouchEnd={onTE} onClick={()=>{if(mm)setSt(-1);}}>
-      <div className={"v-anchor "+slideAnim}>
+      <div className="v-anchor">
         <div className="v-wrap">
           {discSvg}
           <div className="playhead"><div className="playhead-line"/><div className="playhead-tri"/></div>
