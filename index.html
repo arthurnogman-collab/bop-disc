@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Bop Concept">
 <meta name="theme-color" content="#EDEDF1">
 <link rel="apple-touch-icon" href="/icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
 :root{
@@ -169,12 +169,12 @@ body{display:flex;justify-content:center;align-items:center;}
 .pwa-vinyl{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,#222225,#101012);margin-bottom:32px;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.15);}
 .pwa-vinyl::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:42px;height:42px;border-radius:50%;background:#fff;}
 .pwa-vinyl-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:none;}
-.pwa-title{font-size:26px;font-weight:700;color:var(--t1);letter-spacing:-0.5px;margin-bottom:8px;}
-.pwa-sub{font-size:14px;color:var(--t3);text-align:center;line-height:1.5;margin-bottom:36px;}
-.pwa-steps{width:100%;display:flex;flex-direction:column;gap:16px;margin-bottom:36px;}
-.pwa-step{display:flex;align-items:flex-start;gap:14px;background:rgba(255,255,255,0.6);border-radius:14px;padding:14px 16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.5);}
-.pwa-step-num{width:24px;height:24px;border-radius:50%;background:var(--t1);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
-.pwa-step-text{font-size:13px;color:var(--t2);line-height:1.45;}
+.pwa-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:42px;font-weight:700;font-style:italic;color:var(--t1);letter-spacing:-0.5px;margin-bottom:4px;line-height:1;}
+.pwa-sub{font-size:12px;font-weight:500;color:var(--t3);text-align:center;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:40px;}
+.pwa-steps{width:100%;display:flex;flex-direction:column;gap:12px;margin-bottom:36px;}
+.pwa-step{display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.65);border-radius:14px;padding:14px 16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.6);}
+.pwa-step-icon{width:36px;height:36px;border-radius:10px;background:var(--t1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;}
+.pwa-step-text{font-size:13px;color:var(--t2);line-height:1.4;}
 .pwa-step-text strong{color:var(--t1);font-weight:600;}
 .pwa-dismiss{width:100%;padding:14px;border-radius:14px;border:none;background:var(--t1);color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:0.2px;}
 .pwa-install-native{width:100%;padding:15px;border-radius:14px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.3px;box-shadow:0 4px 16px rgba(212,43,64,0.28);}
@@ -626,21 +626,36 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 
 <div class="pwa-screen" id="pwaScreen">
-  <img src="/icon-192.png" style="width:96px;height:96px;border-radius:22px;margin-bottom:28px;box-shadow:0 4px 24px rgba(0,0,0,0.13);" alt="Bop Concept"/>
+  <img src="/icon-192.png" style="width:88px;height:88px;border-radius:20px;margin-bottom:24px;box-shadow:0 4px 24px rgba(0,0,0,0.13);" alt="Bop Concept"/>
   <div class="pwa-title">Bop Concept</div>
-  <div class="pwa-sub" id="pwaSub">Install the app to remix vinyl records from your home screen.</div>
+  <div class="pwa-sub">The Original Mix</div>
 
-  <!-- iOS steps — no dismiss -->
+  <!-- iOS steps: just Share + Add to Home Screen, no "open in Safari" -->
   <div class="pwa-steps" id="iosSteps" style="display:none">
-    <div class="pwa-step"><div class="pwa-step-num">1</div><div class="pwa-step-text">Open this page in <strong>Safari</strong> on your iPhone or iPad</div></div>
-    <div class="pwa-step"><div class="pwa-step-num">2</div><div class="pwa-step-text">Tap the <strong>Share</strong> <span style="font-size:15px">⎙</span> button at the bottom</div></div>
-    <div class="pwa-step"><div class="pwa-step-num">3</div><div class="pwa-step-text">Tap <strong>"Add to Home Screen"</strong> and confirm</div></div>
+    <div class="pwa-step">
+      <div class="pwa-step-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v13"/><path d="M8 7l4-4 4 4"/>
+          <path d="M5 13v6a1 1 0 001 1h12a1 1 0 001-1v-6"/>
+        </svg>
+      </div>
+      <div class="pwa-step-text">Tap <strong>Share</strong> at the bottom of your screen</div>
+    </div>
+    <div class="pwa-step">
+      <div class="pwa-step-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M12 8v8M8 12h8"/>
+        </svg>
+      </div>
+      <div class="pwa-step-text">Tap <strong>Add to Home Screen</strong></div>
+    </div>
   </div>
 
   <!-- Android install button -->
   <button class="pwa-install-native" id="androidInstallBtn" style="display:none" onclick="triggerAndroidInstall()">Add to Home Screen</button>
 
-  <!-- Fallback dismiss (non-mobile / already installed) -->
+  <!-- Fallback dismiss (desktop) -->
   <button class="pwa-dismiss" id="pwaDismiss" style="display:none" onclick="dismissPWA()">Open app</button>
 </div>
 <script>
