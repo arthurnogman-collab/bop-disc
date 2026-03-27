@@ -79,6 +79,7 @@ body{display:flex;justify-content:center;align-items:center;}
 .feed-social{display:flex;align-items:center;justify-content:center;gap:20px;}
 .fs-item{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:500;color:var(--t4);}
 .fs-item svg{width:13px;height:13px;opacity:0.5;}
+.fs-item.liked{color:var(--accent);}
 
 /* Color selector removed */
 
@@ -344,7 +345,25 @@ SONGS.forEach((s, i) => {
 function fmtK(n) {
   return n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : String(n);
 }
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(e) {
+    return { error: e };
+  }
+  render() {
+    if (this.state.error) return React.createElement("div", {style:{padding:"40px",textAlign:"center",color:"#D42B40"}},
+      React.createElement("h2", null, "Something went wrong"),
+      React.createElement("p", {style:{color:"#6A6A7C",fontSize:"13px"}}, this.state.error.message),
+      React.createElement("button", {onClick:()=>{ this.setState({error:null}); }, style:{marginTop:"16px",padding:"10px 24px",borderRadius:"12px",border:"none",background:"#D42B40",color:"white",fontWeight:"600",cursor:"pointer"}}, "Try Again")
+    );
+    return this.props.children;
+  }
+}
 function App() {
+  const userProfile = JSON.parse(localStorage.getItem('wax-user') || '{}');
   const [mm, setMM] = useState(false);
   const [pl, setPl] = useState(false);
   const [st, setSt] = useState(-1);
@@ -372,6 +391,10 @@ function App() {
   const [onboarded, setOnboarded] = useState(!!localStorage.getItem('wax-user'));
   const [obName, setObName] = useState('');
   const [obUsername, setObUsername] = useState('');
+  const [likedPosts, setLikedPosts] = useState({});
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editUsername, setEditUsername] = useState('');
   const dr = useRef(false);
   const lr = useRef(null);
   const touchRef = useRef({
@@ -1225,15 +1248,17 @@ function App() {
   }))))), !mm && /*#__PURE__*/React.createElement("div", {
     className: "feed-social"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "fs-item"
+    className: "fs-item" + (likedPosts[fi] ? " liked" : ""),
+    onClick: () => { setLikedPosts(p => ({...p, [fi]: !p[fi]})); },
+    style: { cursor: 'pointer' }
   }, /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
+    fill: likedPosts[fi] ? "var(--accent)" : "none",
+    stroke: likedPosts[fi] ? "var(--accent)" : "currentColor",
     strokeWidth: "1.8"
   }, /*#__PURE__*/React.createElement("path", {
     d: "M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1.1L12 21.3l7.8-7.8 1-1.1a5.5 5.5 0 000-7.8z"
-  })), fmtK(FEED[fi].likes)), /*#__PURE__*/React.createElement("div", {
+  })), fmtK(FEED[fi].likes + (likedPosts[fi] ? 1 : 0))), /*#__PURE__*/React.createElement("div", {
     className: "fs-item"
   }, /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 24 24",
@@ -1452,19 +1477,22 @@ function App() {
       if (!mm) {
         // Entering mix: use current feed track as starting disc
         const feedSlide = FEED[fi].slides[fsi] || FEED[fi].slides[0];
-        setDiscs([{
+        const newDisc = {
           ts: [...feedSlide.s],
           fx: new Set(),
           lb: null,
           samps: [0, 0, 0, 0],
           cuts: [[0, 1], [0, 1], [0, 1], [0, 1]],
           color: 0
-        }]);
+        };
+        setDiscs([newDisc]);
         setAd(0);
+        setMM(true);
+      } else {
+        setMM(false);
+        setPl(false);
       }
-      setMM(!mm);
       setSt(-1);
-      if (mm) setPl(false);
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "led" + (mm ? " on" : "")
@@ -1499,19 +1527,32 @@ function App() {
   }, /*#__PURE__*/React.createElement("div", {
     className: "prof-header"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "prof-avatar"
-  }, /*#__PURE__*/React.createElement("img", {
-    src: C[SONGS.indexOf(feedArtist)],
-    alt: ""
-  })), /*#__PURE__*/React.createElement("div", {
+    className: "prof-avatar",
+    style: { background: '#D42B40', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '700', color: '#fff' }
+  }, (userProfile.name || 'U')[0].toUpperCase()), /*#__PURE__*/React.createElement("div", {
     className: "prof-info"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, !editingProfile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "prof-name"
-  }, feedArtist.a), /*#__PURE__*/React.createElement("div", {
+  }, userProfile.name || 'Your Name'), /*#__PURE__*/React.createElement("div", {
     className: "prof-handle"
-  }, feedArtist.t)), /*#__PURE__*/React.createElement("div", {
+  }, '@' + (userProfile.username || 'username'))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "Display name",
+    value: editName,
+    onChange: e => setEditName(e.target.value),
+    style: { width: '100%', padding: '6px', marginBottom: '6px', fontSize: '14px', border: '1px solid #D42B40', borderRadius: '6px' }
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "Username",
+    value: editUsername,
+    onChange: e => setEditUsername(e.target.value),
+    style: { width: '100%', padding: '6px', fontSize: '14px', border: '1px solid #D42B40', borderRadius: '6px' }
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "prof-actions"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, !editingProfile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+    onClick: () => { setEditName(userProfile.name || ''); setEditUsername(userProfile.username || ''); setEditingProfile(true); },
+    style: { padding: '6px 12px', background: '#D42B40', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }
+  }, "Edit"), /*#__PURE__*/React.createElement("div", {
     className: "prof-msg"
   }, /*#__PURE__*/React.createElement("svg", {
     width: "16",
@@ -1528,7 +1569,13 @@ function App() {
     rx: "3"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M2 7l10 6 10-6"
-  }))), /*#__PURE__*/React.createElement("button", {
+  })))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+    onClick: () => { const newProfile = { ...userProfile, name: editName, username: editUsername }; localStorage.setItem('wax-user', JSON.stringify(newProfile)); setEditingProfile(false); },
+    style: { padding: '6px 12px', background: '#D42B40', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', marginRight: '6px' }
+  }, "Save"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setEditingProfile(false),
+    style: { padding: '6px 12px', background: '#ccc', color: '#000', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }
+  }, "Cancel")), /*#__PURE__*/React.createElement("button", {
     className: "prof-close",
     onClick: () => setProf(false)
   }, /*#__PURE__*/React.createElement("svg", {
@@ -1681,7 +1728,7 @@ function App() {
     }
   }, "Get Started"))));
 }
-ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(App, null));</script>
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary, null, React.createElement(App, null)));</script>
 
 <div class="pwa-screen" id="pwaScreen">
   <img src="/icon-192.png" style="width:88px;height:88px;border-radius:20px;margin-bottom:24px;box-shadow:0 4px 24px rgba(0,0,0,0.13);" alt="WAX"/>
@@ -1713,8 +1760,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.c
   <!-- Android install button -->
   <button class="pwa-install-native" id="androidInstallBtn" style="display:none" onclick="triggerAndroidInstall()">Add to Home Screen</button>
 
-  <!-- Fallback dismiss -->
-  <button class="pwa-dismiss" id="pwaDismiss" style="display:none" onclick="dismissPWA()">Continue to app</button>
 </div>
 <script>
 var deferredPrompt=null;
@@ -1725,7 +1770,6 @@ function isAndroid(){return/android/i.test(navigator.userAgent);}
 function isStandalone(){return window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;}
 
 function dismissPWA(){
-  localStorage.setItem('pwa-seen','1');
   var s=document.getElementById('pwaScreen');
   s.classList.add('hidden');
   setTimeout(function(){s.style.display='none';},400);
@@ -1735,28 +1779,23 @@ function triggerAndroidInstall(){
   if(deferredPrompt){
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(function(r){if(r.outcome==='accepted')dismissPWA();});
-  } else {
-    dismissPWA();
   }
 }
 
 (function setupPWA(){
-  // Already running as PWA or user has seen the screen before
-  if(isStandalone()||localStorage.getItem('pwa-seen')){dismissPWA();return;}
+  // Only allow PWA mode - if not standalone, show install instructions
+  if(isStandalone()){dismissPWA();return;}
 
   if(isIOS()){
     document.getElementById('iosSteps').style.display='';
-    // Show a dismiss link after 3 seconds so users aren't stuck
-    setTimeout(function(){document.getElementById('pwaDismiss').style.display='';},3000);
   } else if(isAndroid()){
     document.getElementById('androidInstallBtn').style.display='';
     window.addEventListener('beforeinstallprompt',function(){
       document.getElementById('androidInstallBtn').style.display='';
     });
-    // Fallback dismiss after 3 seconds
-    setTimeout(function(){document.getElementById('pwaDismiss').style.display='';},3000);
   } else {
-    document.getElementById('pwaDismiss').style.display='';
+    // Desktop/unknown: show iOS fallback instructions
+    document.getElementById('iosSteps').style.display='';
   }
 })();
 
