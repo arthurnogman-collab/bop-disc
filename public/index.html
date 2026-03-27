@@ -848,8 +848,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
   <!-- Android install button -->
   <button class="pwa-install-native" id="androidInstallBtn" style="display:none" onclick="triggerAndroidInstall()">Add to Home Screen</button>
 
-  <!-- Fallback dismiss (desktop) -->
-  <button class="pwa-dismiss" id="pwaDismiss" style="display:none" onclick="dismissPWA()">Open app</button>
+  <!-- Fallback dismiss -->
+  <button class="pwa-dismiss" id="pwaDismiss" style="display:none" onclick="dismissPWA()">Continue to app</button>
 </div>
 <script>
 var deferredPrompt=null;
@@ -876,23 +876,22 @@ function triggerAndroidInstall(){
 }
 
 (function setupPWA(){
-  // Already running as PWA or already seen on desktop
-  if(isStandalone()){dismissPWA();return;}
+  // Already running as PWA or user has seen the screen before
+  if(isStandalone()||localStorage.getItem('pwa-seen')){dismissPWA();return;}
 
   if(isIOS()){
-    // iOS: show steps, no dismiss button
     document.getElementById('iosSteps').style.display='';
+    // Show a dismiss link after 3 seconds so users aren't stuck
+    setTimeout(function(){document.getElementById('pwaDismiss').style.display='';},3000);
   } else if(isAndroid()){
-    // Android: show install button (uses beforeinstallprompt or fallback)
     document.getElementById('androidInstallBtn').style.display='';
-    // If prompt fires later, it's already captured
     window.addEventListener('beforeinstallprompt',function(){
       document.getElementById('androidInstallBtn').style.display='';
     });
+    // Fallback dismiss after 3 seconds
+    setTimeout(function(){document.getElementById('pwaDismiss').style.display='';},3000);
   } else {
-    // Desktop / unknown: just show open button
     document.getElementById('pwaDismiss').style.display='';
-    if(localStorage.getItem('pwa-seen')){dismissPWA();}
   }
 })();
 
