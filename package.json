@@ -1,0 +1,12 @@
+{
+  "name": "wax",
+  "version": "1.0.0",
+  "description": "WAX - The Original vinyl remix app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

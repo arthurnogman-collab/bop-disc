@@ -27,7 +27,11 @@ body{display:flex;justify-content:center;align-items:center;}
 @media(max-width:400px){#root{width:100vw;height:100vh;height:100dvh;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);}}
 @media(min-width:401px){#root{border-radius:44px;box-shadow:0 20px 60px rgba(0,0,0,0.15),inset 0 0.5px 0 rgba(255,255,255,0.8);}}
 
-.top-bar{height:50px;flex-shrink:0;z-index:10;}
+.top-bar{height:50px;flex-shrink:0;z-index:10;display:flex;align-items:center;justify-content:center;}
+.search-wrap{display:flex;align-items:center;margin:0 20px;padding:0 12px;height:32px;border-radius:16px;background:rgba(255,255,255,0.6);border:1px solid rgba(0,0,0,0.05);}
+.search-ico{width:14px;height:14px;color:var(--t4);flex-shrink:0;margin-right:8px;}
+.search-input{flex:1;border:none;background:transparent;font-family:inherit;font-size:12px;color:var(--t1);outline:none;}
+.search-input::placeholder{color:var(--t4);}
 
 /* Story slide indicators */
 .slides-row{display:flex;justify-content:center;gap:6px;padding:4px 0;flex-shrink:0;z-index:10;}
@@ -86,7 +90,7 @@ body{display:flex;justify-content:center;align-items:center;}
   background:rgba(255,255,255,0.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-top:1px solid rgba(255,255,255,0.4);}
 .picker.shut{max-height:0;opacity:0;border-top-color:transparent;}
-.picker.open{max-height:320px;opacity:1;}
+.picker.open{max-height:380px;opacity:1;}
 .pk-head{display:flex;align-items:center;gap:8px;padding:10px 20px 4px;}
 .pk-dot{width:6px;height:6px;border-radius:50%;}
 .pk-name{font-size:12px;font-weight:600;color:var(--t1);flex:1;text-transform:capitalize;}
@@ -205,7 +209,7 @@ const C=[
 ];
 
 const SONGS=[{t:"Curtis",a:"Curtis Mayfield"},{t:"In The Beginning",a:"Isaac Hayes"},{t:"Color Him Father",a:"The Winstons"},{t:"Sextant",a:"Herbie Hancock"},{t:"The Awakening",a:"Ahmad Jamal Trio"},{t:"Everybody Loves the Sunshine",a:"Roy Ayers"},{t:"Is It Because I'm Black",a:"Syl Johnson"},{t:"Three",a:"Bob James"}];
-const TN=["Drums","Base","Fill","Lead"];
+const TN=["Drums","Base","Fill","Vocal"];
 const TC=["#8B7355","#A0607A","#4A9E98","#7B52B0"];
 const DISC_COLORS=["#1A1A1E","#8B2252","#1B5D7E","#6B4422","#3E1A5B","#9B2222","#1A6A3E","#5A5A66"];
 
@@ -253,6 +257,7 @@ function App(){
   const [ptab,setPtab]=useState(0);
   const [sq,setSq]=useState('');
   /* loops removed */
+  const [feedSearch,setFeedSearch]=useState('');
   const [fi,setFi]=useState(0);
   const [fsi,setFsi]=useState(0); /* feed slide index */
   const dr=useRef(false);const lr=useRef(null);
@@ -396,20 +401,18 @@ function App(){
     if(!lblPrompt.trim()||lblGen)return;
     setLblGen(true);
     try{
-      const r=await fetch('https://api.openai.com/v1/images/generations',{
-        method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+OPENAI_KEY},
-        body:JSON.stringify({model:'dall-e-3',prompt:'Vinyl record center label design, circular format, vintage aesthetic, retro typography, warm tones, music label art: '+lblPrompt.trim(),n:1,size:'1024x1024',response_format:'b64_json'})
+      const r=await fetch('/api/generate-label',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({prompt:lblPrompt.trim()})
       });
       const d=await r.json();
-      if(d.data&&d.data[0]){
-        const img='data:image/png;base64,'+d.data[0].b64_json;
-        setDiscs(p=>{const n=[...p];n[ad]={...n[ad],lb:img};return n;});
+      if(d.image){
+        setDiscs(p=>{const n=[...p];n[ad]={...n[ad],lb:d.image};return n;});
         setLblDlg(false);
-      }else{alert('Generation failed — try again.');}
+      }else{alert(d.error||'Generation failed — try again.');}
     }catch(e){alert('Error: '+e.message);}
     setLblGen(false);
   };
-  const OPENAI_KEY=window.__OPENAI_KEY||'';
   const onUp=(e)=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=(ev)=>{setDiscs(p=>{const n=[...p];n[ad]={...n[ad],lb:ev.target.result};return n;});};r.readAsDataURL(f);};
   const flt=SONGS.filter(s=>!sq||s.t.toLowerCase().includes(sq.toLowerCase())||s.a.toLowerCase().includes(sq.toLowerCase()));
 
@@ -501,10 +504,11 @@ function App(){
           <stop offset="0%" stopColor="#FFFFFF"/><stop offset="100%" stopColor="#F2F2F4"/>
         </radialGradient>
         <linearGradient id="spec" x1="0" y1="0" x2="0.7" y2="1">
-          <stop offset="0%" stopColor="rgba(255,255,255,0.10)"/>
-          <stop offset="30%" stopColor="rgba(255,255,255,0.02)"/>
+          <stop offset="0%" stopColor="rgba(255,255,255,0.25)"/>
+          <stop offset="15%" stopColor="rgba(255,255,255,0.15)"/>
+          <stop offset="30%" stopColor="rgba(255,255,255,0.06)"/>
           <stop offset="70%" stopColor="rgba(255,255,255,0)"/>
-          <stop offset="100%" stopColor="rgba(255,255,255,0.06)"/>
+          <stop offset="100%" stopColor="rgba(255,255,255,0.08)"/>
         </linearGradient>
         <radialGradient id="rlight" cx="30%" cy="25%" r="70%">
           <stop offset="0%" stopColor="rgba(255,255,255,0.06)"/><stop offset="100%" stopColor="rgba(0,0,0,0)"/>
@@ -527,13 +531,10 @@ function App(){
         const cutOff=cut[0]*circ;
 
         return(<g key={ti}>
-          {/* Base ring — always dimmed, blended with disc color */}
-          {!isEmpty&&<circle cx={CX} cy={CY} r={mr} fill="none" stroke={`url(#cp${src})`} strokeWidth={sw} opacity={0.25}/>}
-          {/* If selected: bright overlay for the CUT region only */}
-          {sel&&!isEmpty&&<circle cx={CX} cy={CY} r={mr} fill="none" stroke={`url(#cp${src})`} strokeWidth={sw} opacity={0.88}
-            strokeDasharray={`${cutLen} ${circ-cutLen}`}
-            strokeDashoffset={-cutOff}
-            transform={`rotate(-90 ${CX} ${CY})`}/>}
+          {/* Base ring — always vibrant */}
+          {!isEmpty&&<circle cx={CX} cy={CY} r={mr} fill="none" stroke={`url(#cp${src})`} strokeWidth={sw} opacity={0.85}/>}
+          {/* If selected: colored tinted overlay */}
+          {sel&&!isEmpty&&<circle cx={CX} cy={CY} r={mr} fill="none" stroke={TC[src]} strokeWidth={sw} opacity={0.4}/>}
           {/* Cut handles — always visible on selected ring */}
           {sel&&!isEmpty&&[0,1].map(hi=>{
             const pos=handlePos(CX,CY,mr,cut[hi]);
@@ -549,10 +550,15 @@ function App(){
 
       <circle cx={CX} cy={CY} r={DISC_R-1} fill="url(#spec)" style={{pointerEvents:'none'}}/>
       <circle cx={CX} cy={CY} r={DISC_R-1} fill="url(#rlight)" style={{pointerEvents:'none'}}/>
+      <circle cx={CX} cy={CY} r={DISC_R-1} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="2" style={{pointerEvents:'none',mixBlendMode:'overlay'}}/>
       <circle cx={CX} cy={CY} r={DISC_R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.6"/>
 
       {RINGS.map(([mr,sw],ti)=><circle key={"hit"+ti} className="ring-hit" cx={CX} cy={CY} r={mr} fill="none" stroke="transparent" strokeWidth={sw}
-        onClick={(e)=>{if(mm){e.stopPropagation();setSt(ti);}}}/>)}
+        onClick={(e)=>{if(mm){e.stopPropagation();setSt(ti);}}}/>))}
+
+      {!pl&&mm&&!isEmpty&&RINGS.map(([mr,sw],ti)=>
+        <text key={"lbl"+ti} x={CX} y={CY-mr+sw/2} textAnchor="middle" fill="rgba(255,255,255,0.7)" fontFamily="Space Grotesk,sans-serif" fontSize="8" fontWeight="600" letterSpacing="1.5" style={{textTransform:'uppercase',pointerEvents:'none'}}>{TN[ti]}</text>
+      )}
 
       <g className="v-label-group" onClick={(e)=>{e.stopPropagation();onLbl();}}>
         <circle cx={CX} cy={CY} r={LABEL_R} fill="url(#lg)"/>
@@ -575,14 +581,19 @@ function App(){
   const slideIdx=mm?ad:fsi;
 
   return(<>
-    <div className="top-bar"></div>
+    <div className="top-bar">
+      {!mm && <div className="search-wrap">
+        <svg className="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input className="search-input" placeholder="Search" value={feedSearch} onChange={e=>setFeedSearch(e.target.value)}/>
+      </div>}
+    </div>
 
     <div className="main" onTouchStart={onTS} onTouchEnd={onTE} onClick={()=>{if(mm)setSt(-1);}}>
       {/* Artist name on top (feed mode only) */}
-      {!mm&&<div className="feed-artist">
+      <div className="feed-artist" style={{visibility:mm?'hidden':'visible'}}>
         <div className="fa-name">{FEED[fi].cr}</div>
         <div className="fa-track">{FEED[fi].d}</div>
-      </div>}
+      </div>
 
       {/* Disc + dots: fixed centered, never moves */}
       <div className="disc-center">
@@ -672,7 +683,15 @@ function App(){
         {pl?<svg viewBox="0 0 16 16"><rect x="3" y="2" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="9.5" y="2" width="3.5" height="12" rx="1" fill="currentColor"/></svg>
         :<svg viewBox="0 0 16 16"><path d="M4 2v12l10-6z" fill="currentColor"/></svg>}
       </button>
-      <button className={"vp-btn vp-mix"+(mm?" pressed":"")} onClick={()=>{setMM(!mm);setSt(-1);if(mm)setPl(false);}}>
+      <button className={"vp-btn vp-mix"+(mm?" pressed":"")} onClick={()=>{
+        if(!mm){
+          // Entering mix: use current feed track as starting disc
+          const feedSlide=FEED[fi].slides[fsi]||FEED[fi].slides[0];
+          setDiscs([{ts:[...feedSlide.s],fx:new Set(),lb:null,samps:[0,0,0,0],cuts:[[0,1],[0,1],[0,1],[0,1]],color:0}]);
+          setAd(0);
+        }
+        setMM(!mm);setSt(-1);if(mm)setPl(false);
+      }}>
         <div className={"led"+(mm?" on":"")}/>
         <span>Mix</span>
       </button>
