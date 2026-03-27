@@ -12,6 +12,7 @@
 <meta name="theme-color" content="#EDEDF1">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
 :root{
@@ -345,6 +346,111 @@ SONGS.forEach((s, i) => {
 function fmtK(n) {
   return n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : String(n);
 }
+function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
+  const googleButtonRef = React.useRef(null);
+  const [googleReady, setGoogleReady] = React.useState(false);
+  const CLIENT_ID = '743719143434-22rgs4pqss3aev4rb2r8t7vfbkqetuov.apps.googleusercontent.com';
+
+  function handleGoogleLogin(response) {
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const userData = {
+      googleId: payload.sub,
+      email: payload.email,
+      name: payload.name,
+      picture: payload.picture,
+      displayName: ''
+    };
+    const existing = JSON.parse(localStorage.getItem('wax-user') || 'null');
+    if (existing && existing.googleId === payload.sub && existing.displayName) {
+      userData.displayName = existing.displayName;
+    }
+    localStorage.setItem('wax-user', JSON.stringify(userData));
+    setUser(userData);
+    if (!userData.displayName) {
+      setDisplayName(payload.name);
+      setNeedsName(true);
+    }
+  }
+
+  React.useEffect(() => {
+    const checkGoogle = setInterval(() => {
+      if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+        clearInterval(checkGoogle);
+        setGoogleReady(true);
+        google.accounts.id.initialize({
+          client_id: CLIENT_ID,
+          callback: handleGoogleLogin
+        });
+        if (googleButtonRef.current) {
+          google.accounts.id.renderButton(googleButtonRef.current, {
+            theme: 'outline',
+            size: 'large',
+            text: 'signin_with',
+            shape: 'pill'
+          });
+        }
+      }
+    }, 100);
+    return () => clearInterval(checkGoogle);
+  }, []);
+
+  return /*#__PURE__*/React.createElement("div", {
+    className: "ob-screen"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "/icon-192.png",
+    style: {
+      width: "88px",
+      height: "88px",
+      borderRadius: "20px",
+      marginBottom: "24px",
+      boxShadow: "0 4px 24px rgba(0,0,0,0.13)"
+    },
+    alt: "WAX"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "ob-title"
+  }, "WAX"), /*#__PURE__*/React.createElement("div", {
+    className: "ob-sub"
+  }, "The Original"), /*#__PURE__*/React.createElement("div", {
+    ref: googleButtonRef,
+    style: { marginTop: "24px" }
+  }), googleReady ? null : /*#__PURE__*/React.createElement("p", {
+    style: { marginTop: "16px", fontSize: "12px", color: "var(--t3)" }
+  }, "Loading sign-in..."));
+}
+function DisplayNameScreen({ user, setUser, displayName, setDisplayName, setNeedsName }) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "ob-screen"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "/icon-192.png",
+    style: {
+      width: "88px",
+      height: "88px",
+      borderRadius: "20px",
+      marginBottom: "24px",
+      boxShadow: "0 4px 24px rgba(0,0,0,0.13)"
+    },
+    alt: "WAX"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "ob-title"
+  }, "Choose Display Name"), /*#__PURE__*/React.createElement("div", {
+    className: "ob-form"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "ob-input",
+    placeholder: "Display name",
+    value: displayName,
+    onChange: e => setDisplayName(e.target.value),
+    autoFocus: true
+  }), /*#__PURE__*/React.createElement("button", {
+    className: "ob-btn",
+    disabled: !displayName,
+    onClick: () => {
+      const updated = { ...user, displayName: displayName };
+      localStorage.setItem('wax-user', JSON.stringify(updated));
+      setUser(updated);
+      setNeedsName(false);
+    }
+  }, "Continue")));
+}
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -363,7 +469,9 @@ class ErrorBoundary extends React.Component {
   }
 }
 function App() {
-  const userProfile = JSON.parse(localStorage.getItem('wax-user') || '{}');
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('wax-user') || 'null'));
+  const [needsName, setNeedsName] = useState(false);
+  const [displayName, setDisplayName] = useState('');
   const [mm, setMM] = useState(false);
   const [pl, setPl] = useState(false);
   const [st, setSt] = useState(-1);
@@ -388,13 +496,9 @@ function App() {
   const [feedSearch, setFeedSearch] = useState('');
   const [fi, setFi] = useState(0);
   const [fsi, setFsi] = useState(0); /* feed slide index */
-  const [onboarded, setOnboarded] = useState(!!localStorage.getItem('wax-user'));
-  const [obName, setObName] = useState('');
-  const [obUsername, setObUsername] = useState('');
   const [likedPosts, setLikedPosts] = useState({});
   const [editingProfile, setEditingProfile] = useState(false);
   const [editName, setEditName] = useState('');
-  const [editUsername, setEditUsername] = useState('');
   const dr = useRef(false);
   const lr = useRef(null);
   const touchRef = useRef({
@@ -1496,7 +1600,7 @@ function App() {
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "led" + (mm ? " on" : "")
-  }), /*#__PURE__*/React.createElement("span", null, "Mix")), /*#__PURE__*/React.createElement("button", {
+  }), /*#__PURE__*/React.createElement("span", null, "Mix")), user && /*#__PURE__*/React.createElement("button", {
     className: "vp-btn vp-shelf",
     onClick: () => setProf(true)
   }, /*#__PURE__*/React.createElement("svg", {
@@ -1522,60 +1626,26 @@ function App() {
     width: "4",
     height: "10",
     rx: "1"
-  })))), /*#__PURE__*/React.createElement("div", {
+  })))), user && /*#__PURE__*/React.createElement("div", {
     className: "profile-ov" + (prof ? " open" : "")
   }, /*#__PURE__*/React.createElement("div", {
     className: "prof-header"
   }, /*#__PURE__*/React.createElement("div", {
     className: "prof-avatar",
-    style: { background: '#D42B40', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '700', color: '#fff' }
-  }, (userProfile.name || 'U')[0].toUpperCase()), /*#__PURE__*/React.createElement("div", {
+    style: user?.picture ? { backgroundImage: `url(${user.picture})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: '#D42B40', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '700', color: '#fff' }
+  }, !user?.picture && (user?.displayName || 'U')[0].toUpperCase()), /*#__PURE__*/React.createElement("div", {
     className: "prof-info"
-  }, !editingProfile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: "prof-name"
-  }, userProfile.name || 'Your Name'), /*#__PURE__*/React.createElement("div", {
-    className: "prof-handle"
-  }, '@' + (userProfile.username || 'username'))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("input", {
-    type: "text",
-    placeholder: "Display name",
-    value: editName,
-    onChange: e => setEditName(e.target.value),
-    style: { width: '100%', padding: '6px', marginBottom: '6px', fontSize: '14px', border: '1px solid #D42B40', borderRadius: '6px' }
-  }), /*#__PURE__*/React.createElement("input", {
-    type: "text",
-    placeholder: "Username",
-    value: editUsername,
-    onChange: e => setEditUsername(e.target.value),
-    style: { width: '100%', padding: '6px', fontSize: '14px', border: '1px solid #D42B40', borderRadius: '6px' }
-  }))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "prof-name",
+    onClick: () => { setEditName(user?.displayName || ''); setEditingProfile(true); },
+    style: { cursor: 'pointer' }
+  }, user?.displayName || 'Tap to set name'), /*#__PURE__*/React.createElement("div", {
+    className: "prof-handle",
+    onClick: () => { setEditName(user?.displayName || ''); setEditingProfile(true); },
+    style: { cursor: 'pointer' }
+  }, user?.email || '')), /*#__PURE__*/React.createElement("div", {
     className: "prof-actions"
-  }, !editingProfile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
-    onClick: () => { setEditName(userProfile.name || ''); setEditUsername(userProfile.username || ''); setEditingProfile(true); },
-    style: { padding: '6px 12px', background: '#D42B40', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }
-  }, "Edit"), /*#__PURE__*/React.createElement("div", {
-    className: "prof-msg"
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "16",
-    height: "16",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "1.5"
-  }, /*#__PURE__*/React.createElement("rect", {
-    x: "2",
-    y: "4",
-    width: "20",
-    height: "14",
-    rx: "3"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M2 7l10 6 10-6"
-  })))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
-    onClick: () => { const newProfile = { ...userProfile, name: editName, username: editUsername }; localStorage.setItem('wax-user', JSON.stringify(newProfile)); setEditingProfile(false); },
-    style: { padding: '6px 12px', background: '#D42B40', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', marginRight: '6px' }
-  }, "Save"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setEditingProfile(false),
-    style: { padding: '6px 12px', background: '#ccc', color: '#000', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }
-  }, "Cancel")), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     className: "prof-close",
     onClick: () => setProf(false)
   }, /*#__PURE__*/React.createElement("svg", {
@@ -1595,7 +1665,32 @@ function App() {
     y1: "6",
     x2: "18",
     y2: "18"
-  }))))), /*#__PURE__*/React.createElement("div", {
+  }))))),
+  /* Edit name dialog — centered modal */
+  editingProfile && /*#__PURE__*/React.createElement("div", {
+    style: { position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' },
+    onClick: e => { if (e.target === e.currentTarget) setEditingProfile(false); }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { background: 'var(--bg)', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '280px', boxShadow: '0 12px 40px rgba(0,0,0,0.2)' }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: '16px', fontWeight: '700', color: 'var(--t1)', marginBottom: '16px', textAlign: 'center' }
+  }, "Edit Profile"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "Display name",
+    value: editName,
+    onChange: e => setEditName(e.target.value),
+    autoFocus: true,
+    style: { width: '100%', padding: '10px 14px', fontSize: '14px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', background: 'white', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', marginBottom: '12px' }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', gap: '8px' }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setEditingProfile(false),
+    style: { flex: 1, padding: '10px', background: 'rgba(0,0,0,0.04)', color: 'var(--t2)', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit' }
+  }, "Cancel"), /*#__PURE__*/React.createElement("button", {
+    disabled: !editName.trim(),
+    onClick: () => { const updated = { ...user, displayName: editName.trim() }; localStorage.setItem('wax-user', JSON.stringify(updated)); setUser(updated); setEditingProfile(false); },
+    style: { flex: 1, padding: '10px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', opacity: editName.trim() ? 1 : 0.5 }
+  }, "Save")))), /*#__PURE__*/React.createElement("div", {
     className: "prof-tog"
   }, /*#__PURE__*/React.createElement("div", {
     className: "pf-tab" + (ptab === 0 ? " on" : ""),
@@ -1688,46 +1783,19 @@ function App() {
     key: fx,
     className: "fx-ch" + (disc.fx && disc.fx.has(fx) ? " on" : ""),
     onClick: () => tf(fx)
-  }, fx)))), !onboarded && /*#__PURE__*/React.createElement("div", {
-    className: "ob-screen"
-  }, /*#__PURE__*/React.createElement("img", {
-    src: "/icon-192.png",
-    style: {
-      width: "88px",
-      height: "88px",
-      borderRadius: "20px",
-      marginBottom: "24px",
-      boxShadow: "0 4px 24px rgba(0,0,0,0.13)"
-    },
-    alt: "WAX"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "ob-title"
-  }, "WAX"), /*#__PURE__*/React.createElement("div", {
-    className: "ob-sub"
-  }, "The Original"), /*#__PURE__*/React.createElement("div", {
-    className: "ob-form"
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "ob-input",
-    placeholder: "Display name",
-    value: obName,
-    onChange: e => setObName(e.target.value)
-  }), /*#__PURE__*/React.createElement("input", {
-    className: "ob-input",
-    placeholder: "Username",
-    value: obUsername,
-    onChange: e => setObUsername(e.target.value)
-  }), /*#__PURE__*/React.createElement("button", {
-    className: "ob-btn",
-    disabled: !obName || !obUsername,
-    onClick: () => {
-      localStorage.setItem('wax-user', JSON.stringify({
-        name: obName,
-        username: obUsername
-      }));
-      setOnboarded(true);
-    }
-  }, "Get Started"))));
+  }, fx)))), !user && /*#__PURE__*/React.createElement(GoogleSignInScreen, {
+    setUser,
+    setNeedsName,
+    setDisplayName
+  }), user && needsName && /*#__PURE__*/React.createElement(DisplayNameScreen, {
+    user,
+    setUser,
+    displayName,
+    setDisplayName,
+    setNeedsName
+  }));
 }
+
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary, null, React.createElement(App, null)));</script>
 
 <div class="pwa-screen" id="pwaScreen">
