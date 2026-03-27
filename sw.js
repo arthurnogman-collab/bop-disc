@@ -1,4 +1,4 @@
-const CACHE = 'bop-v3';
+const CACHE = 'wax-v5';
 const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {

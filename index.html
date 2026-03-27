@@ -40,7 +40,8 @@ body{display:flex;justify-content:center;align-items:center;}
 .dot.on{background:var(--accent);transform:scale(1.3);box-shadow:0 0 6px var(--accent-glow);}
 .dot.add-d{border:1.5px solid var(--t4);background:transparent;}
 
-.main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;min-height:0;z-index:1;gap:12px;}
+.main{flex:1;position:relative;overflow:hidden;min-height:0;z-index:1;}
+.disc-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-52%);display:flex;flex-direction:column;align-items:center;gap:10px;}
 .v-wrap{width:340px;height:340px;position:relative;flex-shrink:0;}
 .v-svg{overflow:visible;transform-origin:50% 50%;will-change:transform;touch-action:none;}
 .ring-hit{cursor:pointer;}
@@ -53,17 +54,19 @@ body{display:flex;justify-content:center;align-items:center;}
 
 /* Loops removed */
 
-/* Feed info */
-.feed-info{text-align:center;z-index:8;}
-.fi-cr{font-size:14px;font-weight:600;color:var(--t1);}
-.fi-desc{font-size:11px;color:var(--t3);margin-top:2px;}
-.fi-loops{display:flex;align-items:center;gap:4px;margin-top:5px;font-size:10px;color:var(--t3);font-weight:500;}
-.fi-loops svg{opacity:0.5;}
+/* Feed artist name (above disc) */
+.feed-artist{position:absolute;top:18px;left:0;right:0;text-align:center;z-index:8;}
+.fa-name{font-size:15px;font-weight:700;color:var(--t1);letter-spacing:-0.2px;}
+.fa-track{font-size:11px;color:var(--t3);margin-top:2px;font-weight:400;}
+/* Social counters (below dots) */
+.feed-social{display:flex;align-items:center;justify-content:center;gap:20px;}
+.fs-item{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:500;color:var(--t4);}
+.fs-item svg{width:13px;height:13px;opacity:0.5;}
 
 /* Color selector removed */
 
 /* Bottom bar */
-.btn-bar{flex-shrink:0;z-index:10;display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 30px 34px;}
+.btn-bar{flex-shrink:0;z-index:10;display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 30px;padding-bottom:max(28px,env(safe-area-inset-bottom,28px));margin-top:auto;}
 .vp-btn{height:46px;border-radius:23px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;
   font-family:inherit;font-weight:600;font-size:11px;letter-spacing:0.2px;transition:all .12s;
   background:var(--chrome);color:var(--t2);
@@ -151,6 +154,20 @@ body{display:flex;justify-content:center;align-items:center;}
   color:var(--t2);font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;}
 .fx-ch.on{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
 
+/* Label dialog */
+.lbl-dialog{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);backdrop-filter:blur(6px);}
+.lbl-card{width:280px;background:#fff;border-radius:20px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+.lbl-card h3{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:16px;text-align:center;}
+.lbl-opts{display:flex;gap:10px;margin-bottom:14px;}
+.lbl-opt{flex:1;padding:14px 8px;border-radius:12px;border:1.5px solid rgba(0,0,0,0.08);background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:inherit;font-size:11px;font-weight:600;color:var(--t2);transition:all .15s;}
+.lbl-opt:active,.lbl-opt.on{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.lbl-opt svg{width:22px;height:22px;opacity:0.6;}
+.lbl-prompt{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.1);font-family:inherit;font-size:12px;color:var(--t1);outline:none;resize:none;height:60px;margin-bottom:10px;}
+.lbl-prompt:focus{border-color:var(--accent);}
+.lbl-gen-btn{width:100%;padding:12px;border-radius:12px;border:none;background:var(--t1);color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;}
+.lbl-gen-btn:disabled{opacity:0.4;cursor:default;}
+.lbl-cancel{width:100%;padding:10px;border:none;background:transparent;color:var(--t3);font-family:inherit;font-size:12px;cursor:pointer;margin-top:4px;}
+
 /* PWA Install Screen */
 .pwa-screen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;transition:opacity .4s,transform .4s;}
 .pwa-screen.hidden{opacity:0;transform:scale(1.04);pointer-events:none;}
@@ -201,11 +218,11 @@ const CX=170,CY=170,SVS=340;
 
 const EFX=["reverb","delay","pitch shift","chop","lo-fi","chorus","flanger","distort"];
 const FEED=[
-  {cr:"@dj.vinyl",d:"Sunset soul remix",slides:[{s:[0,2,5,3]},{s:[0,2,5,7]},{s:[0,3,5,3]}],loops:12400},
-  {cr:"@beatcraftr",d:"Tokyo midnight jazz",slides:[{s:[3,1,4,6]},{s:[3,1,7,6]}],loops:8300},
-  {cr:"@groove.lab",d:"Golden hour funk",slides:[{s:[5,0,2,7]}],loops:31200},
-  {cr:"@wav.rider",d:"Neon street beats",slides:[{s:[1,6,3,0]},{s:[1,6,4,0]},{s:[2,6,3,0]},{s:[1,5,3,7]}],loops:5600},
-  {cr:"@mellow.mix",d:"Rainy day loops",slides:[{s:[4,5,7,2]},{s:[4,0,7,2]}],loops:19800}
+  {cr:"DJ Vinyl",d:"Sunset Soul Remix",slides:[{s:[0,2,5,3]},{s:[0,2,5,7]},{s:[0,3,5,3]}],plays:12400,likes:342,comments:28},
+  {cr:"Beat Crafter",d:"Tokyo Midnight Jazz",slides:[{s:[3,1,4,6]},{s:[3,1,7,6]}],plays:8300,likes:189,comments:15},
+  {cr:"Groove Lab",d:"Golden Hour Funk",slides:[{s:[5,0,2,7]}],plays:31200,likes:1240,comments:87},
+  {cr:"Wav Rider",d:"Neon Street Beats",slides:[{s:[1,6,3,0]},{s:[1,6,4,0]},{s:[2,6,3,0]},{s:[1,5,3,7]}],plays:5600,likes:98,comments:7},
+  {cr:"Mellow Mix",d:"Rainy Day Loops",slides:[{s:[4,5,7,2]},{s:[4,0,7,2]}],plays:19800,likes:670,comments:41}
 ];
 
 const SAMPLES={};
@@ -229,6 +246,10 @@ function App(){
   const [discs,setDiscs]=useState([{ts:[0,1,2,3],fx:new Set(),lb:null,samps:[0,0,0,0],cuts:[[0,1],[0,1],[0,1],[0,1]],color:0}]);
   const [sfx,setSfx]=useState(false);
   const [prof,setProf]=useState(false);
+  const [lblDlg,setLblDlg]=useState(false);
+  const [lblMode,setLblMode]=useState('upload'); /* 'upload' or 'generate' */
+  const [lblPrompt,setLblPrompt]=useState('');
+  const [lblGen,setLblGen]=useState(false); /* generating */
   const [ptab,setPtab]=useState(0);
   const [sq,setSq]=useState('');
   /* loops removed */
@@ -243,7 +264,6 @@ function App(){
   const rafRef=useRef(null);
   const lastTRef=useRef(null);
   const plRef=useRef(false);
-  const spRef=useRef(1);
   const discDragRef=useRef(null);/* {startAngle, startRot} or null */
   const dragVelRef=useRef(0);   /* deg/sec of last drag movement */
   const dragLastTRef=useRef(0); /* timestamp of last drag move */
@@ -307,6 +327,7 @@ function App(){
     return Math.atan2(ey-cy,ex-cx)*180/Math.PI;
   }
   const onDiscDragStart=(e)=>{
+    if(!mm)return; /* feed mode: don't rotate, let swipes work */
     if(po)return; /* don't steal cut-handle drags */
     e.preventDefault();
     const startAngle=discAngleFromEvent(e);
@@ -369,7 +390,26 @@ function App(){
   const setSamp=(si)=>{setDiscs(p=>{const n=[...p];const d={...n[ad],samps:[...n[ad].samps]};d.samps[st]=si;n[ad]=d;return n;});};
   const setColor=(ci)=>{setDiscs(p=>{const n=[...p];n[ad]={...n[ad],color:ci};return n;});};
   const addD=()=>{if(discs.length<8){const cur=discs[ad];const i=discs.length;setDiscs(p=>[...p,{ts:[...cur.ts],fx:new Set(cur.fx),lb:cur.lb,samps:[...cur.samps],cuts:cur.cuts.map(c=>[...c]),color:cur.color}]);setAd(i);}};
-  const onLbl=()=>{if(mm&&lr.current)lr.current.click();};
+  const onLbl=()=>{if(mm){setLblDlg(true);setLblMode('upload');setLblPrompt('');}};
+  const onLblUpload=()=>{setLblDlg(false);if(lr.current)lr.current.click();};
+  const onLblGenerate=async()=>{
+    if(!lblPrompt.trim()||lblGen)return;
+    setLblGen(true);
+    try{
+      const r=await fetch('https://api.openai.com/v1/images/generations',{
+        method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+OPENAI_KEY},
+        body:JSON.stringify({model:'dall-e-3',prompt:'Vinyl record center label design, circular format, vintage aesthetic, retro typography, warm tones, music label art: '+lblPrompt.trim(),n:1,size:'1024x1024',response_format:'b64_json'})
+      });
+      const d=await r.json();
+      if(d.data&&d.data[0]){
+        const img='data:image/png;base64,'+d.data[0].b64_json;
+        setDiscs(p=>{const n=[...p];n[ad]={...n[ad],lb:img};return n;});
+        setLblDlg(false);
+      }else{alert('Generation failed — try again.');}
+    }catch(e){alert('Error: '+e.message);}
+    setLblGen(false);
+  };
+  const OPENAI_KEY=window.__OPENAI_KEY||'';
   const onUp=(e)=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=(ev)=>{setDiscs(p=>{const n=[...p];n[ad]={...n[ad],lb:ev.target.result};return n;});};r.readAsDataURL(f);};
   const flt=SONGS.filter(s=>!sq||s.t.toLowerCase().includes(sq.toLowerCase())||s.a.toLowerCase().includes(sq.toLowerCase()));
 
@@ -524,7 +564,7 @@ function App(){
           <text x={CX} y={CY-5} textAnchor="middle" fill="rgba(0,0,0,0.5)" fontFamily="Space Grotesk,sans-serif" fontSize="8" fontWeight="300" letterSpacing="3">ADD</text>
           <text x={CX} y={CY+8} textAnchor="middle" fill="rgba(0,0,0,0.8)" fontFamily="Space Grotesk,sans-serif" fontSize="11" fontWeight="700" letterSpacing="1.5">LABEL</text>
         </>}
-        {!disc.lb&&!mm&&<text x={CX} y={CY+3} textAnchor="middle" fill="rgba(0,0,0,0.1)" fontFamily="Space Grotesk,sans-serif" fontSize="7" fontWeight="700" letterSpacing="2.5">BOP DISC</text>}
+        {!disc.lb&&!mm&&<text x={CX} y={CY+3} textAnchor="middle" fill="rgba(0,0,0,0.1)" fontFamily="Space Grotesk,sans-serif" fontSize="7" fontWeight="700" letterSpacing="2.5">WAX</text>}
         <circle cx={CX} cy={CY} r="2.5" fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="0.4"/>
       </g>
     </svg>
@@ -538,21 +578,41 @@ function App(){
     <div className="top-bar"></div>
 
     <div className="main" onTouchStart={onTS} onTouchEnd={onTE} onClick={()=>{if(mm)setSt(-1);}}>
-      <div className="v-wrap">
-        {discSvg}
-        <div className="playhead"><div className="playhead-line"/><div className="playhead-tri"/></div>
-      </div>
-      {/* Dots sit directly below the disc */}
-      {mm?
-        <div className="dots">{discs.map((_,i)=><div key={i} className={"dot"+(ad===i?" on":"")} onClick={(e)=>{e.stopPropagation();setAd(i);setSt(-1);}}/>)}{discs.length<8&&<div className="dot add-d" onClick={(e)=>{e.stopPropagation();addD();}}/>}</div>
-      :feedItem.slides.length>1&&
-        <div className="dots">{feedItem.slides.map((_,i)=><div key={i} className={"dot"+(fsi===i?" on":"")} onClick={(e)=>{e.stopPropagation();setFsi(i);}}/>)}</div>
-      }
-      <input ref={lr} type="file" accept="image/*" style={{display:'none'}} onChange={onUp}/>
-      {!mm&&<div className="feed-info">
-        <div className="fi-cr">{FEED[fi].cr}</div>
-        <div className="fi-desc">{FEED[fi].d}</div>
+      {/* Artist name on top (feed mode only) */}
+      {!mm&&<div className="feed-artist">
+        <div className="fa-name">{FEED[fi].cr}</div>
+        <div className="fa-track">{FEED[fi].d}</div>
       </div>}
+
+      {/* Disc + dots: fixed centered, never moves */}
+      <div className="disc-center">
+        <div className="v-wrap">
+          {discSvg}
+          <div className="playhead"><div className="playhead-line"/><div className="playhead-tri"/></div>
+        </div>
+        {mm?
+          <div className="dots">{discs.map((_,i)=><div key={i} className={"dot"+(ad===i?" on":"")} onClick={(e)=>{e.stopPropagation();setAd(i);setSt(-1);}}/>)}{discs.length<8&&<div className="dot add-d" onClick={(e)=>{e.stopPropagation();addD();}}/>}</div>
+        :feedItem.slides.length>1&&
+          <div className="dots">{feedItem.slides.map((_,i)=><div key={i} className={"dot"+(fsi===i?" on":"")} onClick={(e)=>{e.stopPropagation();setFsi(i);}}/>)}</div>
+        }
+        {/* Social counters (feed mode) */}
+        {!mm&&<div className="feed-social">
+          <div className="fs-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1.1L12 21.3l7.8-7.8 1-1.1a5.5 5.5 0 000-7.8z"/></svg>
+            {fmtK(FEED[fi].likes)}
+          </div>
+          <div className="fs-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            {fmtK(FEED[fi].comments)}
+          </div>
+          <div className="fs-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            {fmtK(FEED[fi].plays)}
+          </div>
+        </div>}
+      </div>
+
+      <input ref={lr} type="file" accept="image/*" style={{display:'none'}} onChange={onUp}/>
     </div>
 
     <div className={"picker"+(po?" open":" shut")}>{st>=0&&<>
@@ -582,6 +642,30 @@ function App(){
         </div>
       </div>}
     </>}</div>
+
+    {/* Label dialog */}
+    {lblDlg&&<div className="lbl-dialog" onClick={()=>setLblDlg(false)}>
+      <div className="lbl-card" onClick={(e)=>e.stopPropagation()}>
+        <h3>Add Label</h3>
+        <div className="lbl-opts">
+          <button className={"lbl-opt"+(lblMode==='upload'?" on":"")} onClick={()=>setLblMode('upload')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload
+          </button>
+          <button className={"lbl-opt"+(lblMode==='generate'?" on":"")} onClick={()=>setLblMode('generate')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            Generate
+          </button>
+        </div>
+        {lblMode==='upload'?
+          <button className="lbl-gen-btn" onClick={onLblUpload}>Choose Image</button>
+        :<>
+          <textarea className="lbl-prompt" placeholder="Describe your label... e.g. 'psychedelic sunset jazz vibes'" value={lblPrompt} onChange={(e)=>setLblPrompt(e.target.value)}/>
+          <button className="lbl-gen-btn" disabled={!lblPrompt.trim()||lblGen} onClick={onLblGenerate}>{lblGen?'Generating...':'Generate with AI'}</button>
+        </>}
+        <button className="lbl-cancel" onClick={()=>setLblDlg(false)}>Cancel</button>
+      </div>
+    </div>}
 
     <div className="btn-bar">
       <button className={"vp-btn vp-play"+(pl?" pressed":"")} onClick={()=>setPl(!pl)}>
