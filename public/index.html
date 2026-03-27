@@ -352,24 +352,26 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
   const CLIENT_ID = '743719143434-22rgs4pqss3aev4rb2r8t7vfbkqetuov.apps.googleusercontent.com';
 
   function handleGoogleLogin(response) {
-    const payload = JSON.parse(atob(response.credential.split('.')[1]));
-    const userData = {
-      googleId: payload.sub,
-      email: payload.email,
-      name: payload.name,
-      picture: payload.picture,
-      displayName: ''
-    };
-    const existing = JSON.parse(localStorage.getItem('wax-user') || 'null');
-    if (existing && existing.googleId === payload.sub && existing.displayName) {
-      userData.displayName = existing.displayName;
-    }
-    localStorage.setItem('wax-user', JSON.stringify(userData));
-    setUser(userData);
-    if (!userData.displayName) {
-      setDisplayName(payload.name);
-      setNeedsName(true);
-    }
+    fetch('/api/auth/google', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({credential: response.credential})
+    }).then(r => r.json()).then(userData => {
+      const user = {
+        id: userData.id,
+        googleId: userData.google_id,
+        email: userData.email,
+        name: userData.name,
+        picture: userData.picture,
+        displayName: userData.display_name || ''
+      };
+      localStorage.setItem('wax-user', JSON.stringify(user));
+      setUser(user);
+      if (!user.displayName) {
+        setDisplayName(userData.name || '');
+        setNeedsName(true);
+      }
+    }).catch(err => console.error('Auth error:', err));
   }
 
   React.useEffect(() => {
@@ -410,7 +412,7 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
     className: "ob-title"
   }, "WAX"), /*#__PURE__*/React.createElement("div", {
     className: "ob-sub"
-  }, "The Original"), /*#__PURE__*/React.createElement("div", {
+  }, "Keep it Real"), /*#__PURE__*/React.createElement("div", {
     ref: googleButtonRef,
     style: { marginTop: "24px" }
   }), googleReady ? null : /*#__PURE__*/React.createElement("p", {
@@ -447,6 +449,13 @@ function DisplayNameScreen({ user, setUser, displayName, setDisplayName, setNeed
       const updated = { ...user, displayName: displayName };
       localStorage.setItem('wax-user', JSON.stringify(updated));
       setUser(updated);
+      if (updated.id) {
+        fetch('/api/auth/display-name', {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({displayName: displayName})
+        }).catch(() => {});
+      }
       setNeedsName(false);
     }
   }, "Continue")));
@@ -499,6 +508,8 @@ function App() {
   const [likedPosts, setLikedPosts] = useState({});
   const [editingProfile, setEditingProfile] = useState(false);
   const [editName, setEditName] = useState('');
+  const [feedData, setFeedData] = useState(FEED);
+  const [feedLoading, setFeedLoading] = useState(true);
   const dr = useRef(false);
   const lr = useRef(null);
   const touchRef = useRef({
@@ -518,7 +529,7 @@ function App() {
   const dragLastTRef = useRef(0); /* timestamp of last drag move */
   const dragLastARef = useRef(0); /* angle at last drag move */
 
-  const feedItem = FEED[fi];
+  const feedItem = feedData[fi];
   const feedSlide = feedItem.slides[fsi] || feedItem.slides[0];
   const disc = mm ? discs[ad] : {
     ts: feedSlide.s,
@@ -530,6 +541,25 @@ function App() {
   };
   const discColor = DISC_COLORS[disc.color || 0];
   const po = mm && st >= 0;
+
+  /* Load feed data from API */
+  useEffect(() => {
+    fetch('/api/mixes').then(r => r.json()).then(mixes => {
+      if (mixes && mixes.length > 0) {
+        const mapped = mixes.map(m => ({
+          id: m.id,
+          cr: m.display_name || m.name || 'Unknown',
+          d: m.title,
+          slides: [{s: m.tracks}],
+          plays: m.plays || 0,
+          likes: m.like_count || 0,
+          comments: m.comment_count || 0
+        }));
+        setFeedData(mapped);
+      }
+      setFeedLoading(false);
+    }).catch(() => setFeedLoading(false));
+  }, []);
 
   /* Sync pl to ref so RAF always has latest */
   useEffect(() => {
@@ -654,7 +684,7 @@ function App() {
       setSt(-1);
     } else {
       const maxS = feedItem.slides.length - 1;
-      if (fsi < maxS) setFsi(fsi + 1);else if (fi < FEED.length - 1) {
+      if (fsi < maxS) setFsi(fsi + 1);else if (fi < feedData.length - 1) {
         setFi(fi + 1);
         setFsi(0);
       }
@@ -836,7 +866,7 @@ function App() {
       /* Feed mode */
       if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx)) {
         /* Vertical — change feed item */
-        if (dy < 0 && fi < FEED.length - 1) {
+        if (dy < 0 && fi < feedData.length - 1) {
           setFi(fi + 1);
           setFsi(0);
         }
@@ -1276,9 +1306,9 @@ function App() {
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "fa-name"
-  }, FEED[fi].cr), /*#__PURE__*/React.createElement("div", {
+  }, feedData[fi].cr), /*#__PURE__*/React.createElement("div", {
     className: "fa-track"
-  }, FEED[fi].d)), /*#__PURE__*/React.createElement("div", {
+  }, feedData[fi].d)), /*#__PURE__*/React.createElement("div", {
     className: "disc-center"
   }, /*#__PURE__*/React.createElement("div", {
     className: "v-wrap"
@@ -1353,7 +1383,16 @@ function App() {
     className: "feed-social"
   }, /*#__PURE__*/React.createElement("div", {
     className: "fs-item" + (likedPosts[fi] ? " liked" : ""),
-    onClick: () => { setLikedPosts(p => ({...p, [fi]: !p[fi]})); },
+    onClick: () => {
+      setLikedPosts(p => ({...p, [fi]: !p[fi]}));
+      if (user && user.id && feedData[fi] && feedData[fi].id) {
+        fetch('/api/likes', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({userId: user.id, mixId: feedData[fi].id})
+        }).catch(() => {});
+      }
+    },
     style: { cursor: 'pointer' }
   }, /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 24 24",
@@ -1362,7 +1401,7 @@ function App() {
     strokeWidth: "1.8"
   }, /*#__PURE__*/React.createElement("path", {
     d: "M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1.1L12 21.3l7.8-7.8 1-1.1a5.5 5.5 0 000-7.8z"
-  })), fmtK(FEED[fi].likes + (likedPosts[fi] ? 1 : 0))), /*#__PURE__*/React.createElement("div", {
+  })), fmtK(feedData[fi].likes + (likedPosts[fi] ? 1 : 0))), /*#__PURE__*/React.createElement("div", {
     className: "fs-item"
   }, /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 24 24",
@@ -1371,7 +1410,7 @@ function App() {
     strokeWidth: "1.8"
   }, /*#__PURE__*/React.createElement("path", {
     d: "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
-  })), fmtK(FEED[fi].comments)), /*#__PURE__*/React.createElement("div", {
+  })), fmtK(feedData[fi].comments)), /*#__PURE__*/React.createElement("div", {
     className: "fs-item"
   }, /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 24 24",
@@ -1380,7 +1419,7 @@ function App() {
     strokeWidth: "1.8"
   }, /*#__PURE__*/React.createElement("polygon", {
     points: "5 3 19 12 5 21 5 3"
-  })), fmtK(FEED[fi].plays)))), /*#__PURE__*/React.createElement("input", {
+  })), fmtK(feedData[fi].plays)))), /*#__PURE__*/React.createElement("input", {
     ref: lr,
     type: "file",
     accept: "image/*",
@@ -1580,7 +1619,7 @@ function App() {
     onClick: () => {
       if (!mm) {
         // Entering mix: use current feed track as starting disc
-        const feedSlide = FEED[fi].slides[fsi] || FEED[fi].slides[0];
+        const feedSlide = feedData[fi].slides[fsi] || feedData[fi].slides[0];
         const newDisc = {
           ts: [...feedSlide.s],
           fx: new Set(),
@@ -1801,7 +1840,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(
 <div class="pwa-screen" id="pwaScreen">
   <img src="/icon-192.png" style="width:88px;height:88px;border-radius:20px;margin-bottom:24px;box-shadow:0 4px 24px rgba(0,0,0,0.13);" alt="WAX"/>
   <div class="pwa-title">WAX</div>
-  <div class="pwa-sub">The Original</div>
+  <div class="pwa-sub">Keep it Real</div>
 
   <!-- iOS steps: just Share + Add to Home Screen, no "open in Safari" -->
   <div class="pwa-steps" id="iosSteps" style="display:none">
