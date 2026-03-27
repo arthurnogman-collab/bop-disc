@@ -40,9 +40,8 @@ body{display:flex;justify-content:center;align-items:center;}
 .dot.on{background:var(--accent);transform:scale(1.3);box-shadow:0 0 6px var(--accent-glow);}
 .dot.add-d{border:1.5px solid var(--t4);background:transparent;}
 
-.main{flex:1;position:relative;overflow:hidden;min-height:0;z-index:1;}
-.v-anchor{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);}
-.v-wrap{width:340px;height:340px;position:relative;}
+.main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;min-height:0;z-index:1;gap:12px;}
+.v-wrap{width:340px;height:340px;position:relative;flex-shrink:0;}
 .v-svg{overflow:visible;transform-origin:50% 50%;will-change:transform;touch-action:none;}
 .ring-hit{cursor:pointer;}
 .v-label-group{cursor:pointer;}
@@ -55,7 +54,7 @@ body{display:flex;justify-content:center;align-items:center;}
 /* Loops removed */
 
 /* Feed info */
-.feed-info{position:absolute;bottom:12px;left:20px;z-index:8;}
+.feed-info{text-align:center;z-index:8;}
 .fi-cr{font-size:14px;font-weight:600;color:var(--t1);}
 .fi-desc{font-size:11px;color:var(--t3);margin-top:2px;}
 .fi-loops{display:flex;align-items:center;gap:4px;margin-top:5px;font-size:10px;color:var(--t3);font-weight:500;}
@@ -63,19 +62,14 @@ body{display:flex;justify-content:center;align-items:center;}
 
 /* Color selector removed */
 
-/* Speed row */
-.speed-row{flex-shrink:0;padding:0 24px;z-index:10;display:flex;align-items:center;gap:10px;transition:max-height .3s,opacity .3s,padding .3s;overflow:hidden;}
-.speed-row.hide{max-height:0;opacity:0;padding:0 24px;}
-.speed-row.show{max-height:36px;opacity:1;height:32px;padding:2px 24px;}
-.sl-lbl{font-size:8px;font-weight:600;color:var(--t3);letter-spacing:0.8px;text-transform:uppercase;flex-shrink:0;width:32px;}
-.sl-area{flex:1;position:relative;height:32px;display:flex;align-items:center;touch-action:none;}
-.sl-bg{width:100%;height:2px;background:var(--t4);border-radius:1px;position:relative;opacity:0.45;}
-.sl-fill{height:100%;background:var(--t2);border-radius:1px;transition:width .05s;}
-.sl-thumb{width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:50%;transform:translate(-50%,-50%);cursor:grab;
-  box-shadow:0 1px 4px rgba(0,0,0,0.2),0 0 0 1px rgba(0,0,0,0.05);}
-
 /* Bottom bar */
-.btn-bar{flex-shrink:0;z-index:10;display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 30px 34px;}
+.btn-bar{flex-shrink:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:8px 20px 34px;}
+.btn-bar-center{display:flex;align-items:center;gap:12px;}
+.vp-skip{width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  background:var(--chrome);color:var(--t3);
+  box-shadow:0 2px 6px rgba(0,0,0,0.07),inset 0 0.5px 0 rgba(255,255,255,0.9);
+  transition:all .12s;}
+.vp-skip:active{box-shadow:inset 0 2px 4px rgba(0,0,0,0.12);transform:scale(0.94);}
 .vp-btn{height:46px;border-radius:23px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;
   font-family:inherit;font-weight:600;font-size:11px;letter-spacing:0.2px;transition:all .12s;
   background:var(--chrome);color:var(--t2);
@@ -236,7 +230,6 @@ function fmtK(n){return n>=1000?(n/1000).toFixed(1).replace(/\.0$/,'')+'K':Strin
 function App(){
   const [mm,setMM]=useState(false);
   const [pl,setPl]=useState(false);
-  const [sp,setSp]=useState(1);
   const [st,setSt]=useState(-1);
   const [ad,setAd]=useState(0); /* active disc (in mix = which disc, in feed = which feed item) */
   const [discs,setDiscs]=useState([{ts:[0,1,2,3],fx:new Set(),lb:null,samps:[0,0,0,0],cuts:[[0,1],[0,1],[0,1],[0,1]],color:0}]);
@@ -247,7 +240,7 @@ function App(){
   /* loops removed */
   const [fi,setFi]=useState(0);
   const [fsi,setFsi]=useState(0); /* feed slide index */
-  const sr=useRef(null);const dr=useRef(false);const lr=useRef(null);
+  const dr=useRef(false);const lr=useRef(null);
   const touchRef=useRef({x:null,y:null});
   const svgRef=useRef(null);
   /* RAF rotation */
@@ -258,6 +251,9 @@ function App(){
   const plRef=useRef(false);
   const spRef=useRef(1);
   const discDragRef=useRef(null);/* {startAngle, startRot} or null */
+  const dragVelRef=useRef(0);   /* deg/sec of last drag movement */
+  const dragLastTRef=useRef(0); /* timestamp of last drag move */
+  const dragLastARef=useRef(0); /* angle at last drag move */
 
   const feedItem=FEED[fi];
   const feedSlide=feedItem.slides[fsi]||feedItem.slides[0];
@@ -265,22 +261,24 @@ function App(){
   const discColor=DISC_COLORS[disc.color||0];
   const po=mm&&st>=0;
 
-  /* Sync pl/sp to refs so RAF always has latest */
+  /* Sync pl to ref so RAF always has latest */
   useEffect(()=>{plRef.current=pl;},[pl]);
-  useEffect(()=>{spRef.current=sp;},[sp]);
 
   /* RAF rotation engine */
   useEffect(()=>{
-    function targetSpeed(){return plRef.current&&spRef.current>0?72*spRef.current:0;}
+    const PLAY_SPEED=90; /* deg/sec ≈ 33 RPM */
+    function targetSpeed(){return plRef.current?PLAY_SPEED:0;}
     function tick(ts){
       if(!lastTRef.current)lastTRef.current=ts;
       const dt=Math.min((ts-lastTRef.current)/1000,0.1);
       lastTRef.current=ts;
       const tgt=targetSpeed();
       const diff=tgt-angVelRef.current;
-      const accel=400; /* deg/sec² — how fast speed changes */
+      /* Friction when spinning faster than target (inertia coast-down): 150 deg/s²
+         Acceleration when spinning slower than target (spin-up): 300 deg/s² */
+      const rate=diff<0?150:300;
       if(Math.abs(diff)>0.5){
-        angVelRef.current+=Math.sign(diff)*Math.min(Math.abs(diff),accel*dt);
+        angVelRef.current+=Math.sign(diff)*Math.min(Math.abs(diff),rate*dt);
       }else{angVelRef.current=tgt;}
       if(!discDragRef.current){
         rotRef.current=(rotRef.current+angVelRef.current*dt)%360;
@@ -300,9 +298,8 @@ function App(){
     const changed=ad!==prevAdRef.current||fi!==prevFiRef.current||fsi!==prevFsiRef.current;
     prevAdRef.current=ad;prevFiRef.current=fi;prevFsiRef.current=fsi;
     if(changed){
-      /* kick speed up to ~3× current target so it visually "spins" to next */
-      const base=Math.max(angVelRef.current,72*Math.max(spRef.current,1));
-      angVelRef.current=base*3;
+      /* kick speed up to ~3× playback speed so it visually "spins" to next */
+      angVelRef.current=Math.max(angVelRef.current,90)*3;
     }
   },[ad,fi,fsi]);
 
@@ -318,16 +315,34 @@ function App(){
   const onDiscDragStart=(e)=>{
     if(po)return; /* don't steal cut-handle drags */
     e.preventDefault();
-    discDragRef.current={startAngle:discAngleFromEvent(e),startRot:rotRef.current};
-    angVelRef.current=0; /* freeze spin while dragging */
+    const startAngle=discAngleFromEvent(e);
+    discDragRef.current={startAngle,startRot:rotRef.current};
+    angVelRef.current=0;
+    dragVelRef.current=0;
+    dragLastTRef.current=performance.now();
+    dragLastARef.current=startAngle;
     function onMove(ev){
       if(!discDragRef.current)return;
-      const delta=discAngleFromEvent(ev)-discDragRef.current.startAngle;
+      const now=performance.now();
+      const curAngle=discAngleFromEvent(ev);
+      const dt=(now-dragLastTRef.current)/1000;
+      if(dt>0.005){
+        /* compute instantaneous angular velocity in deg/sec */
+        let da=curAngle-dragLastARef.current;
+        /* unwrap: keep delta in [-180,180] */
+        if(da>180)da-=360;if(da<-180)da+=360;
+        dragVelRef.current=da/dt;
+        dragLastTRef.current=now;
+        dragLastARef.current=curAngle;
+      }
+      const delta=curAngle-discDragRef.current.startAngle;
       rotRef.current=discDragRef.current.startRot+delta;
       if(svgRef.current)svgRef.current.style.transform=`rotate(${rotRef.current}deg)`;
       ev.preventDefault();
     }
     function onUp(){
+      /* release with the velocity measured during drag */
+      angVelRef.current=dragVelRef.current;
       discDragRef.current=null;
       window.removeEventListener('mousemove',onMove);
       window.removeEventListener('mouseup',onUp);
@@ -340,9 +355,20 @@ function App(){
     window.addEventListener('touchend',onUp);
   };
 
-  /* Slider */
-  const hs=useCallback((e)=>{if(!sr.current)return;const r=sr.current.getBoundingClientRect();const cx=e.touches?e.touches[0].clientX:e.clientX;const p=Math.max(0,Math.min(1,(cx-r.left)/r.width));setSp(Math.round(p*20)/10);},[]);
-  const sd=useCallback((e)=>{dr.current=true;hs(e);const mv=(ev)=>{if(dr.current)hs(ev);ev.preventDefault();};const up=()=>{dr.current=false;window.removeEventListener('mousemove',mv);window.removeEventListener('mouseup',up);window.removeEventListener('touchmove',mv);window.removeEventListener('touchend',up);};window.addEventListener('mousemove',mv);window.addEventListener('mouseup',up);window.addEventListener('touchmove',mv,{passive:false});window.addEventListener('touchend',up);},[hs]);
+  /* Forward / Reverse — replace horizontal swipe */
+  const onForward=()=>{
+    if(mm){if(ad<discs.length-1){setAd(ad+1);}else{addD();}setSt(-1);}
+    else{
+      const maxS=feedItem.slides.length-1;
+      if(fsi<maxS)setFsi(fsi+1);else if(fi<FEED.length-1){setFi(fi+1);setFsi(0);}
+    }
+  };
+  const onReverse=()=>{
+    if(mm){if(ad>0){setAd(ad-1);setSt(-1);}}
+    else{
+      if(fsi>0)setFsi(fsi-1);else if(fi>0){setFi(fi-1);setFsi(0);}
+    }
+  };
 
   const tf=(fx)=>{setDiscs(p=>{const n=[...p];const d={...n[ad],fx:new Set(n[ad].fx)};if(d.fx.has(fx))d.fx.delete(fx);else d.fx.add(fx);n[ad]=d;return n;});};
   const ps=(si)=>{if(st<0)return;setDiscs(p=>{const n=[...p];const d={...n[ad],ts:[...n[ad].ts],samps:[...n[ad].samps],cuts:[...n[ad].cuts]};d.ts[st]=si;d.samps[st]=0;d.cuts[st]=[0,1];n[ad]=d;return n;});};
@@ -517,34 +543,22 @@ function App(){
   return(<>
     <div className="top-bar"></div>
 
-    {/* Slide/disc dots — consistent small dots in both modes */}
-    {mm?
-      <div className="dots">{discs.map((_,i)=><div key={i} className={"dot"+(ad===i?" on":"")} onClick={()=>{setAd(i);setSt(-1);}}/>)}{discs.length<8&&<div className="dot add-d" onClick={addD}/>}</div>
-    :feedItem.slides.length>1&&
-      <div className="dots">{feedItem.slides.map((_,i)=><div key={i} className={"dot"+(fsi===i?" on":"")} onClick={()=>setFsi(i)}/>)}</div>
-    }
-
     <div className="main" onTouchStart={onTS} onTouchEnd={onTE} onClick={()=>{if(mm)setSt(-1);}}>
-      <div className="v-anchor">
-        <div className="v-wrap">
-          {discSvg}
-          <div className="playhead"><div className="playhead-line"/><div className="playhead-tri"/></div>
-        </div>
+      <div className="v-wrap">
+        {discSvg}
+        <div className="playhead"><div className="playhead-line"/><div className="playhead-tri"/></div>
       </div>
+      {/* Dots sit directly below the disc */}
+      {mm?
+        <div className="dots">{discs.map((_,i)=><div key={i} className={"dot"+(ad===i?" on":"")} onClick={(e)=>{e.stopPropagation();setAd(i);setSt(-1);}}/>)}{discs.length<8&&<div className="dot add-d" onClick={(e)=>{e.stopPropagation();addD();}}/>}</div>
+      :feedItem.slides.length>1&&
+        <div className="dots">{feedItem.slides.map((_,i)=><div key={i} className={"dot"+(fsi===i?" on":"")} onClick={(e)=>{e.stopPropagation();setFsi(i);}}/>)}</div>
+      }
       <input ref={lr} type="file" accept="image/*" style={{display:'none'}} onChange={onUp}/>
       {!mm&&<div className="feed-info">
         <div className="fi-cr">{FEED[fi].cr}</div>
         <div className="fi-desc">{FEED[fi].d}</div>
       </div>}
-    </div>
-
-
-    <div className={"speed-row"+(mm?" show":" hide")}>
-      <span className="sl-lbl">Speed</span>
-      <div className="sl-area" ref={sr} onMouseDown={sd} onTouchStart={sd}>
-        <div className="sl-bg"><div className="sl-fill" style={{width:(sp/2)*100+"%"}}/></div>
-        <div className="sl-thumb" style={{left:(sp/2)*100+"%"}}/>
-      </div>
     </div>
 
     <div className={"picker"+(po?" open":" shut")}>{st>=0&&<>
@@ -576,16 +590,28 @@ function App(){
     </>}</div>
 
     <div className="btn-bar">
-      <button className={"vp-btn vp-play"+(pl?" pressed":"")} onClick={()=>{if(!pl&&sp===0)setSp(1);setPl(!pl);}}>
-        {pl?<svg viewBox="0 0 16 16"><rect x="3" y="2" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="9.5" y="2" width="3.5" height="12" rx="1" fill="currentColor"/></svg>
-        :<svg viewBox="0 0 16 16"><path d="M4 2v12l10-6z" fill="currentColor"/></svg>}
+      <button className="vp-skip" onClick={onReverse} title="Reverse">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 20L9 12l10-8v16z"/><line x1="5" y1="4" x2="5" y2="20"/>
+        </svg>
       </button>
-      <button className={"vp-btn vp-mix"+(mm?" pressed":"")} onClick={()=>{setMM(!mm);setSt(-1);if(mm)setPl(false);}}>
-        <div className={"led"+(mm?" on":"")}/>
-        <span>Mix</span>
-      </button>
-      <button className="vp-btn vp-shelf" onClick={()=>setProf(true)}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="5" width="4" height="14" rx="1"/><rect x="10" y="3" width="4" height="16" rx="1"/><rect x="17" y="7" width="4" height="10" rx="1"/></svg>
+      <div className="btn-bar-center">
+        <button className={"vp-btn vp-play"+(pl?" pressed":"")} onClick={()=>setPl(!pl)}>
+          {pl?<svg viewBox="0 0 16 16"><rect x="3" y="2" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="9.5" y="2" width="3.5" height="12" rx="1" fill="currentColor"/></svg>
+          :<svg viewBox="0 0 16 16"><path d="M4 2v12l10-6z" fill="currentColor"/></svg>}
+        </button>
+        <button className={"vp-btn vp-mix"+(mm?" pressed":"")} onClick={()=>{setMM(!mm);setSt(-1);if(mm)setPl(false);}}>
+          <div className={"led"+(mm?" on":"")}/>
+          <span>Mix</span>
+        </button>
+        <button className="vp-btn vp-shelf" onClick={()=>setProf(true)}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="5" width="4" height="14" rx="1"/><rect x="10" y="3" width="4" height="16" rx="1"/><rect x="17" y="7" width="4" height="10" rx="1"/></svg>
+        </button>
+      </div>
+      <button className="vp-skip" onClick={onForward} title="Forward">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M5 4l10 8-10 8V4z"/><line x1="19" y1="4" x2="19" y2="20"/>
+        </svg>
       </button>
     </div>
 
