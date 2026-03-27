@@ -56,6 +56,19 @@ body{display:flex;justify-content:center;align-items:center;}
 .playhead-tri{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:11px solid #fff;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.35));}
 .playhead-line{width:1px;height:8px;background:#fff;opacity:0.55;}
 
+/* Timeline Editor */
+.timeline-editor{width:280px;padding:8px 0;}
+.tl-label{font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;text-align:center;}
+.tl-track{position:relative;height:36px;border-radius:8px;overflow:hidden;background:rgba(0,0,0,0.06);touch-action:none;}
+.tl-bg{position:absolute;inset:0;}
+.tl-region{position:absolute;top:0;bottom:0;border-radius:6px;opacity:0.3;cursor:grab;min-width:10%;}
+.tl-handle{position:absolute;top:0;bottom:0;width:12px;cursor:col-resize;display:flex;align-items:center;justify-content:center;}
+.tl-handle::after{content:'';width:3px;height:16px;border-radius:1.5px;background:rgba(255,255,255,0.8);}
+.tl-handle-l{left:-2px;}
+.tl-handle-r{right:-2px;}
+.tl-wave{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:2px;pointer-events:none;padding:0 8px;}
+.tl-bar{width:3px;border-radius:1.5px;background:rgba(0,0,0,0.08);}
+
 /* Loops removed */
 
 /* Feed artist name (above disc) */
@@ -172,6 +185,17 @@ body{display:flex;justify-content:center;align-items:center;}
 .lbl-gen-btn:disabled{opacity:0.4;cursor:default;}
 .lbl-cancel{width:100%;padding:10px;border:none;background:transparent;color:var(--t3);font-family:inherit;font-size:12px;cursor:pointer;margin-top:4px;}
 
+/* Onboarding Screen */
+.ob-screen{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
+.ob-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:52px;font-weight:700;font-style:italic;color:var(--t1);margin-bottom:4px;}
+.ob-sub{font-size:11px;font-weight:500;color:var(--t3);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:40px;}
+.ob-form{width:100%;display:flex;flex-direction:column;gap:12px;}
+.ob-input{width:100%;padding:14px 16px;border-radius:14px;border:1px solid rgba(0,0,0,0.08);background:rgba(255,255,255,0.6);font-family:inherit;font-size:14px;color:var(--t1);outline:none;}
+.ob-input:focus{border-color:var(--accent);}
+.ob-input::placeholder{color:var(--t4);}
+.ob-btn{width:100%;padding:15px;border-radius:14px;border:none;background:var(--t1);color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;}
+.ob-btn:disabled{opacity:0.3;}
+
 /* PWA Install Screen */
 .pwa-screen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;transition:opacity .4s,transform .4s;}
 .pwa-screen.hidden{opacity:0;transform:scale(1.04);pointer-events:none;}
@@ -260,9 +284,13 @@ function App(){
   const [feedSearch,setFeedSearch]=useState('');
   const [fi,setFi]=useState(0);
   const [fsi,setFsi]=useState(0); /* feed slide index */
+  const [onboarded,setOnboarded]=useState(!!localStorage.getItem('wax-user'));
+  const [obName,setObName]=useState('');
+  const [obUsername,setObUsername]=useState('');
   const dr=useRef(false);const lr=useRef(null);
   const touchRef=useRef({x:null,y:null});
   const svgRef=useRef(null);
+  const tlRef=useRef(null);
   /* RAF rotation */
   const rotRef=useRef(0);        /* current angle in degrees */
   const angVelRef=useRef(0);     /* current speed deg/sec */
@@ -482,6 +510,41 @@ function App(){
     window.addEventListener('touchend',onUp);
   };
 
+  const onTlDrag=(e)=>{
+    e.stopPropagation();e.preventDefault();
+    if(!tlRef.current||st<0)return;
+    const rect=tlRef.current.getBoundingClientRect();
+    const startX=(e.touches?e.touches[0].clientX:e.clientX);
+    const startCut=[...disc.cuts[st]];
+    const w=startCut[1]-startCut[0];
+    function onMove(ev){
+      const cx=(ev.touches?ev.touches[0].clientX:ev.clientX);
+      const delta=(cx-startX)/rect.width;
+      let s=Math.max(0,Math.min(1-w,startCut[0]+delta));
+      setDiscs(p=>{const n=[...p];const d={...n[ad],cuts:n[ad].cuts.map(c=>[...c])};d.cuts[st]=[s,s+w];n[ad]=d;return n;});
+      ev.preventDefault();
+    }
+    function onUp(){window.removeEventListener('mousemove',onMove);window.removeEventListener('mouseup',onUp);window.removeEventListener('touchmove',onMove);window.removeEventListener('touchend',onUp);}
+    window.addEventListener('mousemove',onMove);window.addEventListener('mouseup',onUp);window.addEventListener('touchmove',onMove,{passive:false});window.addEventListener('touchend',onUp);
+  };
+
+  const onTlHandleDrag=(e,handle)=>{
+    e.stopPropagation();e.preventDefault();
+    if(!tlRef.current||st<0)return;
+    const rect=tlRef.current.getBoundingClientRect();
+    function onMove(ev){
+      const cx=(ev.touches?ev.touches[0].clientX:ev.clientX);
+      const frac=Math.max(0,Math.min(1,(cx-rect.left)/rect.width));
+      setDiscs(p=>{const n=[...p];const d={...n[ad],cuts:n[ad].cuts.map(c=>[...c])};
+        if(handle==='start'){d.cuts[st][0]=Math.min(frac,d.cuts[st][1]-0.05);}
+        else{d.cuts[st][1]=Math.max(frac,d.cuts[st][0]+0.05);}
+        n[ad]=d;return n;});
+      ev.preventDefault();
+    }
+    function onUp(){window.removeEventListener('mousemove',onMove);window.removeEventListener('mouseup',onUp);window.removeEventListener('touchmove',onMove);window.removeEventListener('touchend',onUp);}
+    window.addEventListener('mousemove',onMove);window.addEventListener('mouseup',onUp);window.addEventListener('touchmove',onMove,{passive:false});window.addEventListener('touchend',onUp);
+  };
+
   const handlePos=(cx,cy,r,frac)=>{
     const a=frac*2*Math.PI-Math.PI/2;
     return{x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)};
@@ -535,16 +598,6 @@ function App(){
           {!isEmpty&&<circle cx={CX} cy={CY} r={mr} fill="none" stroke={`url(#cp${src})`} strokeWidth={sw} opacity={0.85}/>}
           {/* If selected: colored tinted overlay */}
           {sel&&!isEmpty&&<circle cx={CX} cy={CY} r={mr} fill="none" stroke={TC[src]} strokeWidth={sw} opacity={0.4}/>}
-          {/* Cut handles — always visible on selected ring */}
-          {sel&&!isEmpty&&[0,1].map(hi=>{
-            const pos=handlePos(CX,CY,mr,cut[hi]);
-            return<g key={hi} className="cut-handle"
-              onMouseDown={(e)=>onCutDown(ti,hi===0?'start':'end',e)}
-              onTouchStart={(e)=>onCutDown(ti,hi===0?'start':'end',e)}>
-              <circle cx={pos.x} cy={pos.y} r="7" fill="white" stroke="rgba(0,0,0,0.12)" strokeWidth="0.8"/>
-              <text x={pos.x} y={pos.y+0.5} textAnchor="middle" dominantBaseline="central" fontSize="7" fontWeight="700" fill="var(--t2)">{hi===0?"\u2039":"\u203A"}</text>
-            </g>;
-          })}
         </g>);
       })}
 
@@ -606,6 +659,21 @@ function App(){
         :feedItem.slides.length>1&&
           <div className="dots">{feedItem.slides.map((_,i)=><div key={i} className={"dot"+(fsi===i?" on":"")} onClick={(e)=>{e.stopPropagation();setFsi(i);}}/>)}</div>
         }
+        {po&&<div className="timeline-editor">
+          <div className="tl-label">{TN[st]}</div>
+          <div className="tl-track" ref={tlRef}>
+            <div className="tl-bg"/>
+            <div className="tl-region"
+              style={{left:(disc.cuts[st][0]*100)+'%',width:((disc.cuts[st][1]-disc.cuts[st][0])*100)+'%',background:TC[st]}}
+              onMouseDown={onTlDrag} onTouchStart={onTlDrag}>
+              <div className="tl-handle tl-handle-l" onMouseDown={e=>onTlHandleDrag(e,'start')} onTouchStart={e=>onTlHandleDrag(e,'start')}/>
+              <div className="tl-handle tl-handle-r" onMouseDown={e=>onTlHandleDrag(e,'end')} onTouchStart={e=>onTlHandleDrag(e,'end')}/>
+            </div>
+            <div className="tl-wave">
+              {Array.from({length:40}).map((_,i)=><div key={i} className="tl-bar" style={{height:(3+((i*7+3)%10))+'px'}}/>)}
+            </div>
+          </div>
+        </div>}
         {/* Social counters (feed mode) */}
         {!mm&&<div className="feed-social">
           <div className="fs-item">
@@ -731,6 +799,20 @@ function App(){
       <div className="fx-hd"><span className="fx-ti">Effects</span><button className="fx-x" onClick={()=>setSfx(false)}>{"\u2715"}</button></div>
       <div className="fx-ls">{EFX.map(fx=><button key={fx} className={"fx-ch"+(disc.fx&&disc.fx.has(fx)?" on":"")} onClick={()=>tf(fx)}>{fx}</button>)}</div>
     </div>
+
+    {!onboarded&&<div className="ob-screen">
+      <img src="/icon-192.png" style={{width:"88px",height:"88px",borderRadius:"20px",marginBottom:"24px",boxShadow:"0 4px 24px rgba(0,0,0,0.13)"}} alt="WAX"/>
+      <div className="ob-title">WAX</div>
+      <div className="ob-sub">The Original</div>
+      <div className="ob-form">
+        <input className="ob-input" placeholder="Display name" value={obName} onChange={e=>setObName(e.target.value)}/>
+        <input className="ob-input" placeholder="Username" value={obUsername} onChange={e=>setObUsername(e.target.value)}/>
+        <button className="ob-btn" disabled={!obName||!obUsername} onClick={()=>{
+          localStorage.setItem('wax-user',JSON.stringify({name:obName,username:obUsername}));
+          setOnboarded(true);
+        }}>Get Started</button>
+      </div>
+    </div>}
   </>);
 }
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
