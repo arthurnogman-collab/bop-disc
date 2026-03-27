@@ -1,6 +1,6 @@
 {
-  "name": "Bop Disc",
-  "short_name": "Bop Disc",
+  "name": "Bop Concept",
+  "short_name": "Bop Concept",
   "description": "Vinyl remix app — mix tracks from classic records",
   "start_url": "/",
   "display": "standalone",
