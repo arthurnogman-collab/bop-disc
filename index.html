@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Bop Concept</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Bop Concept">
 <meta name="theme-color" content="#EDEDF1">
 <link rel="apple-touch-icon" href="/icon-192.png">
@@ -21,14 +21,13 @@
   --accent:#D42B40;--accent-glow:rgba(212,43,64,0.2);--accent-dim:rgba(212,43,64,0.08);
   --chrome:linear-gradient(180deg,#FBFBFD 0%,#E8E8F0 100%);
 }
-html,body{width:100%;height:100%;overflow:hidden;background:#D8D8DE;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+html,body{width:100%;height:100%;overflow:hidden;background:#EDEDF1;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
 body{display:flex;justify-content:center;align-items:center;}
 #root{width:375px;height:812px;position:relative;overflow:hidden;display:flex;flex-direction:column;background:var(--bg);}
-@media(max-width:400px){#root{width:100vw;height:100vh;height:100dvh;}}
+@media(max-width:400px){#root{width:100vw;height:100vh;height:100dvh;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);}}
 @media(min-width:401px){#root{border-radius:44px;box-shadow:0 20px 60px rgba(0,0,0,0.15),inset 0 0.5px 0 rgba(255,255,255,0.8);}}
 
-.top-bar{height:50px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;flex-shrink:0;z-index:10;}
-.top-time{font-size:14px;font-weight:600;color:var(--t1);letter-spacing:-0.3px;}
+.top-bar{height:50px;flex-shrink:0;z-index:10;}
 
 /* Story slide indicators */
 .slides-row{display:flex;justify-content:center;gap:6px;padding:4px 0;flex-shrink:0;z-index:10;}
@@ -516,7 +515,7 @@ function App(){
   const slideIdx=mm?ad:fsi;
 
   return(<>
-    <div className="top-bar"><span className="top-time">9:41</span></div>
+    <div className="top-bar"></div>
 
     {/* Slide/disc dots — consistent small dots in both modes */}
     {mm?
