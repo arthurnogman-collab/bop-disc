@@ -12,7 +12,6 @@
 <meta name="theme-color" content="#EDEDF1">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
 :root{
@@ -273,56 +272,9 @@ SONGS.forEach((s, i) => {
 function fmtK(n) {
   return n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : String(n);
 }
-function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
-  const googleButtonRef = React.useRef(null);
-  const [googleReady, setGoogleReady] = React.useState(false);
-  const CLIENT_ID = '743719143434-22rgs4pqss3aev4rb2r8t7vfbkqetuov.apps.googleusercontent.com';
-
-  function handleGoogleLogin(response) {
-    fetch('/api/auth/google', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({credential: response.credential})
-    }).then(r => r.json()).then(userData => {
-      const user = {
-        id: userData.id,
-        googleId: userData.google_id,
-        email: userData.email,
-        name: userData.name,
-        picture: userData.picture,
-        displayName: userData.display_name || ''
-      };
-      localStorage.setItem('house-user', JSON.stringify(user));
-      setUser(user);
-      if (!user.displayName) {
-        setDisplayName(userData.name || '');
-        setNeedsName(true);
-      }
-    }).catch(err => console.error('Auth error:', err));
-  }
-
-  React.useEffect(() => {
-    const checkGoogle = setInterval(() => {
-      if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-        clearInterval(checkGoogle);
-        setGoogleReady(true);
-        google.accounts.id.initialize({
-          client_id: CLIENT_ID,
-          callback: handleGoogleLogin
-        });
-        if (googleButtonRef.current) {
-          google.accounts.id.renderButton(googleButtonRef.current, {
-            theme: 'outline',
-            size: 'large',
-            text: 'signin_with',
-            shape: 'pill'
-          });
-        }
-      }
-    }, 100);
-    return () => clearInterval(checkGoogle);
-  }, []);
-
+function SignUpScreen({ setUser }) {
+  const [name, setName] = React.useState('');
+  const [username, setUsername] = React.useState('');
   return /*#__PURE__*/React.createElement("div", {
     className: "ob-screen"
   }, /*#__PURE__*/React.createElement("img", {
@@ -340,50 +292,27 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
   }, "House"), /*#__PURE__*/React.createElement("div", {
     className: "ob-sub"
   }, "Keep it Real"), /*#__PURE__*/React.createElement("div", {
-    ref: googleButtonRef,
+    className: "ob-form",
     style: { marginTop: "24px" }
-  }), googleReady ? null : /*#__PURE__*/React.createElement("p", {
-    style: { marginTop: "16px", fontSize: "12px", color: "var(--t3)" }
-  }, "Loading sign-in..."));
-}
-function DisplayNameScreen({ user, setUser, displayName, setDisplayName, setNeedsName }) {
-  return /*#__PURE__*/React.createElement("div", {
-    className: "ob-screen"
-  }, /*#__PURE__*/React.createElement("img", {
-    src: "/icon-192.png",
-    style: {
-      width: "88px",
-      height: "88px",
-      borderRadius: "20px",
-      marginBottom: "24px",
-      boxShadow: "0 4px 24px rgba(0,0,0,0.13)"
-    },
-    alt: "House"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "ob-title"
-  }, "Choose Display Name"), /*#__PURE__*/React.createElement("div", {
-    className: "ob-form"
   }, /*#__PURE__*/React.createElement("input", {
     className: "ob-input",
+    placeholder: "Username",
+    value: username,
+    onChange: e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase()),
+    autoFocus: true,
+    style: { marginBottom: "10px" }
+  }), /*#__PURE__*/React.createElement("input", {
+    className: "ob-input",
     placeholder: "Display name",
-    value: displayName,
-    onChange: e => setDisplayName(e.target.value),
-    autoFocus: true
+    value: name,
+    onChange: e => setName(e.target.value)
   }), /*#__PURE__*/React.createElement("button", {
     className: "ob-btn",
-    disabled: !displayName,
+    disabled: !name.trim() || !username.trim(),
     onClick: () => {
-      const updated = { ...user, displayName: displayName };
-      localStorage.setItem('house-user', JSON.stringify(updated));
-      setUser(updated);
-      if (updated.id) {
-        fetch('/api/auth/display-name', {
-          method: 'PATCH',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({displayName: displayName})
-        }).catch(() => {});
-      }
-      setNeedsName(false);
+      const user = { username: username.trim(), displayName: name.trim() };
+      localStorage.setItem('house-user', JSON.stringify(user));
+      setUser(user);
     }
   }, "Continue")));
 }
@@ -406,8 +335,6 @@ class ErrorBoundary extends React.Component {
 }
 function App() {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('house-user') || 'null'));
-  const [needsName, setNeedsName] = useState(false);
-  const [displayName, setDisplayName] = useState('');
   const [mm, setMM] = useState(false);
   const [pl, setPl] = useState(false);
   const [st, setSt] = useState(-1);
@@ -1749,16 +1676,8 @@ function App() {
     key: fx,
     className: "fx-ch" + (disc.fx && disc.fx.has(fx) ? " on" : ""),
     onClick: () => tf(fx)
-  }, fx)))), !user && /*#__PURE__*/React.createElement(GoogleSignInScreen, {
-    setUser,
-    setNeedsName,
-    setDisplayName
-  }), user && needsName && /*#__PURE__*/React.createElement(DisplayNameScreen, {
-    user,
-    setUser,
-    displayName,
-    setDisplayName,
-    setNeedsName
+  }, fx)))), !user && /*#__PURE__*/React.createElement(SignUpScreen, {
+    setUser
   }));
 }
 
