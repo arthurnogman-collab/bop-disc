@@ -330,4 +330,4 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 // Catch-all: serve index.html
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-app.listen(PORT, () => console.log(`WAX server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`House server running on port ${PORT}`));

@@ -1,7 +1,7 @@
 {
-  "name": "wax",
+  "name": "house",
   "version": "1.0.0",
-  "description": "WAX - Keep it Real",
+  "description": "House - Keep it Real",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

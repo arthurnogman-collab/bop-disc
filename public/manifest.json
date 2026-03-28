@@ -1,6 +1,6 @@
 {
-  "name": "WAX",
-  "short_name": "WAX",
+  "name": "House",
+  "short_name": "House",
   "description": "Vinyl remix app — mix tracks from classic records",
   "start_url": "/",
   "display": "standalone",
