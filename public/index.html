@@ -292,7 +292,7 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
         picture: userData.picture,
         displayName: userData.display_name || ''
       };
-      localStorage.setItem('wax-user', JSON.stringify(user));
+      localStorage.setItem('house-user', JSON.stringify(user));
       setUser(user);
       if (!user.displayName) {
         setDisplayName(userData.name || '');
@@ -334,10 +334,10 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
       marginBottom: "24px",
       boxShadow: "0 4px 24px rgba(0,0,0,0.13)"
     },
-    alt: "WAX"
+    alt: "House"
   }), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
-  }, "WAX"), /*#__PURE__*/React.createElement("div", {
+  }, "House"), /*#__PURE__*/React.createElement("div", {
     className: "ob-sub"
   }, "Keep it Real"), /*#__PURE__*/React.createElement("div", {
     ref: googleButtonRef,
@@ -358,7 +358,7 @@ function DisplayNameScreen({ user, setUser, displayName, setDisplayName, setNeed
       marginBottom: "24px",
       boxShadow: "0 4px 24px rgba(0,0,0,0.13)"
     },
-    alt: "WAX"
+    alt: "House"
   }), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
   }, "Choose Display Name"), /*#__PURE__*/React.createElement("div", {
@@ -374,7 +374,7 @@ function DisplayNameScreen({ user, setUser, displayName, setDisplayName, setNeed
     disabled: !displayName,
     onClick: () => {
       const updated = { ...user, displayName: displayName };
-      localStorage.setItem('wax-user', JSON.stringify(updated));
+      localStorage.setItem('house-user', JSON.stringify(updated));
       setUser(updated);
       if (updated.id) {
         fetch('/api/auth/display-name', {
@@ -405,7 +405,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 function App() {
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('wax-user') || 'null'));
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('house-user') || 'null'));
   const [needsName, setNeedsName] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [mm, setMM] = useState(false);
@@ -1187,7 +1187,7 @@ function App() {
     fontSize: "7",
     fontWeight: "700",
     letterSpacing: "2.5"
-  }, "WAX"), /*#__PURE__*/React.createElement("circle", {
+  }, "House"), /*#__PURE__*/React.createElement("circle", {
     cx: CX,
     cy: CY,
     r: "2.5",
@@ -1654,7 +1654,7 @@ function App() {
     style: { flex: 1, padding: '10px', background: 'rgba(0,0,0,0.04)', color: 'var(--t2)', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit' }
   }, "Cancel"), /*#__PURE__*/React.createElement("button", {
     disabled: !editName.trim(),
-    onClick: () => { const updated = { ...user, displayName: editName.trim() }; localStorage.setItem('wax-user', JSON.stringify(updated)); setUser(updated); setEditingProfile(false); },
+    onClick: () => { const updated = { ...user, displayName: editName.trim() }; localStorage.setItem('house-user', JSON.stringify(updated)); setUser(updated); setEditingProfile(false); },
     style: { flex: 1, padding: '10px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', opacity: editName.trim() ? 1 : 0.5 }
   }, "Save")))), /*#__PURE__*/React.createElement("div", {
     className: "prof-tog"
@@ -1765,8 +1765,8 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary, null, React.createElement(App, null)));</script>
 
 <div class="pwa-screen" id="pwaScreen">
-  <img src="/icon-192.png" style="width:88px;height:88px;border-radius:20px;margin-bottom:24px;box-shadow:0 4px 24px rgba(0,0,0,0.13);" alt="WAX"/>
-  <div class="pwa-title">WAX</div>
+  <img src="/icon-192.png" style="width:88px;height:88px;border-radius:20px;margin-bottom:24px;box-shadow:0 4px 24px rgba(0,0,0,0.13);" alt="House"/>
+  <div class="pwa-title">House</div>
   <div class="pwa-sub">Keep it Real</div>
 
   <!-- iOS steps: just Share + Add to Home Screen, no "open in Safari" -->
