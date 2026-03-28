@@ -227,7 +227,7 @@ const {
   useCallback,
   useEffect
 } = React;
-const C = ["data:image/jpeg;base64,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FABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQB/9k="];
+const C = ["/albums/Easy Peelers-Polymorph/cover.jpg"];
 const SONGS = [{
   t: "Polymorph",
   a: "Easy Peelers"
@@ -436,6 +436,14 @@ function App() {
   const [editName, setEditName] = useState('');
   const [feedData, setFeedData] = useState(FEED);
   const [feedLoading, setFeedLoading] = useState(true);
+  const [publishDlg, setPublishDlg] = useState(false);
+  const [publishName, setPublishName] = useState('');
+  const [publishLoading, setPublishLoading] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState('');
+  const [commentDlg, setCommentDlg] = useState(false);
+  const [comments, setComments] = useState({});
+  const [commentText, setCommentText] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
   const dr = useRef(false);
   const lr = useRef(null);
   const touchRef = useRef({
@@ -455,6 +463,82 @@ function App() {
   const dragLastTRef = useRef(0); /* timestamp of last drag move */
   const dragLastARef = useRef(0); /* angle at last drag move */
 
+  // Web Audio API setup
+  const audioContextRef = useRef(null);
+  const audioBuffersRef = useRef({});
+  const audioSourcesRef = useRef({});
+  const audioDurationRef = useRef(0);
+  const audioStartTimeRef = useRef(0);
+  
+  // Initialize Web Audio API
+  useEffect(() => {
+    const initAudio = async () => {
+      if (!audioContextRef.current) {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        audioContextRef.current = ctx;
+        
+        // Load audio stems
+        const trackNames = ['drums', 'base', 'fill', 'vocal'];
+        const urls = trackNames.map(name => `/albums/Easy Peelers-Polymorph/${name}/main.mp3`);
+        
+        try {
+          for (let i = 0; i < urls.length; i++) {
+            const response = await fetch(urls[i]);
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+            audioBuffersRef.current[i] = audioBuffer;
+            audioDurationRef.current = Math.max(audioDurationRef.current, audioBuffer.duration);
+          }
+        } catch (e) {
+          console.error('Error loading audio:', e);
+        }
+      }
+    };
+    initAudio();
+  }, []);
+  
+  // Handle play/pause - will be connected to actual disc state below
+  const startAudioPlayback = React.useCallback((discState) => {
+    const ctx = audioContextRef.current;
+    if (!ctx) return;
+
+    // Stop existing
+    Object.values(audioSourcesRef.current).forEach(({ source }) => {
+      try { source.stop(ctx.currentTime); } catch (e) {}
+    });
+    audioSourcesRef.current = {};
+
+    // Start new sources for active tracks
+    for (let idx = 0; idx < 4; idx++) {
+      if (discState.ts[idx] >= 0 && audioBuffersRef.current[idx]) {
+        try {
+          const src = ctx.createBufferSource();
+          src.buffer = audioBuffersRef.current[idx];
+          src.loop = true;
+
+          const gainNode = ctx.createGain();
+          gainNode.gain.value = 0.25;
+          src.connect(gainNode);
+          gainNode.connect(ctx.destination);
+
+          src.start(ctx.currentTime);
+          audioSourcesRef.current[idx] = { source: src, gain: gainNode };
+        } catch (e) {
+          console.error('Audio playback error at ring', idx, ':', e);
+        }
+      }
+    }
+  }, []);
+
+  const stopAudioPlayback = React.useCallback(() => {
+    const ctx = audioContextRef.current;
+    if (!ctx) return;
+    Object.values(audioSourcesRef.current).forEach(({ source }) => {
+      try { source.stop(ctx.currentTime); } catch (e) {}
+    });
+    audioSourcesRef.current = {};
+  }, []);
+
   const feedItem = feedData[fi];
   const feedSlide = feedItem.slides[fsi] || feedItem.slides[0];
   const disc = mm ? discs[ad] : {
@@ -467,6 +551,15 @@ function App() {
   };
   const discColor = DISC_COLORS[disc.color || 0];
   const po = mm && st >= 0;
+
+  /* Play/stop audio based on pl state */
+  useEffect(() => {
+    if (pl && mm) {
+      startAudioPlayback(disc);
+    } else {
+      stopAudioPlayback();
+    }
+  }, [pl, mm, disc, startAudioPlayback, stopAudioPlayback]);
 
   /* Load feed data from API */
   useEffect(() => {
@@ -1337,7 +1430,17 @@ function App() {
   }, /*#__PURE__*/React.createElement("path", {
     d: "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
   })), fmtK(feedData[fi].comments)), /*#__PURE__*/React.createElement("div", {
-    className: "fs-item"
+    className: "fs-item",
+    onClick: () => {
+      setCommentDlg(true);
+      setCommentText('');
+      if (!comments[fi]) {
+        fetch('/api/comments/' + feedData[fi].id).then(r => r.json()).then(cmts => {
+          setComments(p => ({ ...p, [fi]: cmts }));
+        }).catch(() => {});
+      }
+    },
+    style: { cursor: 'pointer' }
   }, /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 24 24",
     fill: "none",
@@ -1514,11 +1617,117 @@ function App() {
   }, lblGen ? 'Generating...' : 'Generate with AI')), /*#__PURE__*/React.createElement("button", {
     className: "lbl-cancel",
     onClick: () => setLblDlg(false)
-  }, "Cancel"))), /*#__PURE__*/React.createElement("div", {
+  }, "Cancel"))), publishDlg && /*#__PURE__*/React.createElement("div", {
+    style: { position: 'absolute', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' },
+    onClick: () => { if (!publishedUrl) setPublishDlg(false); }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { background: 'var(--bg)', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '320px', boxShadow: '0 12px 40px rgba(0,0,0,0.2)' }
+  }, publishedUrl ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: '16px', fontWeight: '700', color: 'var(--t1)', marginBottom: '16px', textAlign: 'center' }
+  }, "Mix Published!"), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: '13px', color: 'var(--t2)', marginBottom: '20px', padding: '12px', background: 'var(--surface)', borderRadius: '10px', wordBreak: 'break-all' }
+  }, publishedUrl), /*#__PURE__*/React.createElement("button", {
+    onClick: () => { navigator.clipboard.writeText(publishedUrl).then(() => { alert('Link copied!'); setPublishDlg(false); }); },
+    style: { width: '100%', padding: '12px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit' }
+  }, "Copy Link")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: '16px', fontWeight: '700', color: 'var(--t1)', marginBottom: '16px', textAlign: 'center' }
+  }, "Publish Mix"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "Mix name",
+    value: publishName,
+    onChange: e => setPublishName(e.target.value),
+    autoFocus: true,
+    style: { width: '100%', padding: '10px 14px', fontSize: '14px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', background: 'white', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', marginBottom: '16px' }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', gap: '8px' }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => { setPublishDlg(false); setMM(true); },
+    style: { flex: 1, padding: '10px', background: 'rgba(0,0,0,0.04)', color: 'var(--t2)', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit' }
+  }, "Discard"), /*#__PURE__*/React.createElement("button", {
+    disabled: !publishName.trim() || publishLoading,
+    onClick: async () => {
+      setPublishLoading(true);
+      try {
+        const res = await fetch('/api/mixes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            title: publishName.trim(),
+            tracks: discs[0].ts,
+            cuts: discs[0].cuts,
+            effects: Array.from(discs[0].fx || []),
+            labelUrl: discs[0].lb,
+            discColor: discs[0].color
+          })
+        });
+        const mix = await res.json();
+        if (mix.id) {
+          const url = window.location.origin + '?mix=' + mix.id;
+          setPublishedUrl(url);
+          setFeedData(prev => [{ ...mix, cr: user.displayName || user.name, d: publishName.trim(), slides: [{ s: mix.tracks }], plays: 0, likes: 0, comments: 0 }, ...prev]);
+        }
+      } catch (e) {
+        alert('Error publishing: ' + e.message);
+      }
+      setPublishLoading(false);
+    },
+    style: { flex: 1, padding: '10px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', opacity: (publishName.trim() && !publishLoading) ? 1 : 0.5 }
+  }, publishLoading ? 'Publishing...' : 'Publish')))), commentDlg && /*#__PURE__*/React.createElement("div", {
+    style: { position: 'absolute', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' },
+    onClick: () => setCommentDlg(false)
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { background: 'var(--bg)', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '360px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 12px 40px rgba(0,0,0,0.2)' },
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: '16px', fontWeight: '700', color: 'var(--t1)', marginBottom: '16px' }
+  }, "Comments"), /*#__PURE__*/React.createElement("div", {
+    style: { flex: 1, overflowY: 'auto', marginBottom: '16px', paddingRight: '8px' }
+  }, (comments[fi] || []).map((c, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: { marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)' }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { fontWeight: '600', fontSize: '13px', color: 'var(--t1)', marginBottom: '4px' }
+  }, c.display_name || c.name || 'Anonymous'), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: '13px', color: 'var(--t2)', lineHeight: '1.4' }
+  }, c.text)))), /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', gap: '8px' }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "Add comment...",
+    value: commentText,
+    onChange: e => setCommentText(e.target.value),
+    style: { flex: 1, padding: '10px 12px', fontSize: '13px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', background: 'white', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }
+  }), /*#__PURE__*/React.createElement("button", {
+    disabled: !commentText.trim() || commentLoading,
+    onClick: async () => {
+      setCommentLoading(true);
+      try {
+        await fetch('/api/comments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, mixId: feedData[fi].id, text: commentText.trim() })
+        });
+        const cmts = await fetch('/api/comments/' + feedData[fi].id).then(r => r.json());
+        setComments(p => ({ ...p, [fi]: cmts }));
+        setCommentText('');
+      } catch (e) {
+        console.error('Comment error:', e);
+      }
+      setCommentLoading(false);
+    },
+    style: { padding: '10px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', opacity: (commentText.trim() && !commentLoading) ? 1 : 0.5 }
+  }, "Send")))), /*#__PURE__*/React.createElement("div", {
     className: "btn-bar"
   }, /*#__PURE__*/React.createElement("button", {
     className: "vp-btn vp-play" + (pl ? " pressed" : ""),
-    onClick: () => setPl(!pl)
+    onClick: () => {
+      const newPl = !pl;
+      setPl(newPl);
+      if (newPl && !mm && feedData[fi] && feedData[fi].id) {
+        fetch('/api/mixes/' + feedData[fi].id + '/play', { method: 'POST' }).catch(() => {});
+      }
+    }
   }, pl ? /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 16 16"
   }, /*#__PURE__*/React.createElement("rect", {
@@ -1557,8 +1766,12 @@ function App() {
         setDiscs([newDisc]);
         setAd(0);
         setMM(true);
+        setPl(false);
       } else {
-        setMM(false);
+        // Exiting mix: show publish dialog
+        setPublishDlg(true);
+        setPublishName('');
+        setPublishedUrl('');
         setPl(false);
       }
       setSt(-1);
@@ -1758,7 +1971,7 @@ function App() {
     displayName,
     setDisplayName,
     setNeedsName
-  }));
+  })));
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary, null, React.createElement(App, null)));</script>

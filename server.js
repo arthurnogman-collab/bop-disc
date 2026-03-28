@@ -6,6 +6,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/albums', express.static(path.join(__dirname, 'public', 'albums')));
 
 // Initialize database on startup
 initDB().catch(err => {
