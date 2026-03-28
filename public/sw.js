@@ -1,4 +1,4 @@
-const CACHE = 'house-v1';
+const CACHE = 'house-v2';
 const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
