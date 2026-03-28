@@ -65,17 +65,17 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// GET /api/auth/me - returns user from DB by googleId
+// GET /api/auth/me - returns user from DB by id
 app.get('/api/auth/me', async (req, res) => {
   try {
-    const { googleId } = req.query;
-    if (!googleId) {
-      return res.status(400).json({ error: 'No googleId provided' });
+    const { userId } = req.query;
+    if (!userId) {
+      return res.status(400).json({ error: 'No userId provided' });
     }
 
     const result = await pool.query(
-      'SELECT id, google_id, email, name, picture, display_name FROM wax_users WHERE google_id = $1',
-      [googleId]
+      'SELECT id, google_id, email, name, picture, display_name FROM wax_users WHERE id = $1',
+      [userId]
     );
 
     if (result.rows.length === 0) {
@@ -92,13 +92,13 @@ app.get('/api/auth/me', async (req, res) => {
 // PATCH /api/auth/display-name - update user's display name
 app.patch('/api/auth/display-name', async (req, res) => {
   try {
-    const { googleId, displayName } = req.body;
-    if (!googleId || !displayName) {
-      return res.status(400).json({ error: 'Missing googleId or displayName' });
+    const { userId, displayName } = req.body;
+    if (!userId || !displayName) {
+      return res.status(400).json({ error: 'Missing userId or displayName' });
     }
     const result = await pool.query(
-      'UPDATE wax_users SET display_name = $1, updated_at = NOW() WHERE google_id = $2 RETURNING id, google_id, email, name, picture, display_name',
-      [displayName, googleId]
+      'UPDATE wax_users SET display_name = $1, updated_at = NOW() WHERE id = $2 RETURNING id, google_id, email, name, picture, display_name',
+      [displayName, userId]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
     res.json(result.rows[0]);
@@ -117,7 +117,7 @@ app.get('/api/mixes', async (req, res) => {
       `SELECT
         m.id, m.user_id, m.title, m.description, m.tracks, m.cuts, m.effects,
         m.label_url, m.disc_color, m.plays, m.created_at,
-        u.id as user_id, u.google_id, u.email, u.name, u.picture, u.display_name,
+        u.id as creator_id, u.display_name, u.name, u.picture,
         (SELECT COUNT(*) FROM wax_likes WHERE mix_id = m.id)::int as like_count,
         (SELECT COUNT(*) FROM wax_comments WHERE mix_id = m.id)::int as comment_count
        FROM wax_mixes m
@@ -260,7 +260,7 @@ app.get('/api/comments/:mixId', async (req, res) => {
     const result = await pool.query(
       `SELECT
         c.id, c.user_id, c.text, c.created_at,
-        u.id as user_id, u.google_id, u.email, u.name, u.picture, u.display_name
+        u.id as commenter_id, u.display_name, u.name, u.picture
        FROM wax_comments c
        LEFT JOIN wax_users u ON c.user_id = u.id
        WHERE c.mix_id = $1

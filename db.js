@@ -11,15 +11,23 @@ async function initDB() {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS wax_users (
         id SERIAL PRIMARY KEY,
-        google_id TEXT UNIQUE NOT NULL,
-        email TEXT NOT NULL,
+        google_id TEXT UNIQUE,
+        email TEXT,
         name TEXT,
         picture TEXT,
         display_name TEXT,
+        username TEXT,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
+
+    // Migration: make google_id nullable if it was NOT NULL before
+    await pool.query(`ALTER TABLE wax_users ALTER COLUMN google_id DROP NOT NULL;`).catch(() => {});
+    await pool.query(`ALTER TABLE wax_users ALTER COLUMN email DROP NOT NULL;`).catch(() => {});
+
+    // Migration: add username column if missing
+    await pool.query(`ALTER TABLE wax_users ADD COLUMN IF NOT EXISTS username TEXT;`).catch(() => {});
 
     // Create wax_mixes table
     await pool.query(`

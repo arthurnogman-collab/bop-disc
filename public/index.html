@@ -12,6 +12,7 @@
 <meta name="theme-color" content="#EDEDF1">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
 :root{
@@ -272,9 +273,57 @@ SONGS.forEach((s, i) => {
 function fmtK(n) {
   return n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : String(n);
 }
-function SignUpScreen({ setUser }) {
-  const [name, setName] = React.useState('');
-  const [username, setUsername] = React.useState('');
+function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
+  const googleButtonRef = React.useRef(null);
+  const [googleReady, setGoogleReady] = React.useState(false);
+  const CLIENT_ID = '743719143434-1pvraheoge22k8fmbse5as9cuvtu0fm0.apps.googleusercontent.com';
+
+  function handleGoogleLogin(response) {
+    fetch('/api/auth/google', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({credential: response.credential})
+    }).then(r => r.json()).then(userData => {
+      if (userData.error) { console.error('Auth error:', userData.error); return; }
+      const user = {
+        id: userData.id,
+        googleId: userData.google_id,
+        email: userData.email,
+        name: userData.name,
+        picture: userData.picture,
+        displayName: userData.display_name || ''
+      };
+      localStorage.setItem('house-user', JSON.stringify(user));
+      setUser(user);
+      if (!user.displayName) {
+        setDisplayName(userData.name || '');
+        setNeedsName(true);
+      }
+    }).catch(err => console.error('Auth error:', err));
+  }
+
+  React.useEffect(() => {
+    const checkGoogle = setInterval(() => {
+      if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+        clearInterval(checkGoogle);
+        setGoogleReady(true);
+        google.accounts.id.initialize({
+          client_id: CLIENT_ID,
+          callback: handleGoogleLogin
+        });
+        if (googleButtonRef.current) {
+          google.accounts.id.renderButton(googleButtonRef.current, {
+            theme: 'outline',
+            size: 'large',
+            text: 'signin_with',
+            shape: 'pill'
+          });
+        }
+      }
+    }, 100);
+    return () => clearInterval(checkGoogle);
+  }, []);
+
   return /*#__PURE__*/React.createElement("div", {
     className: "ob-screen"
   }, /*#__PURE__*/React.createElement("img", {
@@ -292,27 +341,48 @@ function SignUpScreen({ setUser }) {
   }, "House"), /*#__PURE__*/React.createElement("div", {
     className: "ob-sub"
   }, "Keep it Real"), /*#__PURE__*/React.createElement("div", {
-    className: "ob-form",
+    ref: googleButtonRef,
     style: { marginTop: "24px" }
+  }), googleReady ? null : /*#__PURE__*/React.createElement("p", {
+    style: { marginTop: "16px", fontSize: "12px", color: "var(--t3)" }
+  }, "Loading sign-in..."));
+}
+function DisplayNameScreen({ user, setUser, displayName, setDisplayName, setNeedsName }) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "ob-screen"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "/icon-192.png",
+    style: {
+      width: "88px",
+      height: "88px",
+      borderRadius: "20px",
+      marginBottom: "24px",
+      boxShadow: "0 4px 24px rgba(0,0,0,0.13)"
+    },
+    alt: "House"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "ob-title"
+  }, "Choose Display Name"), /*#__PURE__*/React.createElement("div", {
+    className: "ob-form"
   }, /*#__PURE__*/React.createElement("input", {
     className: "ob-input",
-    placeholder: "Username",
-    value: username,
-    onChange: e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase()),
-    autoFocus: true,
-    style: { marginBottom: "10px" }
-  }), /*#__PURE__*/React.createElement("input", {
-    className: "ob-input",
     placeholder: "Display name",
-    value: name,
-    onChange: e => setName(e.target.value)
+    value: displayName,
+    onChange: e => setDisplayName(e.target.value),
+    autoFocus: true
   }), /*#__PURE__*/React.createElement("button", {
     className: "ob-btn",
-    disabled: !name.trim() || !username.trim(),
+    disabled: !displayName.trim(),
     onClick: () => {
-      const user = { username: username.trim(), displayName: name.trim() };
-      localStorage.setItem('house-user', JSON.stringify(user));
-      setUser(user);
+      const updated = { ...user, displayName: displayName.trim() };
+      localStorage.setItem('house-user', JSON.stringify(updated));
+      setUser(updated);
+      fetch('/api/auth/display-name', {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ userId: updated.id, displayName: displayName.trim() })
+      }).catch(() => {});
+      setNeedsName(false);
     }
   }, "Continue")));
 }
@@ -335,6 +405,8 @@ class ErrorBoundary extends React.Component {
 }
 function App() {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('house-user') || 'null'));
+  const [needsName, setNeedsName] = useState(false);
+  const [displayName, setDisplayName] = useState('');
   const [mm, setMM] = useState(false);
   const [pl, setPl] = useState(false);
   const [st, setSt] = useState(-1);
@@ -1581,7 +1653,7 @@ function App() {
     style: { flex: 1, padding: '10px', background: 'rgba(0,0,0,0.04)', color: 'var(--t2)', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit' }
   }, "Cancel"), /*#__PURE__*/React.createElement("button", {
     disabled: !editName.trim(),
-    onClick: () => { const updated = { ...user, displayName: editName.trim() }; localStorage.setItem('house-user', JSON.stringify(updated)); setUser(updated); setEditingProfile(false); },
+    onClick: () => { const updated = { ...user, displayName: editName.trim() }; localStorage.setItem('house-user', JSON.stringify(updated)); setUser(updated); setEditingProfile(false); if (updated.id) { fetch('/api/auth/display-name', { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ userId: updated.id, displayName: editName.trim() }) }).catch(() => {}); } },
     style: { flex: 1, padding: '10px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', opacity: editName.trim() ? 1 : 0.5 }
   }, "Save")))), /*#__PURE__*/React.createElement("div", {
     className: "prof-tog"
@@ -1676,8 +1748,16 @@ function App() {
     key: fx,
     className: "fx-ch" + (disc.fx && disc.fx.has(fx) ? " on" : ""),
     onClick: () => tf(fx)
-  }, fx)))), !user && /*#__PURE__*/React.createElement(SignUpScreen, {
-    setUser
+  }, fx)))), !user && /*#__PURE__*/React.createElement(GoogleSignInScreen, {
+    setUser,
+    setNeedsName,
+    setDisplayName
+  }), user && needsName && /*#__PURE__*/React.createElement(DisplayNameScreen, {
+    user,
+    setUser,
+    displayName,
+    setDisplayName,
+    setNeedsName
   }));
 }
 
