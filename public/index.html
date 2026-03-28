@@ -1805,6 +1805,7 @@ function isStandalone(){return window.navigator.standalone||window.matchMedia('(
 function dismissPWA(){
   var s=document.getElementById('pwaScreen');
   s.classList.add('hidden');
+  document.getElementById('root').style.display='';
   setTimeout(function(){s.style.display='none';},400);
 }
 
@@ -1816,8 +1817,11 @@ function triggerAndroidInstall(){
 }
 
 (function setupPWA(){
-  // Only allow PWA mode - if not standalone, show install instructions
+  // Only allow PWA mode - if not standalone, hide React app and show install instructions
   if(isStandalone()){dismissPWA();return;}
+
+  // Hide the React app entirely when not in PWA mode
+  document.getElementById('root').style.display='none';
 
   if(isIOS()){
     document.getElementById('iosSteps').style.display='';
