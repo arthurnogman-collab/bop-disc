@@ -5,6 +5,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '10mb' }));
+
+// No-cache headers for SW and HTML so browsers always check for updates
+app.use((req, res, next) => {
+  if (req.path === '/sw.js' || req.path === '/' || req.path.endsWith('.html')) {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/albums', express.static(path.join(__dirname, 'public', 'albums')));
 

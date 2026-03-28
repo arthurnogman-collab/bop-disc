@@ -2049,7 +2049,12 @@ function triggerAndroidInstall(){
   }
 })();
 
-if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js');}
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js');
+  navigator.serviceWorker.addEventListener('message', function(e){
+    if(e.data && e.data.type === 'SW_UPDATED') window.location.reload();
+  });
+}
 </script>
 
 </body>
