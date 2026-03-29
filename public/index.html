@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Roll</title>
+<title>Wax</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Roll">
+<meta name="apple-mobile-web-app-title" content="Wax">
 <meta name="theme-color" content="#EDEDF1">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Shizuru&display=swap" rel="stylesheet">
@@ -189,7 +189,7 @@ body{display:flex;justify-content:center;align-items:center;}
 
 /* Onboarding Screen */
 .ob-screen{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
-.ob-title{font-family:'Shizuru',sans-serif;font-size:58px;font-weight:400;color:var(--t1);margin-bottom:6px;letter-spacing:10px;text-transform:uppercase;}
+.ob-title{font-family:'Shizuru',sans-serif;font-size:68px;font-weight:400;color:var(--t1);margin-bottom:6px;letter-spacing:10px;text-transform:uppercase;}
 .ob-sub{font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:300;color:var(--t3);letter-spacing:4px;text-transform:uppercase;margin-bottom:40px;}
 .ob-form{width:100%;display:flex;flex-direction:column;gap:12px;}
 .ob-input{width:100%;padding:14px 16px;border-radius:14px;border:1px solid rgba(0,0,0,0.08);background:rgba(255,255,255,0.6);font-family:inherit;font-size:14px;color:var(--t1);outline:none;}
@@ -204,7 +204,7 @@ body{display:flex;justify-content:center;align-items:center;}
 .pwa-vinyl{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,#222225,#101012);margin-bottom:32px;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.15);}
 .pwa-vinyl::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:42px;height:42px;border-radius:50%;background:#fff;}
 .pwa-vinyl-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:none;}
-.pwa-title{font-family:'Shizuru',sans-serif;font-size:50px;font-weight:400;color:var(--t1);letter-spacing:10px;text-transform:uppercase;margin-bottom:6px;line-height:1;}
+.pwa-title{font-family:'Shizuru',sans-serif;font-size:60px;font-weight:400;color:var(--t1);letter-spacing:10px;text-transform:uppercase;margin-bottom:6px;line-height:1;}
 .pwa-sub{font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:300;color:var(--t3);text-align:center;letter-spacing:4px;text-transform:uppercase;margin-bottom:40px;}
 .pwa-steps{width:100%;display:flex;flex-direction:column;gap:12px;margin-bottom:36px;}
 .pwa-step{display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.65);border-radius:14px;padding:14px 16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.6);}
@@ -293,7 +293,7 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
         picture: userData.picture,
         displayName: userData.display_name || ''
       };
-      localStorage.setItem('roll-user', JSON.stringify(user));
+      localStorage.setItem('wax-user', JSON.stringify(user));
       setUser(user);
       if (!user.displayName) {
         setDisplayName(userData.name || '');
@@ -335,10 +335,10 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
       marginBottom: "24px",
       boxShadow: "0 4px 24px rgba(0,0,0,0.13)"
     },
-    alt: "Roll"
+    alt: "Wax"
   }), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
-  }, "Roll"), /*#__PURE__*/React.createElement("div", {
+  }, "Wax"), /*#__PURE__*/React.createElement("div", {
     className: "ob-sub"
   }, "Keep it Rolling"), /*#__PURE__*/React.createElement("div", {
     ref: googleButtonRef,
@@ -375,7 +375,7 @@ function DisplayNameScreen({ user, setUser, displayName, setDisplayName, setNeed
     disabled: !displayName.trim(),
     onClick: () => {
       const updated = { ...user, displayName: displayName.trim() };
-      localStorage.setItem('roll-user', JSON.stringify(updated));
+      localStorage.setItem('wax-user', JSON.stringify(updated));
       setUser(updated);
       fetch('/api/auth/display-name', {
         method: 'PATCH',
@@ -404,7 +404,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 function App() {
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('roll-user') || 'null'));
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('wax-user') || 'null'));
   const [needsName, setNeedsName] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [mm, setMM] = useState(false);
@@ -1279,7 +1279,7 @@ function App() {
     fontSize: "7",
     fontWeight: "700",
     letterSpacing: "2.5"
-  }, "Roll"), /*#__PURE__*/React.createElement("circle", {
+  }, "Wax"), /*#__PURE__*/React.createElement("circle", {
     cx: CX,
     cy: CY,
     r: "2.5",
@@ -1867,7 +1867,7 @@ function App() {
     style: { flex: 1, padding: '10px', background: 'rgba(0,0,0,0.04)', color: 'var(--t2)', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit' }
   }, "Cancel"), /*#__PURE__*/React.createElement("button", {
     disabled: !editName.trim(),
-    onClick: () => { const updated = { ...user, displayName: editName.trim() }; localStorage.setItem('roll-user', JSON.stringify(updated)); setUser(updated); setEditingProfile(false); if (updated.id) { fetch('/api/auth/display-name', { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ userId: updated.id, displayName: editName.trim() }) }).catch(() => {}); } },
+    onClick: () => { const updated = { ...user, displayName: editName.trim() }; localStorage.setItem('wax-user', JSON.stringify(updated)); setUser(updated); setEditingProfile(false); if (updated.id) { fetch('/api/auth/display-name', { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ userId: updated.id, displayName: editName.trim() }) }).catch(() => {}); } },
     style: { flex: 1, padding: '10px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', opacity: editName.trim() ? 1 : 0.5 }
   }, "Save")))), /*#__PURE__*/React.createElement("div", {
     className: "prof-tog"
@@ -1978,8 +1978,8 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary, null, React.createElement(App, null)));</script>
 
 <div class="pwa-screen" id="pwaScreen">
-  <img src="/icon.svg" style="width:88px;height:88px;border-radius:20px;margin-bottom:24px;box-shadow:0 4px 24px rgba(0,0,0,0.13);" alt="Roll"/>
-  <div class="pwa-title">Roll</div>
+  <img src="/icon.svg" style="width:88px;height:88px;border-radius:20px;margin-bottom:24px;box-shadow:0 4px 24px rgba(0,0,0,0.13);" alt="Wax"/>
+  <div class="pwa-title">Wax</div>
   <div class="pwa-sub">Keep it Rolling</div>
 
   <!-- iOS steps: just Share + Add to Home Screen, no "open in Safari" -->
