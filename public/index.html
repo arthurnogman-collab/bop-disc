@@ -188,10 +188,9 @@ body{display:flex;justify-content:center;align-items:center;}
 .lbl-cancel{width:100%;padding:10px;border:none;background:transparent;color:var(--t3);font-family:inherit;font-size:12px;cursor:pointer;margin-top:4px;}
 
 /* Onboarding Screen */
-.ob-screen{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
-.ob-brand{display:flex;align-items:center;gap:12px;margin-bottom:48px;}
-.ob-brand img{width:100px;height:100px;flex-shrink:0;}
-.ob-title{font-family:'Shizuru',sans-serif;font-size:46px;font-weight:400;color:var(--t1);letter-spacing:5px;text-transform:uppercase;line-height:1;}
+.ob-screen{position:fixed;inset:0;z-index:1000;background:#18181F;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
+.ob-icon{width:150px;height:150px;margin-bottom:16px;filter:invert(1);}
+.ob-title{font-family:'Shizuru',sans-serif;font-size:52px;font-weight:400;color:#fff;letter-spacing:8px;text-transform:uppercase;line-height:1;margin-bottom:40px;}
 .ob-form{width:100%;display:flex;flex-direction:column;gap:12px;}
 .ob-input{width:100%;padding:14px 16px;border-radius:14px;border:1px solid rgba(0,0,0,0.08);background:rgba(255,255,255,0.6);font-family:inherit;font-size:14px;color:var(--t1);outline:none;}
 .ob-input:focus{border-color:var(--accent);}
@@ -200,19 +199,15 @@ body{display:flex;justify-content:center;align-items:center;}
 .ob-btn:disabled{opacity:0.3;}
 
 /* PWA Install Screen */
-.pwa-screen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;padding-bottom:80px;transition:opacity .4s,transform .4s;}
+.pwa-screen{position:fixed;inset:0;z-index:999;background:#18181F;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;padding-bottom:100px;transition:opacity .4s,transform .4s;}
 .pwa-screen.hidden{opacity:0;transform:scale(1.04);pointer-events:none;}
-.pwa-vinyl{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,#222225,#101012);margin-bottom:32px;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.15);}
-.pwa-vinyl::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:42px;height:42px;border-radius:50%;background:#fff;}
-.pwa-vinyl-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:none;}
-.pwa-brand{display:flex;align-items:center;gap:12px;margin-bottom:48px;}
-.pwa-brand img{width:100px;height:100px;flex-shrink:0;}
-.pwa-title{font-family:'Shizuru',sans-serif;font-size:46px;font-weight:400;color:var(--t1);letter-spacing:5px;text-transform:uppercase;line-height:1;}
-.pwa-steps{width:100%;max-width:340px;display:flex;flex-direction:column;gap:12px;margin-bottom:36px;}
-.pwa-step{display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.65);border-radius:14px;padding:14px 16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.6);}
-.pwa-step-icon{width:36px;height:36px;border-radius:10px;background:var(--t1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;}
-.pwa-step-text{font-size:13px;color:var(--t2);line-height:1.4;}
-.pwa-step-text strong{color:var(--t1);font-weight:600;}
+.pwa-icon{width:150px;height:150px;margin-bottom:16px;filter:invert(1);}
+.pwa-title{font-family:'Shizuru',sans-serif;font-size:52px;font-weight:400;color:#fff;letter-spacing:8px;text-transform:uppercase;line-height:1;margin-bottom:40px;}
+.pwa-steps{width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px;margin-bottom:36px;}
+.pwa-step{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.06);border-radius:14px;padding:13px 16px;border:1px solid rgba(255,255,255,0.08);}
+.pwa-step-icon{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;}
+.pwa-step-text{font-size:13px;color:rgba(255,255,255,0.6);line-height:1.4;}
+.pwa-step-text strong{color:#fff;font-weight:600;}
 .pwa-dismiss{width:100%;padding:14px;border-radius:14px;border:none;background:var(--t1);color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:0.2px;}
 .pwa-install-native{width:100%;padding:15px;border-radius:14px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.3px;box-shadow:0 4px 16px rgba(212,43,64,0.28);}
 
@@ -328,14 +323,13 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
 
   return /*#__PURE__*/React.createElement("div", {
     className: "ob-screen"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ob-brand"
   }, /*#__PURE__*/React.createElement("img", {
     src: "/icon.svg",
+    className: "ob-icon",
     alt: "Wax"
   }), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
-  }, "Wax")), /*#__PURE__*/React.createElement("div", {
+  }, "Wax"), /*#__PURE__*/React.createElement("div", {
     ref: googleButtonRef,
     style: { marginTop: "24px" }
   }), googleReady ? null : /*#__PURE__*/React.createElement("p", {
@@ -1971,10 +1965,8 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary, null, React.createElement(App, null)));</script>
 
 <div class="pwa-screen" id="pwaScreen">
-  <div class="pwa-brand">
-    <img src="/icon.svg" alt="Wax"/>
-    <div class="pwa-title">Wax</div>
-  </div>
+  <img src="/icon.svg" class="pwa-icon" alt="Wax"/>
+  <div class="pwa-title">Wax</div>
 
   <!-- iOS steps: just Share + Add to Home Screen, no "open in Safari" -->
   <div class="pwa-steps" id="iosSteps" style="display:none">
