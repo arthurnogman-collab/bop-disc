@@ -4,8 +4,8 @@
   "description": "Vinyl remix app — mix tracks from classic records",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#18181F",
-  "theme_color": "#18181F",
+  "background_color": "#EDEDF1",
+  "theme_color": "#EDEDF1",
   "orientation": "portrait",
   "icons": [
     { "src": "/icon-pwa.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
