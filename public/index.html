@@ -9,8 +9,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Wax">
-<meta name="theme-color" content="#EDEDF1">
-<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="theme-color" content="#18181F">
+<link rel="apple-touch-icon" href="/icon-pwa.svg">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Shizuru&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
@@ -22,7 +22,7 @@
   --accent:#D42B40;--accent-glow:rgba(212,43,64,0.2);--accent-dim:rgba(212,43,64,0.08);
   --chrome:linear-gradient(180deg,#FBFBFD 0%,#E8E8F0 100%);
 }
-html,body{width:100%;height:100%;overflow:hidden;background:#EDEDF1;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+html,body{width:100%;height:100%;overflow:hidden;background:#18181F;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
 body{display:flex;justify-content:center;align-items:center;}
 #root{width:375px;height:812px;position:relative;overflow:hidden;display:flex;flex-direction:column;background:var(--bg);}
 @media(max-width:400px){#root{width:100vw;height:100vh;height:100dvh;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);}}
@@ -340,13 +340,9 @@ function DisplayNameScreen({ user, setUser, displayName, setDisplayName, setNeed
   return /*#__PURE__*/React.createElement("div", {
     className: "ob-screen"
   }, /*#__PURE__*/React.createElement("img", {
-    src: "/icon-192.png",
-    style: {
-      width: "88px",
-      height: "88px",
-      marginBottom: "24px"
-    },
-    alt: "House"
+    src: "/icon.svg",
+    className: "ob-icon",
+    alt: "Wax"
   }), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
   }, "Choose Display Name"), /*#__PURE__*/React.createElement("div", {
