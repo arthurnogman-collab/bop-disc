@@ -424,8 +424,10 @@ function App() {
     lb: null,
     samps: [0, 0, 0, 0],
     cuts: [[0, 1], [0, 1], [0, 1], [0, 1]],
-    color: 0
+    color: 0,
+    title: ''
   }]);
+  const [editingTitle, setEditingTitle] = useState(false);
   const [sfx, setSfx] = useState(false);
   const [prof, setProf] = useState(false);
   const [lblDlg, setLblDlg] = useState(false);
@@ -790,7 +792,8 @@ function App() {
         lb: cur.lb,
         samps: [...cur.samps],
         cuts: cur.cuts.map(c => [...c]),
-        color: cur.color
+        color: cur.color,
+        title: ''
       }]);
       setAd(i);
     }
@@ -1134,20 +1137,28 @@ function App() {
     const src = disc.ts[ti];
     const sel = st === ti;
     const isEmpty = src === -1;
+    const artSrc = src >= 0 ? src : 0;
     const cut = disc.cuts ? disc.cuts[ti] : [0, 1];
     const circ = 2 * Math.PI * mr;
     const cutLen = (cut[1] - cut[0]) * circ;
     const cutOff = cut[0] * circ;
     return /*#__PURE__*/React.createElement("g", {
       key: ti
-    }, !isEmpty && /*#__PURE__*/React.createElement("circle", {
+    }, /*#__PURE__*/React.createElement("circle", {
       cx: CX,
       cy: CY,
       r: mr,
       fill: "none",
-      stroke: `url(#cp${src})`,
+      stroke: `url(#cp${artSrc})`,
       strokeWidth: sw,
-      opacity: 0.85
+      opacity: 1
+    }), isEmpty && mm && /*#__PURE__*/React.createElement("circle", {
+      cx: CX,
+      cy: CY,
+      r: mr,
+      fill: "none",
+      stroke: "rgba(0,0,0,0.35)",
+      strokeWidth: sw
     }), sel && !isEmpty && /*#__PURE__*/React.createElement("circle", {
       cx: CX,
       cy: CY,
@@ -1325,11 +1336,23 @@ function App() {
     onClick: () => {
       if (mm) setSt(-1);
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "feed-artist",
-    style: {
-      visibility: mm ? 'hidden' : 'visible'
-    }
+  }, mm ? /*#__PURE__*/React.createElement("div", {
+    className: "feed-artist"
+  }, editingTitle ? /*#__PURE__*/React.createElement("input", {
+    className: "fa-title-input",
+    autoFocus: true,
+    placeholder: "Name your track",
+    value: discs[ad].title || '',
+    onChange: e => { const v = e.target.value; setDiscs(p => { const n = [...p]; n[ad] = { ...n[ad], title: v }; return n; }); },
+    onBlur: () => setEditingTitle(false),
+    onKeyDown: e => { if (e.key === 'Enter') setEditingTitle(false); },
+    style: { background: 'none', border: 'none', borderBottom: '1.5px solid var(--t3)', outline: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '600', color: 'var(--t1)', textAlign: 'center', width: '100%', maxWidth: '220px', padding: '4px 0' }
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "fa-track",
+    onClick: e => { e.stopPropagation(); setEditingTitle(true); },
+    style: { cursor: 'pointer', opacity: discs[ad].title ? 1 : 0.4 }
+  }, discs[ad].title || 'Tap to name your track')) : /*#__PURE__*/React.createElement("div", {
+    className: "feed-artist"
   }, /*#__PURE__*/React.createElement("div", {
     className: "fa-name"
   }, feedData[fi].cr), /*#__PURE__*/React.createElement("div", {
@@ -1769,18 +1792,18 @@ function App() {
           lb: null,
           samps: [0, 0, 0, 0],
           cuts: [[0, 1], [0, 1], [0, 1], [0, 1]],
-          color: 0
+          color: 0,
+          title: ''
         };
         setDiscs([newDisc]);
         setAd(0);
         setMM(true);
         setPl(false);
       } else {
-        // Exiting mix: show publish dialog
-        setPublishDlg(true);
-        setPublishName('');
-        setPublishedUrl('');
+        // Exiting mix: just exit, changes are saved in disc state
+        setMM(false);
         setPl(false);
+        setEditingTitle(false);
       }
       setSt(-1);
     }
@@ -1893,7 +1916,9 @@ function App() {
   }, /*#__PURE__*/React.createElement("div", {
     className: "pg-art",
     style: {
-      background: `radial-gradient(circle,${DISC_COLORS[d.color || 0]},${DISC_COLORS[d.color || 0]})`
+      backgroundImage: `url(${C[Math.max(0, d.ts[0])]})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
     }
   }, [35, 48, 60, 72].map((p, g) => /*#__PURE__*/React.createElement("div", {
     key: g,
