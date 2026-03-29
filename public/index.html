@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Roll">
 <meta name="theme-color" content="#EDEDF1">
 <link rel="apple-touch-icon" href="/icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Urbanist:wght@400;700;800;900&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
@@ -189,8 +189,8 @@ body{display:flex;justify-content:center;align-items:center;}
 
 /* Onboarding Screen */
 .ob-screen{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
-.ob-title{font-family:'Outfit',sans-serif;font-size:56px;font-weight:900;color:var(--t1);margin-bottom:6px;letter-spacing:6px;text-transform:uppercase;}
-.ob-sub{font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:400;color:var(--t3);letter-spacing:3px;text-transform:uppercase;margin-bottom:40px;}
+.ob-title{font-family:'Urbanist',sans-serif;font-size:58px;font-weight:900;color:var(--t1);margin-bottom:6px;letter-spacing:10px;text-transform:uppercase;}
+.ob-sub{font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:300;color:var(--t3);letter-spacing:4px;text-transform:uppercase;margin-bottom:40px;}
 .ob-form{width:100%;display:flex;flex-direction:column;gap:12px;}
 .ob-input{width:100%;padding:14px 16px;border-radius:14px;border:1px solid rgba(0,0,0,0.08);background:rgba(255,255,255,0.6);font-family:inherit;font-size:14px;color:var(--t1);outline:none;}
 .ob-input:focus{border-color:var(--accent);}
@@ -204,8 +204,8 @@ body{display:flex;justify-content:center;align-items:center;}
 .pwa-vinyl{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,#222225,#101012);margin-bottom:32px;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.15);}
 .pwa-vinyl::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:42px;height:42px;border-radius:50%;background:#fff;}
 .pwa-vinyl-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:none;}
-.pwa-title{font-family:'Outfit',sans-serif;font-size:48px;font-weight:900;color:var(--t1);letter-spacing:6px;text-transform:uppercase;margin-bottom:6px;line-height:1;}
-.pwa-sub{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:400;color:var(--t3);text-align:center;letter-spacing:3px;text-transform:uppercase;margin-bottom:40px;}
+.pwa-title{font-family:'Urbanist',sans-serif;font-size:50px;font-weight:900;color:var(--t1);letter-spacing:10px;text-transform:uppercase;margin-bottom:6px;line-height:1;}
+.pwa-sub{font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:300;color:var(--t3);text-align:center;letter-spacing:4px;text-transform:uppercase;margin-bottom:40px;}
 .pwa-steps{width:100%;display:flex;flex-direction:column;gap:12px;margin-bottom:36px;}
 .pwa-step{display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.65);border-radius:14px;padding:14px 16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.6);}
 .pwa-step-icon{width:36px;height:36px;border-radius:10px;background:var(--t1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;}
