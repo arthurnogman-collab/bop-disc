@@ -8,13 +8,13 @@ app.use(express.json({ limit: '10mb' }));
 
 // No-cache headers for SW and HTML so browsers always check for updates
 app.use((req, res, next) => {
-  if (req.path === '/sw.js' || req.path === '/' || req.path.endsWith('.html')) {
+  if (req.path === '/sw.js' || req.path === '/' || req.path.endsWith('.html') || req.path.startsWith('/api/')) {
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
   }
   next();
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { etag: false, lastModified: false }));
 app.use('/albums', express.static(path.join(__dirname, 'public', 'albums')));
 
 // Initialize database on startup

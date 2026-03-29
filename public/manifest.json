@@ -1,6 +1,6 @@
 {
-  "name": "House",
-  "short_name": "House",
+  "name": "Roll",
+  "short_name": "Roll",
   "description": "Vinyl remix app — mix tracks from classic records",
   "start_url": "/",
   "display": "standalone",

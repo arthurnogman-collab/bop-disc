@@ -1,0 +1,16 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "House",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.js"],
+      "port": 3000,
+      "autoPort": false,
+      "cwd": "C:\\Users\\arthu\\bop\\bop-disc",
+      "env": {
+        "DATABASE_URL": "postgresql://neondb_owner:npg_0hzKMxgBGXQ9@ep-blue-cake-aizxith0-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+      }
+    }
+  ]
+}
