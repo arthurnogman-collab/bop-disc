@@ -189,8 +189,11 @@ body{display:flex;justify-content:center;align-items:center;}
 
 /* Onboarding Screen */
 .ob-screen{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
-.ob-title{font-family:'Shizuru',sans-serif;font-size:52px;font-weight:400;color:var(--t1);margin-bottom:8px;letter-spacing:8px;text-transform:uppercase;}
-.ob-sub{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:300;color:var(--t3);letter-spacing:5px;text-transform:uppercase;margin-bottom:32px;}
+.ob-brand{display:flex;align-items:center;gap:20px;margin-bottom:32px;}
+.ob-brand img{width:80px;height:80px;flex-shrink:0;}
+.ob-brand-text{display:flex;flex-direction:column;}
+.ob-title{font-family:'Shizuru',sans-serif;font-size:52px;font-weight:400;color:var(--t1);letter-spacing:8px;text-transform:uppercase;line-height:1;}
+.ob-sub{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:300;color:var(--t3);letter-spacing:5px;text-transform:uppercase;margin-top:4px;}
 .ob-form{width:100%;display:flex;flex-direction:column;gap:12px;}
 .ob-input{width:100%;padding:14px 16px;border-radius:14px;border:1px solid rgba(0,0,0,0.08);background:rgba(255,255,255,0.6);font-family:inherit;font-size:14px;color:var(--t1);outline:none;}
 .ob-input:focus{border-color:var(--accent);}
@@ -204,8 +207,11 @@ body{display:flex;justify-content:center;align-items:center;}
 .pwa-vinyl{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,#222225,#101012);margin-bottom:32px;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.15);}
 .pwa-vinyl::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:42px;height:42px;border-radius:50%;background:#fff;}
 .pwa-vinyl-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:none;}
-.pwa-title{font-family:'Shizuru',sans-serif;font-size:52px;font-weight:400;color:var(--t1);letter-spacing:8px;text-transform:uppercase;margin-bottom:8px;line-height:1;}
-.pwa-sub{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:300;color:var(--t3);text-align:center;letter-spacing:5px;text-transform:uppercase;margin-bottom:32px;}
+.pwa-brand{display:flex;align-items:center;gap:20px;margin-bottom:32px;}
+.pwa-brand img{width:80px;height:80px;flex-shrink:0;}
+.pwa-brand-text{display:flex;flex-direction:column;}
+.pwa-title{font-family:'Shizuru',sans-serif;font-size:52px;font-weight:400;color:var(--t1);letter-spacing:8px;text-transform:uppercase;line-height:1;}
+.pwa-sub{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:300;color:var(--t3);letter-spacing:5px;text-transform:uppercase;margin-top:4px;}
 .pwa-steps{width:100%;display:flex;flex-direction:column;gap:12px;margin-bottom:36px;}
 .pwa-step{display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.65);border-radius:14px;padding:14px 16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.6);}
 .pwa-step-icon{width:36px;height:36px;border-radius:10px;background:var(--t1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;}
@@ -326,19 +332,18 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
 
   return /*#__PURE__*/React.createElement("div", {
     className: "ob-screen"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ob-brand"
   }, /*#__PURE__*/React.createElement("img", {
     src: "/icon.svg",
-    style: {
-      width: "120px",
-      height: "120px",
-      marginBottom: "28px"
-    },
     alt: "Wax"
   }), /*#__PURE__*/React.createElement("div", {
+    className: "ob-brand-text"
+  }, /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
   }, "Wax"), /*#__PURE__*/React.createElement("div", {
     className: "ob-sub"
-  }, "Real Waves"), /*#__PURE__*/React.createElement("div", {
+  }, "Real Waves"))), /*#__PURE__*/React.createElement("div", {
     ref: googleButtonRef,
     style: { marginTop: "24px" }
   }), googleReady ? null : /*#__PURE__*/React.createElement("p", {
@@ -1974,9 +1979,13 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary, null, React.createElement(App, null)));</script>
 
 <div class="pwa-screen" id="pwaScreen">
-  <img src="/icon.svg" style="width:120px;height:120px;margin-bottom:28px;" alt="Wax"/>
-  <div class="pwa-title">Wax</div>
-  <div class="pwa-sub">Real Waves</div>
+  <div class="pwa-brand">
+    <img src="/icon.svg" alt="Wax"/>
+    <div class="pwa-brand-text">
+      <div class="pwa-title">Wax</div>
+      <div class="pwa-sub">Real Waves</div>
+    </div>
+  </div>
 
   <!-- iOS steps: just Share + Add to Home Screen, no "open in Safari" -->
   <div class="pwa-steps" id="iosSteps" style="display:none">
