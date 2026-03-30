@@ -189,8 +189,7 @@ body{display:flex;justify-content:center;align-items:center;}
 
 /* Onboarding Screen */
 .ob-screen{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
-.ob-icon-box{width:166px;height:166px;border-radius:38px;background:#FFD6DE;display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 6px 24px rgba(255,160,185,0.35),inset 0 1px 0 rgba(255,255,255,0.6);}
-.ob-icon{width:120px;height:120px;}
+.ob-icon{width:166px;height:166px;margin-bottom:16px;}
 .ob-title{font-family:'Quicksand',sans-serif;font-size:42px;font-weight:700;color:var(--t1);letter-spacing:3px;text-transform:none;line-height:1;margin-bottom:28px;}
 .ob-google-wrap{position:relative;width:100%;max-width:280px;margin-top:24px;}
 .ob-google-wrap>div{position:absolute!important;opacity:0!important;pointer-events:none!important;width:100%!important;height:100%!important;}
@@ -208,8 +207,7 @@ body{display:flex;justify-content:center;align-items:center;}
 /* PWA Install Screen */
 .pwa-screen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;padding-bottom:60px;transition:opacity .4s,transform .4s;}
 .pwa-screen.hidden{opacity:0;transform:scale(1.04);pointer-events:none;}
-.pwa-icon-box{width:166px;height:166px;border-radius:38px;background:#FFD6DE;display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 6px 24px rgba(255,160,185,0.35),inset 0 1px 0 rgba(255,255,255,0.6);}
-.pwa-icon{width:120px;height:120px;}
+.pwa-icon{width:166px;height:166px;margin-bottom:16px;}
 .pwa-title{font-family:'Quicksand',sans-serif;font-size:42px;font-weight:700;color:var(--t1);letter-spacing:3px;text-transform:none;line-height:1;margin-bottom:28px;}
 .pwa-steps{width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px;margin-bottom:36px;}
 .pwa-step{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.65);border-radius:14px;padding:13px 16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.6);}
@@ -344,13 +342,11 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
 
   return /*#__PURE__*/React.createElement("div", {
     className: "ob-screen"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ob-icon-box"
   }, /*#__PURE__*/React.createElement("img", {
     src: "/Boba.png",
     className: "ob-icon",
     alt: "Boba"
-  })), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
   }, "boba"), /*#__PURE__*/React.createElement("div", {
     className: "ob-google-wrap"
@@ -377,13 +373,11 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
 function DisplayNameScreen({ user, setUser, displayName, setDisplayName, setNeedsName }) {
   return /*#__PURE__*/React.createElement("div", {
     className: "ob-screen"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ob-icon-box"
   }, /*#__PURE__*/React.createElement("img", {
     src: "/Boba.png",
     className: "ob-icon",
     alt: "Boba"
-  })), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
   }, "Choose Display Name"), /*#__PURE__*/React.createElement("div", {
     className: "ob-form"
@@ -863,36 +857,44 @@ function App() {
   }, [stopPadSample]);
 
   const togglePadFx = useCallback(() => setPadFx(function(p) { var next = !p; padFxRef.current = next; return next; }), []);
-  /* Check if current track is modified from original */
-  const isTrackModified = mm && st >= 0 && discs[ad] && originalTsRef.current &&
-    discs[ad].ts[st] !== originalTsRef.current[st];
+
+  /* Determine button mode: check if track has arcs or is modified from original */
+  var trackHasArcs = mm && st >= 0 && recArcs.some(function(a) { return a && a.track === st; });
+  var trackIsOriginal = mm && st >= 0 && discs[ad] && originalTsRef.current &&
+    discs[ad].ts[st] === originalTsRef.current[st];
+  /* Show back icon when anything has changed (arcs recorded OR track removed/modified) */
+  var showBackBtn = mm && st >= 0 && (trackHasArcs || !trackIsOriginal);
 
   const removeOrRestoreTrack = useCallback(() => {
     if (st < 0) return;
-    var orig = originalTsRef.current;
-    var current = discs[ad] && discs[ad].ts[st];
-    if (current !== undefined && orig && current !== orig[st]) {
-      /* Track is modified → restore to original */
-      setDiscs(function(p) {
-        var n = p.slice();
-        var d = Object.assign({}, n[ad], { ts: n[ad].ts.slice() });
-        d.ts[st] = orig[st];
-        n[ad] = d;
-        return n;
-      });
+    var arcsForTrack = recArcsRef.current.filter(function(a) { return a && a.track === st; });
+    if (arcsForTrack.length > 0) {
+      /* Has recorded arcs → undo: remove arcs for this track */
+      var cleaned = recArcsRef.current.filter(function(a) { return a && a.track !== st; });
+      recArcsRef.current = cleaned;
+      setRecArcs(cleaned);
     } else {
-      /* Track is original → remove it */
-      setDiscs(function(p) {
-        var n = p.slice();
-        var d = Object.assign({}, n[ad], { ts: n[ad].ts.slice() });
-        d.ts[st] = -1;
-        n[ad] = d;
-        return n;
-      });
-      /* Also clear any recorded arcs for this track */
-      setRecArcs(function(prev) {
-        return prev.filter(function(a) { return a && a.track !== st; });
-      });
+      var orig = originalTsRef.current;
+      var current = discs[ad] && discs[ad].ts[st];
+      if (orig && current !== orig[st]) {
+        /* Track is modified (removed) with no arcs → restore original */
+        setDiscs(function(p) {
+          var n = p.slice();
+          var d = Object.assign({}, n[ad], { ts: n[ad].ts.slice() });
+          d.ts[st] = orig[st];
+          n[ad] = d;
+          return n;
+        });
+      } else {
+        /* Track is original → remove it */
+        setDiscs(function(p) {
+          var n = p.slice();
+          var d = Object.assign({}, n[ad], { ts: n[ad].ts.slice() });
+          d.ts[st] = -1;
+          n[ad] = d;
+          return n;
+        });
+      }
     }
   }, [st, ad, discs]);
 
@@ -1843,7 +1845,7 @@ function App() {
       className: "pad-side-btn",
       style: { borderColor: TC[st] || 'var(--t3)', color: TC[st] || 'var(--t3)' },
       onClick: removeOrRestoreTrack
-    }, isTrackModified
+    }, showBackBtn
       ? React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
           React.createElement("path", { d: "M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8" }),
           React.createElement("path", { d: "M21 3v5h-5" })
@@ -2341,7 +2343,7 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary, null, React.createElement(App, null)));</script>
 
 <div class="pwa-screen" id="pwaScreen" oncontextmenu="return false">
-  <div class="pwa-icon-box"><img src="/Boba.png" class="pwa-icon" alt="Boba"/></div>
+  <img src="/Boba.png" class="pwa-icon" alt="Boba"/>
   <div class="pwa-title">boba</div>
 
   <!-- iOS steps -->

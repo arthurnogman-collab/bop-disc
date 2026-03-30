@@ -4,8 +4,8 @@
   "description": "Remix app — mix tracks from classic records",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FFD6DE",
-  "theme_color": "#FFD6DE",
+  "background_color": "#EDEDF1",
+  "theme_color": "#EDEDF1",
   "orientation": "portrait",
   "icons": [
     { "src": "/Boba.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any maskable" },
