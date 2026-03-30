@@ -235,9 +235,7 @@ body{display:flex;justify-content:center;align-items:center;}
 .pad-side-btn.fx-on{border-color:var(--accent);color:var(--accent);}
 .pad-side-btn svg{width:18px;height:18px;}
 .vp-record{width:46px;padding:0;}
-.vp-record.recording{background:linear-gradient(180deg,#D42B40 0%,#B22030 100%) !important;color:white !important;}
-@keyframes rec-pulse{0%,100%{box-shadow:0 0 0 0 rgba(212,43,64,0.3);}50%{box-shadow:0 0 0 8px rgba(212,43,64,0);}}
-.vp-record.recording{animation:rec-pulse 1s infinite;}
+.vp-record.recording{box-shadow:inset 0 2px 6px rgba(0,0,0,0.15);transform:scale(0.95);}
 .rec-layer-arc{pointer-events:none;}
 
 </style>
@@ -586,12 +584,7 @@ function App() {
     });
     audioSourcesRef.current = {};
 
-    // Calculate song offset from disc position
-    var dur = audioDurationRef.current || 6;
-    var playAngle = ((180 - rotRef.current % 360) + 360) % 360;
-    var offset = (playAngle / 360) * dur;
-
-    // Start new sources for active tracks, synced to disc position
+    // Start new sources for active tracks
     for (let idx = 0; idx < 4; idx++) {
       if (discState.ts[idx] >= 0 && audioBuffersRef.current[idx]) {
         try {
@@ -604,7 +597,7 @@ function App() {
           src.connect(gainNode);
           gainNode.connect(ctx.destination);
 
-          src.start(ctx.currentTime, offset);
+          src.start(0);
           audioSourcesRef.current[idx] = { source: src, gain: gainNode };
         } catch (e) {
           console.error('Audio playback error at ring', idx, ':', e);
@@ -669,12 +662,9 @@ function App() {
   }, []);
 
   const startRecording = useCallback(() => {
-    if (pl) { setPl(false); }
     setRecording(true);
     recStartTimeRef.current = performance.now();
-    const dur = audioDurationRef.current || 6;
-    angVelRef.current = 360 / dur;
-  }, [pl]);
+  }, []);
 
   const stopRecording = useCallback(() => {
     setRecording(false);
@@ -1986,9 +1976,7 @@ function App() {
         setSt(-1);
       }
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "led" + (mm ? " on" : "")
-  }), /*#__PURE__*/React.createElement("span", null, "Mix")), user && /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("span", null, "Mix")), user && /*#__PURE__*/React.createElement("button", {
     className: "vp-btn vp-shelf",
     onClick: () => setProf(true)
   }, /*#__PURE__*/React.createElement("svg", {
