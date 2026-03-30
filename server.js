@@ -319,7 +319,7 @@ app.post('/api/generate-label', async (req, res) => {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
       body: JSON.stringify({
         model: 'dall-e-3',
-        prompt: 'Vinyl record center label design, circular format, vintage aesthetic, retro typography, warm tones, music label art: ' + prompt,
+        prompt: 'A vinyl record center label viewed from above in a perfect circle on white background. It should look like a real physical vinyl record label — simple, flat, clean graphic design. Solid colored background (one color), with minimal text layout: a small record label logo or icon at top, song title in the center, artist name below. Only 1-2 colors plus white text. No detailed illustrations, no gradients, no photorealistic elements, no busy patterns. Inspired by classic labels like Blue Note, Motown, Stax. Theme: ' + prompt,
         n: 1, size: '1024x1024', response_format: 'b64_json'
       })
     });

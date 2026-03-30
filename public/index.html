@@ -33,6 +33,12 @@ body{display:flex;justify-content:center;align-items:center;}
 .search-ico{width:14px;height:14px;color:var(--t4);flex-shrink:0;margin-right:8px;}
 .search-input{flex:1;border:none;background:transparent;font-family:inherit;font-size:12px;color:var(--t1);outline:none;}
 .search-input::placeholder{color:var(--t4);}
+/* Edit mode top bar */
+.edit-top{display:flex;align-items:center;justify-content:space-between;padding:0 20px;width:100%;}
+.edit-top-btn{height:36px;border-radius:18px;border:none;background:transparent;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0 8px;color:var(--t2);transition:opacity .15s;}
+.edit-top-btn:active{opacity:0.6;}
+.edit-top-btn svg{width:22px;height:22px;}
+.edit-top-btn.save{color:var(--accent);}
 
 /* Story slide indicators */
 .slides-row{display:flex;justify-content:center;gap:6px;padding:4px 0;flex-shrink:0;z-index:10;}
@@ -1079,8 +1085,6 @@ function App() {
     return Math.atan2(ey - cy, ex - cx) * 180 / Math.PI;
   }
   const onDiscDragStart = e => {
-    if (po) return; /* don't steal when track selected */
-    e.preventDefault();
     const startAngle = discAngleFromEvent(e);
     discDragRef.current = {
       startAngle,
@@ -1339,18 +1343,7 @@ function App() {
       y: null
     };
     if (mm) {
-      /* Mix mode — horizontal swipe changes discs (spin burst animates the switch) */
-      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
-        if (dx < 0) {
-          if (ad < discs.length - 1) {
-            setAd(ad + 1);
-          } else {
-            addD();
-          }
-        } else if (dx > 0 && ad > 0) {
-          setAd(ad - 1);
-        }
-      }
+      /* Single loop mode — no disc switching */
     } else {
       /* Feed mode */
       if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx)) {
@@ -1662,7 +1655,18 @@ function App() {
     placeholder: "Search",
     value: feedSearch,
     onChange: e => setFeedSearch(e.target.value)
-  }))), /*#__PURE__*/React.createElement("div", {
+  })), mm && React.createElement("div", {className: "edit-top"},
+  React.createElement("button", {className: "edit-top-btn", onClick: function() {
+    setDiscs(function(p) { var n = p.slice(); n[ad] = Object.assign({}, n[ad], { arcs: recArcsRef.current.slice() }); return n; });
+    setMM(false); setPl(false); setEditingTitle(false); setRecording(false); setSt(-1);
+  }},
+    React.createElement("svg", {viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2"},
+      React.createElement("path", {d: "M19 12H5"}),
+      React.createElement("path", {d: "M12 19l-7-7 7-7"})
+    )
+  ),
+  React.createElement("button", {className: "edit-top-btn save", onClick: function() { setPublishName(discs[ad].title || ''); setPublishDlg(true); }}, "Save")
+)), /*#__PURE__*/React.createElement("div", {
     className: "main",
     onTouchStart: onTS,
     onTouchEnd: onTE,
@@ -1683,7 +1687,8 @@ function App() {
     onClick: e => { e.stopPropagation(); setEditingTitle(true); },
     style: { cursor: 'pointer', opacity: discs[ad].title ? 1 : 0.4 }
   }, discs[ad].title || 'Name your track')) : /*#__PURE__*/React.createElement("div", {
-    className: "feed-artist"
+    className: "feed-artist",
+    style: { top: 0, height: 'calc(50% - 170px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }
   }, /*#__PURE__*/React.createElement("div", {
     className: "fa-name"
   }, feedData[fi].cr), /*#__PURE__*/React.createElement("div", {
@@ -1698,22 +1703,7 @@ function App() {
     className: "playhead-line"
   }), /*#__PURE__*/React.createElement("div", {
     className: "playhead-tri"
-  }))), mm ? /*#__PURE__*/React.createElement("div", {
-    className: "dots"
-  }, discs.map((_, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "dot" + (ad === i ? " on" : ""),
-    onClick: e => {
-      e.stopPropagation();
-      setAd(i);
-    }
-  })), discs.length < 8 && /*#__PURE__*/React.createElement("div", {
-    className: "dot add-d",
-    onClick: e => {
-      e.stopPropagation();
-      addD();
-    }
-  })) : feedItem.slides.length > 1 && /*#__PURE__*/React.createElement("div", {
+  }))), !mm && feedItem.slides.length > 1 && /*#__PURE__*/React.createElement("div", {
     className: "dots"
   }, feedItem.slides.map((_, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
@@ -1832,6 +1822,28 @@ function App() {
       React.createElement("path", { d: "M2 12c0 0 2-4 5-4s3 8 5 8 2-8 5-8 5 4 5 4" })
     ))
   )
+), mm && React.createElement("div", {
+  style: { position:'absolute', bottom:'15%', left:0, right:0, display:'flex', alignItems:'center', justifyContent:'center', gap:'20px', zIndex:10, pointerEvents:'none' }
+},
+  po && React.createElement("button", {
+    className: "vp-btn vp-record" + (recording ? " recording" : ""),
+    style: { pointerEvents:'auto' },
+    onClick: function() { recording ? stopRecording() : startRecording(); }
+  },
+    React.createElement("svg", { width: "15", height: "15", viewBox: "0 0 16 16" },
+      React.createElement("circle", { cx: 8, cy: 8, r: 5, fill: recording ? "#FF3C50" : "#8B1A2E" })
+    )
+  ),
+  React.createElement("button", {
+    className: "vp-btn vp-play" + (pl ? " pressed" : ""),
+    style: { pointerEvents:'auto' },
+    onClick: function() { setPl(!pl); }
+  }, pl ? React.createElement("svg", { viewBox: "0 0 16 16" },
+    React.createElement("rect", { x: "3", y: "2", width: "3.5", height: "12", rx: "1", fill: "currentColor" }),
+    React.createElement("rect", { x: "9.5", y: "2", width: "3.5", height: "12", rx: "1", fill: "currentColor" })
+  ) : React.createElement("svg", { viewBox: "0 0 16 16" },
+    React.createElement("path", { d: "M4 2v12l10-6z", fill: "currentColor" })
+  ))
 ), !mm && /*#__PURE__*/React.createElement("div", {
     className: "feed-social"
   }, /*#__PURE__*/React.createElement("div", {
@@ -2055,7 +2067,7 @@ function App() {
       setCommentLoading(false);
     },
     style: { padding: '10px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', opacity: (commentText.trim() && !commentLoading) ? 1 : 0.5 }
-  }, "Send")))), /*#__PURE__*/React.createElement("div", {
+  }, "Send")))), !mm && /*#__PURE__*/React.createElement("div", {
     className: "btn-bar"
   }, po && React.createElement("button", {
     className: "vp-btn vp-record" + (recording ? " recording" : ""),
@@ -2117,7 +2129,7 @@ function App() {
         originalTsRef.current = [...feedSlide.s];
         setMM(true);
         setPl(false);
-        setSt(3); /* default to vocal track */
+        setSt(-1); /* no default track — user selects from disc */
       } else {
         // Exiting mix: save recArcs to current disc, then exit
         setDiscs(function(p) {
