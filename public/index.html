@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Boba">
 <meta name="theme-color" content="#EDEDF1">
 <link rel="apple-touch-icon" href="/icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Shizuru&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-ms-user-select:none;touch-action:manipulation;}
@@ -190,7 +190,7 @@ body{display:flex;justify-content:center;align-items:center;}
 /* Onboarding Screen */
 .ob-screen{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
 .ob-icon{width:166px;height:166px;margin-bottom:16px;}
-.ob-title{font-family:'Shizuru',sans-serif;font-size:48px;font-weight:400;color:var(--t1);letter-spacing:8px;text-transform:uppercase;line-height:1;margin-bottom:28px;}
+.ob-title{font-family:'Quicksand',sans-serif;font-size:42px;font-weight:700;color:var(--t1);letter-spacing:3px;text-transform:none;line-height:1;margin-bottom:28px;}
 .ob-google-wrap{position:relative;width:100%;max-width:280px;margin-top:24px;}
 .ob-google-wrap>div{position:absolute!important;opacity:0!important;pointer-events:none!important;width:100%!important;height:100%!important;}
 .ob-google-btn{width:100%;padding:15px 24px;border-radius:14px;border:1px solid rgba(0,0,0,0.08);background:rgba(255,255,255,0.65);backdrop-filter:blur(8px);font-family:inherit;font-size:14px;font-weight:500;color:var(--t1);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s,box-shadow .2s;letter-spacing:0.2px;}
@@ -208,7 +208,7 @@ body{display:flex;justify-content:center;align-items:center;}
 .pwa-screen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;padding-bottom:60px;transition:opacity .4s,transform .4s;}
 .pwa-screen.hidden{opacity:0;transform:scale(1.04);pointer-events:none;}
 .pwa-icon{width:166px;height:166px;margin-bottom:16px;}
-.pwa-title{font-family:'Shizuru',sans-serif;font-size:48px;font-weight:400;color:var(--t1);letter-spacing:8px;text-transform:uppercase;line-height:1;margin-bottom:28px;}
+.pwa-title{font-family:'Quicksand',sans-serif;font-size:42px;font-weight:700;color:var(--t1);letter-spacing:3px;text-transform:none;line-height:1;margin-bottom:28px;}
 .pwa-steps{width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px;margin-bottom:36px;}
 .pwa-step{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.65);border-radius:14px;padding:13px 16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.6);}
 .pwa-step-icon{width:36px;height:36px;border-radius:10px;background:var(--t1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;}
@@ -342,7 +342,7 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
     alt: "Boba"
   }), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
-  }, "Boba"), /*#__PURE__*/React.createElement("div", {
+  }, "boba"), /*#__PURE__*/React.createElement("div", {
     className: "ob-google-wrap"
   }, /*#__PURE__*/React.createElement("div", {
     ref: googleButtonRef
@@ -2159,7 +2159,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(
 
 <div class="pwa-screen" id="pwaScreen" oncontextmenu="return false">
   <img src="/Boba.png" class="pwa-icon" alt="Boba"/>
-  <div class="pwa-title">Boba</div>
+  <div class="pwa-title">boba</div>
 
   <!-- iOS steps -->
   <div id="iosWrap" style="display:none">
