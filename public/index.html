@@ -220,6 +220,27 @@ body{display:flex;justify-content:center;align-items:center;}
 .pwa-msg{font-size:13px;color:var(--t3);text-align:center;margin-bottom:28px;line-height:1.5;max-width:280px;}
 .pwa-desktop-wrap{display:flex;flex-direction:column;align-items:center;width:100%;}
 
+/* Drum Pad Area */
+.drum-pad-area{display:flex;align-items:stretch;gap:8px;padding:0 20px;width:280px;}
+.drum-pad{flex:1;aspect-ratio:1;max-height:140px;border-radius:16px;background:linear-gradient(145deg,rgba(255,255,255,0.5),rgba(0,0,0,0.03));border:1.5px solid rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;touch-action:none;position:relative;overflow:hidden;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.8);}
+.drum-pad.active{background:linear-gradient(145deg,rgba(255,255,255,0.3),rgba(0,0,0,0.08));box-shadow:inset 0 2px 6px rgba(0,0,0,0.12);}
+.drum-pad-wave{position:absolute;inset:12px;display:flex;align-items:center;gap:1px;pointer-events:none;opacity:0.25;}
+.drum-pad-wave .bar{flex:1;background:var(--t2);border-radius:1px;min-width:2px;}
+.drum-pad-scrub{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);pointer-events:none;z-index:2;}
+.drum-pad-pitch{position:absolute;right:8px;top:8px;bottom:8px;width:28px;background:rgba(0,0,0,0.05);border-radius:6px;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .15s;}
+.drum-pad-pitch.visible{opacity:1;}
+.drum-pad-pitch-mark{width:20px;height:4px;background:var(--accent);border-radius:2px;position:absolute;}
+.pad-side-btns{display:flex;flex-direction:column;gap:6px;justify-content:center;}
+.pad-side-btn{width:42px;height:42px;border-radius:12px;border:1.5px solid rgba(0,0,0,0.06);background:var(--chrome);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);box-shadow:0 1px 4px rgba(0,0,0,0.06);transition:all .12s;}
+.pad-side-btn:active{transform:scale(0.94);}
+.pad-side-btn.fx-on{border-color:var(--accent);color:var(--accent);}
+.pad-side-btn svg{width:18px;height:18px;}
+.vp-record{width:46px;padding:0;}
+.vp-record.recording{background:linear-gradient(180deg,#D42B40 0%,#B22030 100%) !important;color:white !important;}
+@keyframes rec-pulse{0%,100%{box-shadow:0 0 0 0 rgba(212,43,64,0.3);}50%{box-shadow:0 0 0 8px rgba(212,43,64,0);}}
+.vp-record.recording{animation:rec-pulse 1s infinite;}
+.rec-layer-arc{pointer-events:none;}
+
 </style>
 </head>
 <body>
@@ -241,6 +262,7 @@ const SONGS = [{
 const TN = ["Drums", "Bass", "Fill", "Vocal"];
 const TC = ["#8B7355", "#A0607A", "#4A9E98", "#7B52B0"];
 const DISC_COLORS = ["#1A1A1E", "#8B2252", "#1B5D7E", "#6B4422", "#3E1A5B", "#9B2222", "#1A6A3E", "#5A5A66"];
+const REC_COLORS = ['#7B52B0', '#E8963E', '#4A9E98', '#D42B40', '#5B8ED4', '#8B7355', '#C75B8E', '#4CAF50'];
 const LABEL_R = 62;
 const DISC_R = 168;
 const RING_W = (DISC_R - LABEL_R) / 4;
@@ -261,21 +283,6 @@ const FEED = [{
   likes: 0,
   comments: 0
 }];
-const SAMPLES = {};
-SONGS.forEach((s, i) => {
-  const count = 3 + Math.floor((i * 37 + 13) % 4);
-  const segs = [];
-  for (let j = 0; j < count; j++) {
-    const bars = [];
-    for (let k = 0; k < 7; k++) bars.push(2 + (i * 13 + j * 7 + k * 5) % 12);
-    segs.push({
-      id: j,
-      label: j === 0 ? "Intro" : j === count - 1 ? "Outro" : "Loop " + j,
-      bars
-    });
-  }
-  SAMPLES[i] = segs;
-});
 function fmtK(n) {
   return n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : String(n);
 }
@@ -428,14 +435,12 @@ function App() {
     title: ''
   }]);
   const [editingTitle, setEditingTitle] = useState(false);
-  const [sfx, setSfx] = useState(false);
   const [prof, setProf] = useState(false);
   const [lblDlg, setLblDlg] = useState(false);
   const [lblMode, setLblMode] = useState('upload'); /* 'upload' or 'generate' */
   const [lblPrompt, setLblPrompt] = useState('');
   const [lblGen, setLblGen] = useState(false); /* generating */
   const [ptab, setPtab] = useState(0);
-  const [sq, setSq] = useState('');
   /* loops removed */
   const [feedSearch, setFeedSearch] = useState('');
   const [fi, setFi] = useState(0);
@@ -453,6 +458,14 @@ function App() {
   const [comments, setComments] = useState({});
   const [commentText, setCommentText] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recLayers, setRecLayers] = useState([]);
+  const [recLoopCount, setRecLoopCount] = useState(0);
+  const [padPitch, setPadPitch] = useState(1.0);
+  const [showPitch, setShowPitch] = useState(false);
+  const [padActive, setPadActive] = useState(false);
+  const [scrubPos, setScrubPos] = useState(0);
+  const [padFx, setPadFx] = useState(false);
   const dr = useRef(false);
   const lr = useRef(null);
   const touchRef = useRef({
@@ -471,6 +484,11 @@ function App() {
   const dragVelRef = useRef(0); /* deg/sec of last drag movement */
   const dragLastTRef = useRef(0); /* timestamp of last drag move */
   const dragLastARef = useRef(0); /* angle at last drag move */
+  const padTouchRef = useRef(null);
+  const padSourceRef = useRef(null);
+  const padGainRef = useRef(null);
+  const recStartTimeRef = useRef(null);
+  const recordingRef = useRef(false);
 
   // Web Audio API setup
   const audioContextRef = useRef(null);
@@ -548,6 +566,126 @@ function App() {
     audioSourcesRef.current = {};
   }, []);
 
+  const playPadSample = useCallback((continuous) => {
+    const ctx = audioContextRef.current;
+    const buf = audioBuffersRef.current[st];
+    if (!ctx || !buf || st < 0) return;
+    if (padSourceRef.current) { try { padSourceRef.current.stop(); } catch(e) {} }
+    const source = ctx.createBufferSource();
+    source.buffer = buf;
+    source.playbackRate.value = padPitch;
+    source.loop = continuous;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.5;
+    source.connect(gain);
+    gain.connect(ctx.destination);
+    const offset = scrubPos * buf.duration;
+    source.start(0, offset);
+    padSourceRef.current = source;
+    padGainRef.current = gain;
+    setPadActive(true);
+    source.onended = () => { if (!continuous) setPadActive(false); };
+  }, [st, padPitch, scrubPos]);
+
+  const stopPadSample = useCallback(() => {
+    if (padSourceRef.current) { try { padSourceRef.current.stop(); } catch(e) {} padSourceRef.current = null; }
+    setPadActive(false);
+  }, []);
+
+  const startRecording = useCallback(() => {
+    if (pl) { setPl(false); }
+    setRecording(true);
+    recStartTimeRef.current = performance.now();
+    setRecLoopCount(0);
+    const dur = audioDurationRef.current || 6;
+    angVelRef.current = 360 / dur;
+  }, [pl]);
+
+  const stopRecording = useCallback(() => {
+    setRecording(false);
+  }, []);
+
+  const registerRecHit = useCallback(() => {
+    if (!recStartTimeRef.current) return;
+    const elapsed = performance.now() - recStartTimeRef.current;
+    const dur = (audioDurationRef.current || 6) * 1000;
+    const angle = ((elapsed / dur) * 360) % 360;
+    const currentLoop = Math.floor(elapsed / dur);
+    setRecLoopCount(prev => {
+      const newCount = Math.max(prev, currentLoop);
+      return newCount;
+    });
+    setRecLayers(prev => {
+      const updated = [...prev];
+      const loopIdx = currentLoop;
+      if (!updated[loopIdx]) {
+        updated[loopIdx] = { color: REC_COLORS[loopIdx % REC_COLORS.length], hits: [] };
+      }
+      updated[loopIdx].hits.push({ angle, time: elapsed });
+      return updated;
+    });
+  }, []);
+
+  const onPadTouchStart = useCallback((e) => {
+    e.preventDefault();
+    const touch = e.touches ? e.touches[0] : e;
+    padTouchRef.current = {
+      startX: touch.clientX, startY: touch.clientY,
+      startTime: performance.now(), moved: false, direction: null, holding: false,
+      holdTimer: setTimeout(() => {
+        if (padTouchRef.current && !padTouchRef.current.moved) {
+          padTouchRef.current.holding = true;
+          playPadSample(true);
+        }
+      }, 200)
+    };
+    if (recordingRef.current) registerRecHit();
+  }, [playPadSample, registerRecHit]);
+
+  const onPadTouchMove = useCallback((e) => {
+    e.preventDefault();
+    if (!padTouchRef.current) return;
+    const touch = e.touches ? e.touches[0] : e;
+    const dx = touch.clientX - padTouchRef.current.startX;
+    const dy = touch.clientY - padTouchRef.current.startY;
+    if (!padTouchRef.current.direction && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+      padTouchRef.current.moved = true;
+      clearTimeout(padTouchRef.current.holdTimer);
+      padTouchRef.current.direction = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+    }
+    if (padTouchRef.current.direction === 'h') {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const pos = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+      setScrubPos(pos);
+    } else if (padTouchRef.current.direction === 'v') {
+      const range = 200;
+      let raw = 1.0 - (dy / range);
+      if (Math.abs(raw - 1.0) < 0.08) raw = 1.0;
+      raw = Math.max(0.5, Math.min(2.0, raw));
+      setPadPitch(raw);
+      setShowPitch(true);
+    }
+  }, []);
+
+  const onPadTouchEnd = useCallback((e) => {
+    if (!padTouchRef.current) return;
+    clearTimeout(padTouchRef.current.holdTimer);
+    if (padTouchRef.current.holding) {
+      stopPadSample();
+    } else if (!padTouchRef.current.moved) {
+      playPadSample(false);
+    }
+    if (padTouchRef.current.direction === 'v') setShowPitch(false);
+    padTouchRef.current = null;
+  }, [playPadSample, stopPadSample]);
+
+  const togglePadFx = useCallback(() => setPadFx(p => !p), []);
+  const lastLayerColor = recLayers.length > 0 ? recLayers[recLayers.length - 1]?.color : null;
+  const removeLastLayer = useCallback(() => {
+    if (recLayers.length === 0) return;
+    setRecLayers(prev => prev.slice(0, -1));
+  }, [recLayers]);
+
   const feedItem = feedData[fi];
   const feedSlide = feedItem.slides[fsi] || feedItem.slides[0];
   const disc = mm ? discs[ad] : {
@@ -594,10 +732,16 @@ function App() {
     plRef.current = pl;
   }, [pl]);
 
+  useEffect(() => { recordingRef.current = recording; }, [recording]);
+
   /* RAF rotation engine */
   useEffect(() => {
     const PLAY_SPEED = 90; /* deg/sec ≈ 33 RPM */
     function targetSpeed() {
+      if (recordingRef.current) {
+        const dur = audioDurationRef.current || 6;
+        return 360 / dur;
+      }
       return plRef.current ? PLAY_SPEED : 0;
     }
     function tick(ts) {
@@ -743,35 +887,6 @@ function App() {
       return n;
     });
   };
-  const ps = si => {
-    if (st < 0) return;
-    setDiscs(p => {
-      const n = [...p];
-      const d = {
-        ...n[ad],
-        ts: [...n[ad].ts],
-        samps: [...n[ad].samps],
-        cuts: [...n[ad].cuts]
-      };
-      d.ts[st] = si;
-      d.samps[st] = 0;
-      d.cuts[st] = [0, 1];
-      n[ad] = d;
-      return n;
-    });
-  };
-  const setSamp = si => {
-    setDiscs(p => {
-      const n = [...p];
-      const d = {
-        ...n[ad],
-        samps: [...n[ad].samps]
-      };
-      d.samps[st] = si;
-      n[ad] = d;
-      return n;
-    });
-  };
   const setColor = ci => {
     setDiscs(p => {
       const n = [...p];
@@ -857,8 +972,6 @@ function App() {
     };
     r.readAsDataURL(f);
   };
-  const flt = SONGS.filter(s => !sq || s.t.toLowerCase().includes(sq.toLowerCase()) || s.a.toLowerCase().includes(sq.toLowerCase()));
-
   /* Swipe handling — feed: vertical swipe changes feed items, horizontal swipe changes slides */
   /* Mix mode: horizontal swipe changes disc slides (with animation) */
   const onTS = e => {
@@ -911,129 +1024,6 @@ function App() {
     }
   };
 
-  /* Cut handle drag */
-  const onCutDown = (ringIdx, handle, e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    const onMove = ev => {
-      if (!svgRef.current) return;
-      const rect = svgRef.current.getBoundingClientRect();
-      const scale = SVS / rect.width;
-      const mx = ((ev.touches ? ev.touches[0].clientX : ev.clientX) - rect.left) * scale;
-      const my = ((ev.touches ? ev.touches[0].clientY : ev.clientY) - rect.top) * scale;
-      let angle = Math.atan2(my - CY, mx - CX) / (2 * Math.PI);
-      if (angle < 0) angle += 1;
-      setDiscs(prev => {
-        const n = [...prev];
-        const d = {
-          ...n[ad],
-          cuts: n[ad].cuts.map(c => [...c])
-        };
-        const c = d.cuts[ringIdx];
-        if (handle === 'start') {
-          c[0] = Math.max(0, Math.min(angle, c[1] - 0.03));
-        } else {
-          c[1] = Math.min(1, Math.max(angle, c[0] + 0.03));
-        }
-        n[ad] = d;
-        return n;
-      });
-      ev.preventDefault();
-    };
-    const onUp = () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-      window.removeEventListener('touchmove', onMove);
-      window.removeEventListener('touchend', onUp);
-    };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    window.addEventListener('touchmove', onMove, {
-      passive: false
-    });
-    window.addEventListener('touchend', onUp);
-  };
-  const onTlDrag = e => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!tlRef.current || st < 0) return;
-    const rect = tlRef.current.getBoundingClientRect();
-    const startX = e.touches ? e.touches[0].clientX : e.clientX;
-    const startCut = [...disc.cuts[st]];
-    const w = startCut[1] - startCut[0];
-    function onMove(ev) {
-      const cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
-      const delta = (cx - startX) / rect.width;
-      let s = Math.max(0, Math.min(1 - w, startCut[0] + delta));
-      setDiscs(p => {
-        const n = [...p];
-        const d = {
-          ...n[ad],
-          cuts: n[ad].cuts.map(c => [...c])
-        };
-        d.cuts[st] = [s, s + w];
-        n[ad] = d;
-        return n;
-      });
-      ev.preventDefault();
-    }
-    function onUp() {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-      window.removeEventListener('touchmove', onMove);
-      window.removeEventListener('touchend', onUp);
-    }
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    window.addEventListener('touchmove', onMove, {
-      passive: false
-    });
-    window.addEventListener('touchend', onUp);
-  };
-  const onTlHandleDrag = (e, handle) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!tlRef.current || st < 0) return;
-    const rect = tlRef.current.getBoundingClientRect();
-    function onMove(ev) {
-      const cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
-      const frac = Math.max(0, Math.min(1, (cx - rect.left) / rect.width));
-      setDiscs(p => {
-        const n = [...p];
-        const d = {
-          ...n[ad],
-          cuts: n[ad].cuts.map(c => [...c])
-        };
-        if (handle === 'start') {
-          d.cuts[st][0] = Math.min(frac, d.cuts[st][1] - 0.05);
-        } else {
-          d.cuts[st][1] = Math.max(frac, d.cuts[st][0] + 0.05);
-        }
-        n[ad] = d;
-        return n;
-      });
-      ev.preventDefault();
-    }
-    function onUp() {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-      window.removeEventListener('touchmove', onMove);
-      window.removeEventListener('touchend', onUp);
-    }
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    window.addEventListener('touchmove', onMove, {
-      passive: false
-    });
-    window.addEventListener('touchend', onUp);
-  };
-  const handlePos = (cx, cy, r, frac) => {
-    const a = frac * 2 * Math.PI - Math.PI / 2;
-    return {
-      x: cx + r * Math.cos(a),
-      y: cy + r * Math.sin(a)
-    };
-  };
 
   /* Grooves */
   const grooves = [];
@@ -1143,7 +1133,26 @@ function App() {
     fill: "none",
     stroke: `rgba(255,255,255,${i % 3 === 0 ? 0.025 : 0.01})`,
     strokeWidth: 0.3
-  })), RINGS.map(([mr, sw], ti) => {
+  })), recLayers.map(function(layer, li) {
+    return layer && layer.hits.map(function(hit, hi) {
+      var ringData = RINGS[st] || RINGS[0];
+      var mr = ringData[0], sw = ringData[1];
+      var startDeg = hit.angle - 5;
+      var endDeg = hit.angle + 5;
+      var startRad = (startDeg - 90) * Math.PI / 180;
+      var endRad = (endDeg - 90) * Math.PI / 180;
+      var x1 = CX + mr * Math.cos(startRad);
+      var y1 = CY + mr * Math.sin(startRad);
+      var x2 = CX + mr * Math.cos(endRad);
+      var y2 = CY + mr * Math.sin(endRad);
+      return React.createElement("path", {
+        key: "rec-" + li + "-" + hi,
+        d: "M " + x1 + " " + y1 + " A " + mr + " " + mr + " 0 0 1 " + x2 + " " + y2,
+        fill: "none", stroke: layer.color, strokeWidth: sw * 0.8, opacity: 0.7,
+        className: "rec-layer-arc"
+      });
+    });
+  }), RINGS.map(([mr, sw], ti) => {
     const src = disc.ts[ti];
     const sel = st === ti;
     const isEmpty = src === -1;
@@ -1386,43 +1395,52 @@ function App() {
       e.stopPropagation();
       setFsi(i);
     }
-  }))), po && /*#__PURE__*/React.createElement("div", {
-    className: "timeline-editor"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "tl-label"
-  }, TN[st]), /*#__PURE__*/React.createElement("div", {
-    className: "tl-track",
-    ref: tlRef
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "tl-bg"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "tl-region",
-    style: {
-      left: disc.cuts[st][0] * 100 + '%',
-      width: (disc.cuts[st][1] - disc.cuts[st][0]) * 100 + '%',
-      background: TC[st]
-    },
-    onMouseDown: onTlDrag,
-    onTouchStart: onTlDrag
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "tl-handle tl-handle-l",
-    onMouseDown: e => onTlHandleDrag(e, 'start'),
-    onTouchStart: e => onTlHandleDrag(e, 'start')
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "tl-handle tl-handle-r",
-    onMouseDown: e => onTlHandleDrag(e, 'end'),
-    onTouchStart: e => onTlHandleDrag(e, 'end')
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "tl-wave"
-  }, Array.from({
-    length: 40
-  }).map((_, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "tl-bar",
-    style: {
-      height: 3 + (i * 7 + 3) % 10 + 'px'
-    }
-  }))))), !mm && /*#__PURE__*/React.createElement("div", {
+  }))), po && React.createElement("div", { className: "drum-pad-area" },
+  React.createElement("div", {
+    className: "drum-pad" + (padActive ? " active" : ""),
+    onTouchStart: onPadTouchStart,
+    onTouchMove: onPadTouchMove,
+    onTouchEnd: onPadTouchEnd,
+    onMouseDown: onPadTouchStart,
+    onMouseMove: onPadTouchMove,
+    onMouseUp: onPadTouchEnd
+  },
+    React.createElement("div", { className: "drum-pad-wave" },
+      Array.from({length: 32}, function(_, i) { return React.createElement("div", {
+        key: i, className: "bar",
+        style: { height: (20 + Math.sin(i * 0.5 + (st || 0)) * 60 + Math.random() * 20) + "%" }
+      }); })
+    ),
+    React.createElement("div", { className: "drum-pad-scrub", style: { left: (scrubPos * 100) + "%" } }),
+    React.createElement("div", { className: "drum-pad-pitch" + (showPitch ? " visible" : "") },
+      React.createElement("div", { className: "drum-pad-pitch-mark", style: { bottom: ((padPitch - 0.5) / 1.5 * 100) + "%" } })
+    ),
+    React.createElement("div", {
+      style: { position: 'absolute', bottom: 8, left: 12, fontSize: '9px', fontWeight: 600, color: 'var(--t3)', letterSpacing: '1px', textTransform: 'uppercase', pointerEvents: 'none' }
+    }, TN[st] || '')
+  ),
+  React.createElement("div", { className: "pad-side-btns" },
+    React.createElement("button", {
+      className: "pad-side-btn" + (padFx ? " fx-on" : ""),
+      onClick: togglePadFx
+    }, React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+      React.createElement("path", { d: "M12 2v20M2 12h20M6 6l12 12M18 6L6 18" })
+    )),
+    React.createElement("button", {
+      className: "pad-side-btn",
+      style: lastLayerColor ? { borderColor: lastLayerColor, color: lastLayerColor } : {},
+      onClick: removeLastLayer
+    }, React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+      React.createElement("path", { d: "M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" })
+    )),
+    React.createElement("button", {
+      className: "pad-side-btn",
+      onClick: function() {}
+    }, React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+      React.createElement("path", { d: "M2 12c0 0 2-4 5-4s3 8 5 8 2-8 5-8 5 4 5 4" })
+    ))
+  )
+), !mm && /*#__PURE__*/React.createElement("div", {
     className: "feed-social"
   }, /*#__PURE__*/React.createElement("div", {
     className: "fs-item" + (likedPosts[fi] ? " liked" : ""),
@@ -1480,104 +1498,7 @@ function App() {
       display: 'none'
     },
     onChange: onUp
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "picker" + (po ? " open" : " shut")
-  }, st >= 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: "pk-head"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "pk-dot",
-    style: {
-      background: TC[st]
-    }
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "pk-name"
-  }, TN[st]), /*#__PURE__*/React.createElement("button", {
-    className: "pk-fx" + (disc.fx && disc.fx.size > 0 ? " has" : ""),
-    onClick: () => setSfx(true)
-  }, "FX", disc.fx && disc.fx.size > 0 ? " \u00B7 " + disc.fx.size : ""), /*#__PURE__*/React.createElement("button", {
-    className: "pk-x",
-    onClick: () => setSt(-1)
-  }, "\u2715")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: "relative"
-    }
-  }, /*#__PURE__*/React.createElement("svg", {
-    style: {
-      position: "absolute",
-      left: 30,
-      top: 9,
-      zIndex: 1
-    },
-    width: "12",
-    height: "12",
-    viewBox: "0 0 16 16",
-    fill: "none",
-    stroke: "var(--t4)",
-    strokeWidth: "2"
-  }, /*#__PURE__*/React.createElement("circle", {
-    cx: "6.5",
-    cy: "6.5",
-    r: "5"
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: "10",
-    y1: "10",
-    x2: "14",
-    y2: "14"
-  })), /*#__PURE__*/React.createElement("input", {
-    className: "pk-search",
-    placeholder: "Search album, artists or song",
-    value: sq,
-    onChange: e => setSq(e.target.value)
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "pk-covs"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "pk-empty" + (disc.ts[st] === -1 ? " on" : ""),
-    onClick: () => ps(-1)
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "16",
-    height: "16",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "#999",
-    strokeWidth: "1.5"
-  }, /*#__PURE__*/React.createElement("circle", {
-    cx: "12",
-    cy: "12",
-    r: "10"
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: "8",
-    y1: "12",
-    x2: "16",
-    y2: "12"
-  }))), flt.map(s => {
-    const si = SONGS.indexOf(s);
-    const on = disc.ts[st] === si;
-    return /*#__PURE__*/React.createElement("div", {
-      key: si,
-      className: "pk-c" + (on ? " on" : ""),
-      onClick: () => ps(si)
-    }, /*#__PURE__*/React.createElement("img", {
-      src: C[si],
-      alt: ""
-    }));
-  })), disc.ts[st] >= 0 && SAMPLES[disc.ts[st]] && /*#__PURE__*/React.createElement("div", {
-    className: "samples-row"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "samples-label"
-  }, "Samples"), /*#__PURE__*/React.createElement("div", {
-    className: "samples-list"
-  }, SAMPLES[disc.ts[st]].map((seg, si) => /*#__PURE__*/React.createElement("button", {
-    key: si,
-    className: "samp" + (disc.samps && disc.samps[st] === si ? " on" : ""),
-    onClick: () => setSamp(si)
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "samp-bar"
-  }, seg.bars.map((h, bi) => /*#__PURE__*/React.createElement("span", {
-    key: bi,
-    style: {
-      height: h + "px"
-    }
-  }))), seg.label)))))), lblDlg && /*#__PURE__*/React.createElement("div", {
+  })), lblDlg && /*#__PURE__*/React.createElement("div", {
     className: "lbl-dialog",
     onClick: () => setLblDlg(false)
   }, /*#__PURE__*/React.createElement("div", {
@@ -1744,7 +1665,19 @@ function App() {
     style: { padding: '10px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', opacity: (commentText.trim() && !commentLoading) ? 1 : 0.5 }
   }, "Send")))), /*#__PURE__*/React.createElement("div", {
     className: "btn-bar"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, po ?
+  React.createElement("button", {
+    className: "vp-btn vp-record" + (recording ? " recording" : ""),
+    onClick: function() { recording ? stopRecording() : startRecording(); }
+  }, recording ?
+    React.createElement("svg", { width: "15", height: "15", viewBox: "0 0 16 16" },
+      React.createElement("rect", { x: 4, y: 4, width: 8, height: 8, rx: 1.5, fill: "currentColor" })
+    ) :
+    React.createElement("svg", { width: "15", height: "15", viewBox: "0 0 16 16" },
+      React.createElement("circle", { cx: 8, cy: 8, r: 5, fill: "#D42B40" })
+    )
+  )
+: /*#__PURE__*/React.createElement("button", {
     className: "vp-btn vp-play" + (pl ? " pressed" : ""),
     onClick: () => {
       const newPl = !pl;
@@ -1969,22 +1902,7 @@ function App() {
   }, /*#__PURE__*/React.createElement("img", {
     src: C[f.slides[0].s[0]],
     alt: ""
-  })))))))), /*#__PURE__*/React.createElement("div", {
-    className: "fx-ov" + (sfx ? " open" : "")
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fx-hd"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "fx-ti"
-  }, "Effects"), /*#__PURE__*/React.createElement("button", {
-    className: "fx-x",
-    onClick: () => setSfx(false)
-  }, "\u2715")), /*#__PURE__*/React.createElement("div", {
-    className: "fx-ls"
-  }, EFX.map(fx => /*#__PURE__*/React.createElement("button", {
-    key: fx,
-    className: "fx-ch" + (disc.fx && disc.fx.has(fx) ? " on" : ""),
-    onClick: () => tf(fx)
-  }, fx)))), !user && /*#__PURE__*/React.createElement(GoogleSignInScreen, {
+  })))))))), !user && /*#__PURE__*/React.createElement(GoogleSignInScreen, {
     setUser,
     setNeedsName,
     setDisplayName
