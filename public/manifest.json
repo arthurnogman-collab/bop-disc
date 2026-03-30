@@ -1,7 +1,7 @@
 {
-  "name": "Wax",
-  "short_name": "Wax",
-  "description": "Vinyl remix app — mix tracks from classic records",
+  "name": "Play",
+  "short_name": "Play",
+  "description": "Remix app — mix tracks from classic records",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#EDEDF1",
