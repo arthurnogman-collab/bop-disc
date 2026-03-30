@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Play</title>
+<title>Wax</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Play">
+<meta name="apple-mobile-web-app-title" content="Wax">
 <meta name="theme-color" content="#EDEDF1">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Shizuru&display=swap" rel="stylesheet">
@@ -189,8 +189,8 @@ body{display:flex;justify-content:center;align-items:center;}
 
 /* Onboarding Screen */
 .ob-screen{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
-.ob-icon{width:48px;height:48px;margin-bottom:20px;}
-.ob-title{font-family:'Shizuru',sans-serif;font-size:52px;font-weight:400;color:var(--t1);letter-spacing:8px;text-transform:uppercase;line-height:1;margin-bottom:40px;}
+.ob-icon{width:64px;height:64px;margin-bottom:16px;}
+.ob-title{font-family:'Shizuru',sans-serif;font-size:48px;font-weight:400;color:var(--t1);letter-spacing:8px;text-transform:uppercase;line-height:1;margin-bottom:28px;}
 .ob-google-wrap{position:relative;width:100%;max-width:280px;margin-top:24px;}
 .ob-google-wrap>div{position:absolute!important;opacity:0!important;pointer-events:none!important;width:100%!important;height:100%!important;}
 .ob-google-btn{width:100%;padding:15px 24px;border-radius:14px;border:1px solid rgba(0,0,0,0.08);background:rgba(255,255,255,0.65);backdrop-filter:blur(8px);font-family:inherit;font-size:14px;font-weight:500;color:var(--t1);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s,box-shadow .2s;letter-spacing:0.2px;}
@@ -205,10 +205,10 @@ body{display:flex;justify-content:center;align-items:center;}
 .ob-btn:disabled{opacity:0.3;}
 
 /* PWA Install Screen */
-.pwa-screen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;padding-bottom:100px;transition:opacity .4s,transform .4s;}
+.pwa-screen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;padding-bottom:60px;transition:opacity .4s,transform .4s;}
 .pwa-screen.hidden{opacity:0;transform:scale(1.04);pointer-events:none;}
-.pwa-icon{width:48px;height:48px;margin-bottom:20px;}
-.pwa-title{font-family:'Shizuru',sans-serif;font-size:52px;font-weight:400;color:var(--t1);letter-spacing:8px;text-transform:uppercase;line-height:1;margin-bottom:40px;}
+.pwa-icon{width:64px;height:64px;margin-bottom:16px;}
+.pwa-title{font-family:'Shizuru',sans-serif;font-size:48px;font-weight:400;color:var(--t1);letter-spacing:8px;text-transform:uppercase;line-height:1;margin-bottom:28px;}
 .pwa-steps{width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px;margin-bottom:36px;}
 .pwa-step{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.65);border-radius:14px;padding:13px 16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.6);}
 .pwa-step-icon{width:36px;height:36px;border-radius:10px;background:var(--t1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;}
@@ -342,10 +342,10 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
   }, /*#__PURE__*/React.createElement("img", {
     src: "/icon.svg",
     className: "ob-icon",
-    alt: "Play"
+    alt: "Wax"
   }), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
-  }, "Play"), /*#__PURE__*/React.createElement("div", {
+  }, "Wax"), /*#__PURE__*/React.createElement("div", {
     className: "ob-google-wrap"
   }, /*#__PURE__*/React.createElement("div", {
     ref: googleButtonRef
@@ -373,7 +373,7 @@ function DisplayNameScreen({ user, setUser, displayName, setDisplayName, setNeed
   }, /*#__PURE__*/React.createElement("img", {
     src: "/icon.svg",
     className: "ob-icon",
-    alt: "Play"
+    alt: "Wax"
   }), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
   }, "Choose Display Name"), /*#__PURE__*/React.createElement("div", {
@@ -1431,7 +1431,7 @@ function App() {
     fontSize: "7",
     fontWeight: "700",
     letterSpacing: "2.5"
-  }, "Play"), /*#__PURE__*/React.createElement("circle", {
+  }, "Wax"), /*#__PURE__*/React.createElement("circle", {
     cx: CX,
     cy: CY,
     r: "2.5",
@@ -2060,12 +2060,12 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary, null, React.createElement(App, null)));</script>
 
 <div class="pwa-screen" id="pwaScreen" oncontextmenu="return false">
-  <img src="/icon.svg" class="pwa-icon" alt="Play"/>
-  <div class="pwa-title">Play</div>
+  <img src="/icon.svg" class="pwa-icon" alt="Wax"/>
+  <div class="pwa-title">Wax</div>
 
   <!-- iOS steps -->
   <div id="iosWrap" style="display:none">
-  <div class="pwa-msg">Play only works in app mode</div>
+  <div class="pwa-msg">Wax only works in app mode</div>
   <div class="pwa-steps" id="iosSteps">
     <div class="pwa-step">
       <div class="pwa-step-icon">
@@ -2098,13 +2098,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(
 
   <!-- Android install button -->
   <div id="androidWrap" style="display:none" class="pwa-desktop-wrap">
-    <div class="pwa-msg">Play only works in app mode</div>
+    <div class="pwa-msg">Wax only works in app mode</div>
     <button class="pwa-install-native" id="androidInstallBtn" onclick="triggerAndroidInstall()">Install</button>
   </div>
 
   <!-- Desktop install -->
   <div id="desktopWrap" style="display:none" class="pwa-desktop-wrap">
-    <div class="pwa-msg">Play only works in app mode.<br>Install it to your device to continue.</div>
+    <div class="pwa-msg">Wax only works in app mode.<br>Install it to your device to continue.</div>
     <button class="pwa-install-native" id="desktopInstallBtn" onclick="triggerDesktopInstall()">Install</button>
   </div>
 

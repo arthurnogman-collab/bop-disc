@@ -1,6 +1,6 @@
 {
-  "name": "Play",
-  "short_name": "Play",
+  "name": "Wax",
+  "short_name": "Wax",
   "description": "Remix app — mix tracks from classic records",
   "start_url": "/",
   "display": "standalone",
