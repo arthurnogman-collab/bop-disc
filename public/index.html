@@ -224,9 +224,9 @@ body{display:flex;justify-content:center;align-items:center;}
 .drum-pad-area{display:flex;align-items:stretch;gap:8px;padding:0 20px;width:280px;}
 .drum-pad{flex:1;aspect-ratio:1;max-height:140px;border-radius:16px;background:linear-gradient(145deg,rgba(255,255,255,0.5),rgba(0,0,0,0.03));border:1.5px solid rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;touch-action:none;position:relative;overflow:hidden;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.8);}
 .drum-pad.active{background:linear-gradient(145deg,rgba(255,255,255,0.3),rgba(0,0,0,0.08));box-shadow:inset 0 2px 6px rgba(0,0,0,0.12);}
-.drum-pad-wave{position:absolute;inset:12px;display:flex;align-items:center;gap:1px;pointer-events:none;opacity:0.25;}
-.drum-pad-wave .bar{flex:1;background:var(--t2);border-radius:1px;min-width:2px;}
-.drum-pad-scrub{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);pointer-events:none;z-index:2;}
+.drum-pad-wave{position:absolute;inset:12px;overflow:hidden;pointer-events:none;opacity:0.4;}
+.drum-pad-wave-inner{position:absolute;top:0;bottom:0;display:flex;align-items:center;}
+.drum-pad-wave-inner .bar{flex:1;background:var(--t2);border-radius:1px;min-width:1px;}
 .drum-pad-pitch{position:absolute;right:8px;top:8px;bottom:8px;width:28px;background:rgba(0,0,0,0.05);border-radius:6px;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .15s;}
 .drum-pad-pitch.visible{opacity:1;}
 .drum-pad-pitch-mark{width:20px;height:4px;background:var(--accent);border-radius:2px;position:absolute;}
@@ -489,6 +489,13 @@ function App() {
   const padGainRef = useRef(null);
   const recStartTimeRef = useRef(null);
   const recordingRef = useRef(false);
+  const reversedBuffersRef = useRef({});
+  const scratchSourceRef = useRef(null);
+  const scratchGainRef = useRef(null);
+  const scratchRevSourceRef = useRef(null);
+  const scratchRevGainRef = useRef(null);
+  const [waveformData, setWaveformData] = useState([]);
+  const [audioLoaded, setAudioLoaded] = useState(false);
 
   // Web Audio API setup
   const audioContextRef = useRef(null);
@@ -515,7 +522,18 @@ function App() {
             const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
             audioBuffersRef.current[i] = audioBuffer;
             audioDurationRef.current = Math.max(audioDurationRef.current, audioBuffer.duration);
+            // Create reversed buffer for scratch
+            const rev = ctx.createBuffer(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate);
+            for (let ch = 0; ch < audioBuffer.numberOfChannels; ch++) {
+              const fwd = audioBuffer.getChannelData(ch);
+              const dst = rev.getChannelData(ch);
+              for (let j = 0; j < fwd.length; j++) {
+                dst[j] = fwd[fwd.length - 1 - j];
+              }
+            }
+            reversedBuffersRef.current[i] = rev;
           }
+          setAudioLoaded(true);
         } catch (e) {
           console.error('Error loading audio:', e);
         }
@@ -523,7 +541,32 @@ function App() {
     };
     initAudio();
   }, []);
-  
+
+  // Compute waveform peaks when selected track changes or audio loads
+  useEffect(() => {
+    if (st >= 0 && audioBuffersRef.current[st]) {
+      const buf = audioBuffersRef.current[st];
+      const data = buf.getChannelData(0);
+      const numBars = 200;
+      const samplesPerBar = Math.floor(data.length / numBars);
+      const peaks = [];
+      for (let i = 0; i < numBars; i++) {
+        const start = i * samplesPerBar;
+        const end = Math.min(start + samplesPerBar, data.length);
+        let mx = 0;
+        for (let j = start; j < end; j++) {
+          const a = Math.abs(data[j]);
+          if (a > mx) mx = a;
+        }
+        peaks.push(mx);
+      }
+      const maxP = Math.max.apply(null, peaks.concat([0.001]));
+      setWaveformData(peaks.map(function(p) { return p / maxP; }));
+    } else {
+      setWaveformData([]);
+    }
+  }, [st, audioLoaded]);
+
   // Handle play/pause - will be connected to actual disc state below
   const startAudioPlayback = React.useCallback((discState) => {
     const ctx = audioContextRef.current;
@@ -796,8 +839,7 @@ function App() {
     return Math.atan2(ey - cy, ex - cx) * 180 / Math.PI;
   }
   const onDiscDragStart = e => {
-    if (!mm) return; /* feed mode: don't rotate, let swipes work */
-    if (po) return; /* don't steal cut-handle drags */
+    if (po) return; /* don't steal when track selected */
     e.preventDefault();
     const startAngle = discAngleFromEvent(e);
     discDragRef.current = {
@@ -808,30 +850,99 @@ function App() {
     dragVelRef.current = 0;
     dragLastTRef.current = performance.now();
     dragLastARef.current = startAngle;
+
+    /* Start scratch audio */
+    var scratchActive = false;
+    var ctx = audioContextRef.current;
+    if (ctx) {
+      if (ctx.state === 'suspended') ctx.resume();
+      var aidx = 0; /* default to drums */
+      var buf = audioBuffersRef.current[aidx];
+      if (!buf) { /* buffers not loaded yet */ }
+      else try {
+        var fwdSrc = ctx.createBufferSource();
+        fwdSrc.buffer = buf;
+        fwdSrc.loop = true;
+        var fwdGain = ctx.createGain();
+        fwdGain.gain.value = 0;
+        fwdSrc.connect(fwdGain);
+        fwdGain.connect(ctx.destination);
+        fwdSrc.playbackRate.value = 0.01;
+        fwdSrc.start(0);
+        scratchSourceRef.current = fwdSrc;
+        scratchGainRef.current = fwdGain;
+
+        var revBuf = reversedBuffersRef.current[aidx];
+        if (revBuf) {
+          var revSrc = ctx.createBufferSource();
+          revSrc.buffer = revBuf;
+          revSrc.loop = true;
+          var revGain = ctx.createGain();
+          revGain.gain.value = 0;
+          revSrc.connect(revGain);
+          revGain.connect(ctx.destination);
+          revSrc.playbackRate.value = 0.01;
+          revSrc.start(0);
+          scratchRevSourceRef.current = revSrc;
+          scratchRevGainRef.current = revGain;
+        }
+        scratchActive = true;
+      } catch(err) { console.error('Scratch init error:', err); }
+    }
+
     function onMove(ev) {
       if (!discDragRef.current) return;
-      const now = performance.now();
-      const curAngle = discAngleFromEvent(ev);
-      const dt = (now - dragLastTRef.current) / 1000;
+      var now = performance.now();
+      var curAngle = discAngleFromEvent(ev);
+      var dt = (now - dragLastTRef.current) / 1000;
       if (dt > 0.005) {
-        /* compute instantaneous angular velocity in deg/sec */
-        let da = curAngle - dragLastARef.current;
-        /* unwrap: keep delta in [-180,180] */
+        var da = curAngle - dragLastARef.current;
         if (da > 180) da -= 360;
         if (da < -180) da += 360;
         dragVelRef.current = da / dt;
         dragLastTRef.current = now;
         dragLastARef.current = curAngle;
       }
-      const delta = curAngle - discDragRef.current.startAngle;
+      var delta = curAngle - discDragRef.current.startAngle;
       rotRef.current = discDragRef.current.startRot + delta;
-      if (svgRef.current) svgRef.current.style.transform = `rotate(${rotRef.current}deg)`;
+      if (svgRef.current) svgRef.current.style.transform = 'rotate(' + rotRef.current + 'deg)';
+
+      /* Update scratch audio */
+      if (scratchActive) {
+        var NORMAL_SPEED = 90;
+        var vel = dragVelRef.current;
+        var rate = Math.abs(vel) / NORMAL_SPEED;
+        var clampedRate = Math.max(0.01, Math.min(4, rate));
+        var vol = Math.min(0.5, rate * 0.6);
+        if (vel >= 0) {
+          if (scratchSourceRef.current) scratchSourceRef.current.playbackRate.value = clampedRate;
+          if (scratchGainRef.current) scratchGainRef.current.gain.value = vol;
+          if (scratchRevGainRef.current) scratchRevGainRef.current.gain.value = 0;
+        } else {
+          if (scratchRevSourceRef.current) scratchRevSourceRef.current.playbackRate.value = clampedRate;
+          if (scratchRevGainRef.current) scratchRevGainRef.current.gain.value = vol;
+          if (scratchGainRef.current) scratchGainRef.current.gain.value = 0;
+        }
+      }
+
       ev.preventDefault();
     }
     function onUp() {
-      /* release with the velocity measured during drag */
       angVelRef.current = dragVelRef.current;
       discDragRef.current = null;
+
+      /* Stop scratch audio */
+      if (scratchSourceRef.current) {
+        try { scratchSourceRef.current.stop(); } catch(err) {}
+        scratchSourceRef.current = null;
+      }
+      if (scratchRevSourceRef.current) {
+        try { scratchRevSourceRef.current.stop(); } catch(err) {}
+        scratchRevSourceRef.current = null;
+      }
+      scratchGainRef.current = null;
+      scratchRevGainRef.current = null;
+
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
       window.removeEventListener('touchmove', onMove);
@@ -1395,7 +1506,7 @@ function App() {
       e.stopPropagation();
       setFsi(i);
     }
-  }))), po && React.createElement("div", { className: "drum-pad-area" },
+  }))), po && React.createElement("div", { className: "drum-pad-area", onClick: function(e) { e.stopPropagation(); }, onTouchStart: function(e) { e.stopPropagation(); }, onTouchEnd: function(e) { e.stopPropagation(); } },
   React.createElement("div", {
     className: "drum-pad" + (padActive ? " active" : ""),
     onTouchStart: onPadTouchStart,
@@ -1406,12 +1517,27 @@ function App() {
     onMouseUp: onPadTouchEnd
   },
     React.createElement("div", { className: "drum-pad-wave" },
-      Array.from({length: 32}, function(_, i) { return React.createElement("div", {
-        key: i, className: "bar",
-        style: { height: (20 + Math.sin(i * 0.5 + (st || 0)) * 60 + Math.random() * 20) + "%" }
-      }); })
+      (function() {
+        var dur = audioDurationRef.current || 6;
+        var windowSec = 2;
+        var widthMul = Math.max(1, dur / windowSec);
+        var widthPct = widthMul * 100;
+        var maxOffset = widthPct - 100;
+        var leftPct = -scrubPos * maxOffset;
+        var bars = waveformData.length > 0 ? waveformData : Array.from({length: 200}, function(_, i) { return 0.2 + Math.sin(i * 0.5 + (st || 0)) * 0.4 + Math.random() * 0.15; });
+        return React.createElement("div", {
+          className: "drum-pad-wave-inner",
+          style: { width: widthPct + '%', left: leftPct + '%' }
+        },
+          bars.map(function(peak, i) {
+            return React.createElement("div", {
+              key: i, className: "bar",
+              style: { height: Math.max(4, peak * 100) + '%' }
+            });
+          })
+        );
+      })()
     ),
-    React.createElement("div", { className: "drum-pad-scrub", style: { left: (scrubPos * 100) + "%" } }),
     React.createElement("div", { className: "drum-pad-pitch" + (showPitch ? " visible" : "") },
       React.createElement("div", { className: "drum-pad-pitch-mark", style: { bottom: ((padPitch - 0.5) / 1.5 * 100) + "%" } })
     ),
