@@ -1,6 +1,6 @@
 {
-  "name": "Boba",
-  "short_name": "Boba",
+  "name": "Groove",
+  "short_name": "Groove",
   "description": "Remix app — mix tracks from classic records",
   "start_url": "/",
   "display": "standalone",
