@@ -1049,22 +1049,7 @@ function App() {
     width: SVS,
     height: SVS,
     viewBox: "0 0 " + SVS + " " + SVS
-  }, /*#__PURE__*/React.createElement("defs", null, C.map((src, i) => /*#__PURE__*/React.createElement("pattern", {
-    key: i,
-    id: "cp" + i,
-    patternUnits: "userSpaceOnUse",
-    x: "0",
-    y: "0",
-    width: SVS,
-    height: SVS
-  }, /*#__PURE__*/React.createElement("image", {
-    href: src,
-    x: "0",
-    y: "0",
-    width: SVS,
-    height: SVS,
-    preserveAspectRatio: "xMidYMid slice"
-  }))), /*#__PURE__*/React.createElement("radialGradient", {
+  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("radialGradient", {
     id: "vg",
     cx: "50%",
     cy: "50%",
@@ -1125,6 +1110,31 @@ function App() {
     cy: CY,
     r: DISC_R,
     fill: "url(#vg)"
+  }), (() => {
+    const coverIdx = disc.ts.find(t => t >= 0);
+    return coverIdx !== undefined ? /*#__PURE__*/React.createElement("foreignObject", {
+      x: CX - DISC_R,
+      y: CY - DISC_R,
+      width: DISC_R * 2,
+      height: DISC_R * 2
+    }, /*#__PURE__*/React.createElement("div", {
+      xmlns: "http://www.w3.org/1999/xhtml",
+      style: { width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden' }
+    }, /*#__PURE__*/React.createElement("img", {
+      src: C[coverIdx],
+      style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' }
+    }))) : null;
+  })(), RINGS.map(([mr, sw], ti) => {
+    const isEmpty = disc.ts[ti] === -1;
+    return isEmpty ? /*#__PURE__*/React.createElement("circle", {
+      key: "vinyl" + ti,
+      cx: CX,
+      cy: CY,
+      r: mr,
+      fill: "none",
+      stroke: discColor,
+      strokeWidth: sw
+    }) : null;
   }), grooves.map((r, i) => /*#__PURE__*/React.createElement("circle", {
     key: i,
     cx: CX,
@@ -1137,29 +1147,13 @@ function App() {
     const src = disc.ts[ti];
     const sel = st === ti;
     const isEmpty = src === -1;
-    const artSrc = src >= 0 ? src : 0;
     const cut = disc.cuts ? disc.cuts[ti] : [0, 1];
     const circ = 2 * Math.PI * mr;
     const cutLen = (cut[1] - cut[0]) * circ;
     const cutOff = cut[0] * circ;
     return /*#__PURE__*/React.createElement("g", {
       key: ti
-    }, /*#__PURE__*/React.createElement("circle", {
-      cx: CX,
-      cy: CY,
-      r: mr,
-      fill: "none",
-      stroke: `url(#cp${artSrc})`,
-      strokeWidth: sw,
-      opacity: 1
-    }), isEmpty && mm && /*#__PURE__*/React.createElement("circle", {
-      cx: CX,
-      cy: CY,
-      r: mr,
-      fill: "none",
-      stroke: "rgba(0,0,0,0.35)",
-      strokeWidth: sw
-    }), sel && !isEmpty && /*#__PURE__*/React.createElement("circle", {
+    }, sel && !isEmpty && /*#__PURE__*/React.createElement("circle", {
       cx: CX,
       cy: CY,
       r: mr,
