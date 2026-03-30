@@ -126,7 +126,7 @@ app.get('/api/mixes', async (req, res) => {
     const result = await pool.query(
       `SELECT
         m.id, m.user_id, m.title, m.description, m.tracks, m.cuts, m.effects,
-        m.label_url, m.disc_color, m.plays, m.created_at,
+        m.label_url, m.disc_color, m.plays, m.created_at, m.parent_mix_id, m.arcs,
         u.id as creator_id, u.display_name, u.name, u.picture,
         (SELECT COUNT(*) FROM wax_likes WHERE mix_id = m.id)::int as like_count,
         (SELECT COUNT(*) FROM wax_comments WHERE mix_id = m.id)::int as comment_count
@@ -146,17 +146,17 @@ app.get('/api/mixes', async (req, res) => {
 // POST /api/mixes - create a new mix
 app.post('/api/mixes', async (req, res) => {
   try {
-    const { userId, title, description, tracks, cuts, effects, labelUrl, discColor } = req.body;
+    const { userId, title, description, tracks, cuts, effects, labelUrl, discColor, parentMixId, arcs } = req.body;
 
     if (!userId || !title || !tracks) {
       return res.status(400).json({ error: 'Missing required fields: userId, title, tracks' });
     }
 
     const result = await pool.query(
-      `INSERT INTO wax_mixes (user_id, title, description, tracks, cuts, effects, label_url, disc_color)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO wax_mixes (user_id, title, description, tracks, cuts, effects, label_url, disc_color, parent_mix_id, arcs)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
-      [userId, title, description, JSON.stringify(tracks), JSON.stringify(cuts), JSON.stringify(effects), labelUrl, discColor || 0]
+      [userId, title, description, JSON.stringify(tracks), JSON.stringify(cuts), JSON.stringify(effects), labelUrl, discColor || 0, parentMixId || null, JSON.stringify(arcs || [])]
     );
 
     res.json(result.rows[0]);
@@ -183,6 +183,28 @@ app.post('/api/mixes/:id/play', async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     console.error('Play mix error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/mixes/:id/chain - returns the full remix chain (root first)
+app.get('/api/mixes/:id/chain', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(`
+      WITH RECURSIVE chain AS (
+        SELECT id, parent_mix_id, title, tracks, cuts, effects, arcs, disc_color, label_url, plays, 0 as depth
+        FROM wax_mixes WHERE id = $1
+        UNION ALL
+        SELECT m.id, m.parent_mix_id, m.title, m.tracks, m.cuts, m.effects, m.arcs, m.disc_color, m.label_url, m.plays, c.depth + 1
+        FROM wax_mixes m JOIN chain c ON m.id = c.parent_mix_id
+        WHERE c.depth < 50
+      )
+      SELECT * FROM chain ORDER BY depth DESC
+    `, [id]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Get chain error:', err);
     res.status(500).json({ error: err.message });
   }
 });

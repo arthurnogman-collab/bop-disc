@@ -490,6 +490,12 @@ function App() {
   const [padZoom, setPadZoom] = useState(1);
   const padZoomRef = useRef(1);
   const originalTsRef = useRef([0, 0, 0, 0]);
+  const [editSourceMixId, setEditSourceMixId] = useState(null);
+  const [chainMixes, setChainMixes] = useState(null);
+  const [chainIndex, setChainIndex] = useState(0);
+  const chainMixesRef = useRef(null);
+  const chainIndexRef = useRef(0);
+  const chainStartRotRef = useRef(0);
   const dr = useRef(false);
   const lr = useRef(null);
   const touchRef = useRef({
@@ -864,13 +870,14 @@ function App() {
 
   const feedItem = feedData[fi];
   const feedSlide = feedItem.slides[fsi] || feedItem.slides[0];
+  const chainMix = (!mm && chainMixes && chainMixes[chainIndex]) || null;
   const disc = mm ? discs[ad] : {
-    ts: feedSlide.s,
+    ts: chainMix ? chainMix.tracks : feedSlide.s,
     fx: new Set(),
-    lb: null,
+    lb: chainMix ? chainMix.label_url : null,
     samps: [0, 0, 0, 0],
-    cuts: [[0, 1], [0, 1], [0, 1], [0, 1]],
-    color: 0
+    cuts: chainMix ? (chainMix.cuts || [[0,1],[0,1],[0,1],[0,1]]) : [[0, 1], [0, 1], [0, 1], [0, 1]],
+    color: chainMix ? (chainMix.disc_color || 0) : 0
   };
   const discColor = DISC_COLORS[disc.color || 0];
   const po = mm && st >= 0;
@@ -890,9 +897,15 @@ function App() {
       if (mixes && mixes.length > 0) {
         const mapped = mixes.map(m => ({
           id: m.id,
+          parent_mix_id: m.parent_mix_id || null,
           cr: m.display_name || m.name || 'Unknown',
           d: m.title,
           slides: [{s: m.tracks}],
+          arcs: m.arcs || [],
+          cuts: m.cuts || [[0,1],[0,1],[0,1],[0,1]],
+          effects: m.effects || [],
+          disc_color: m.disc_color || 0,
+          label_url: m.label_url || null,
           plays: m.plays || 0,
           likes: m.like_count || 0,
           comments: m.comment_count || 0
@@ -902,6 +915,15 @@ function App() {
       setFeedLoading(false);
     }).catch(() => setFeedLoading(false));
   }, []);
+
+  /* Clear chain when feed index changes */
+  useEffect(() => {
+    setChainMixes(null); chainMixesRef.current = null;
+    setChainIndex(0); chainIndexRef.current = 0;
+    /* Load arcs for current feed item */
+    var curArcs = feedData[fi]?.arcs || [];
+    setRecArcs(curArcs); recArcsRef.current = curArcs;
+  }, [fi]);
 
   /* Keep screen awake while in mix mode or playing */
   useEffect(() => {
@@ -1049,6 +1071,29 @@ function App() {
             } catch(me) {}
             metronomeNextRef.current += beatInterval;
           }
+        }
+      }
+      /* Chain playback: advance to next mix when disc completes a full rotation */
+      if (plRef.current && chainMixesRef.current && chainMixesRef.current.length > 1) {
+        var totalRot = Math.abs(rotRef.current - chainStartRotRef.current);
+        if (totalRot < 0) totalRot += 360;
+        if (totalRot >= 360) {
+          chainStartRotRef.current = rotRef.current;
+          var nextIdx = (chainIndexRef.current + 1) % chainMixesRef.current.length;
+          chainIndexRef.current = nextIdx;
+          /* Update chain arcs and disc via state (will trigger re-render + audio restart) */
+          var nextMix = chainMixesRef.current[nextIdx];
+          if (nextMix && nextMix.arcs) {
+            recArcsRef.current = nextMix.arcs;
+          } else {
+            recArcsRef.current = [];
+          }
+          /* Use setTimeout to avoid state updates inside RAF */
+          setTimeout(function() {
+            setChainIndex(nextIdx);
+            if (nextMix && nextMix.arcs) setRecArcs(nextMix.arcs);
+            else setRecArcs([]);
+          }, 0);
         }
       }
       rafRef.current = requestAnimationFrame(tick);
@@ -1658,7 +1703,7 @@ function App() {
   })), mm && React.createElement("div", {className: "edit-top"},
   React.createElement("button", {className: "edit-top-btn", onClick: function() {
     setDiscs(function(p) { var n = p.slice(); n[ad] = Object.assign({}, n[ad], { arcs: recArcsRef.current.slice() }); return n; });
-    setMM(false); setPl(false); setEditingTitle(false); setRecording(false); setSt(-1);
+    setMM(false); setPl(false); setEditingTitle(false); setRecording(false); setSt(-1); setEditSourceMixId(null);
   }},
     React.createElement("svg", {viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2"},
       React.createElement("path", {d: "M19 12H5"}),
@@ -1993,14 +2038,17 @@ function App() {
             cuts: discs[0].cuts,
             effects: Array.from(discs[0].fx || []),
             labelUrl: discs[0].lb,
-            discColor: discs[0].color
+            discColor: discs[0].color,
+            parentMixId: editSourceMixId,
+            arcs: recArcsRef.current
           })
         });
         const mix = await res.json();
         if (mix.id) {
           const url = window.location.origin + '?mix=' + mix.id;
           setPublishedUrl(url);
-          setFeedData(prev => [{ ...mix, cr: user.displayName || user.name, d: publishName.trim(), slides: [{ s: mix.tracks }], plays: 0, likes: 0, comments: 0 }, ...prev]);
+          setFeedData(prev => [{ ...mix, cr: user.displayName || user.name, d: publishName.trim(), slides: [{ s: mix.tracks }], parent_mix_id: editSourceMixId, arcs: recArcsRef.current, cuts: mix.cuts, effects: mix.effects, disc_color: mix.disc_color, label_url: mix.label_url, plays: 0, likes: 0, comments: 0 }, ...prev]);
+          setEditSourceMixId(null);
         }
       } catch (e) {
         alert('Error publishing: ' + e.message);
@@ -2063,11 +2111,34 @@ function App() {
     )
   ), /*#__PURE__*/React.createElement("button", {
     className: "vp-btn vp-play" + (pl ? " pressed" : ""),
-    onClick: () => {
+    onClick: async () => {
       const newPl = !pl;
       setPl(newPl);
       if (newPl && !mm && feedData[fi] && feedData[fi].id) {
         fetch('/api/mixes/' + feedData[fi].id + '/play', { method: 'POST' }).catch(() => {});
+        /* Fetch remix chain for chain playback */
+        try {
+          const chainRes = await fetch('/api/mixes/' + feedData[fi].id + '/chain');
+          const chain = await chainRes.json();
+          if (chain && chain.length > 1) {
+            setChainMixes(chain); chainMixesRef.current = chain;
+            setChainIndex(0); chainIndexRef.current = 0;
+            chainStartRotRef.current = rotRef.current;
+            /* Load first chain mix arcs */
+            if (chain[0].arcs) { setRecArcs(chain[0].arcs); recArcsRef.current = chain[0].arcs; }
+            else { setRecArcs([]); recArcsRef.current = []; }
+          } else {
+            setChainMixes(null); chainMixesRef.current = null;
+            /* Load current mix arcs if any */
+            var curArcs = feedData[fi].arcs || [];
+            setRecArcs(curArcs); recArcsRef.current = curArcs;
+          }
+        } catch (e) {
+          setChainMixes(null); chainMixesRef.current = null;
+        }
+      } else if (!newPl) {
+        setChainMixes(null); chainMixesRef.current = null;
+        setChainIndex(0); chainIndexRef.current = 0;
       }
     }
   }, pl ? /*#__PURE__*/React.createElement("svg", {
@@ -2112,6 +2183,9 @@ function App() {
         setRecArcs([]);
         recArcsRef.current = [];
         originalTsRef.current = [...feedSlide.s];
+        setEditSourceMixId(feedData[fi]?.id || null);
+        setChainMixes(null); chainMixesRef.current = null;
+        setChainIndex(0); chainIndexRef.current = 0;
         setMM(true);
         setPl(false);
         setSt(-1); /* no default track — user selects from disc */
@@ -2126,6 +2200,7 @@ function App() {
         setPl(false);
         setEditingTitle(false);
         setRecording(false);
+        setEditSourceMixId(null);
         setSt(-1);
       }
     }

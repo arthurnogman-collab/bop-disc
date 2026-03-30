@@ -46,6 +46,11 @@ async function initDB() {
       );
     `);
 
+    // Migration: add parent_mix_id and arcs columns for remix chains
+    await pool.query(`ALTER TABLE wax_mixes ADD COLUMN IF NOT EXISTS parent_mix_id INTEGER REFERENCES wax_mixes(id);`).catch(() => {});
+    await pool.query(`ALTER TABLE wax_mixes ADD COLUMN IF NOT EXISTS arcs JSONB;`).catch(() => {});
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_wax_mixes_parent ON wax_mixes(parent_mix_id);`).catch(() => {});
+
     // Create wax_likes table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS wax_likes (
