@@ -73,7 +73,7 @@ body{display:flex;justify-content:center;align-items:center;}
 /* Loops removed */
 
 /* Feed artist name (above disc) */
-.feed-artist{position:absolute;top:18px;left:0;right:0;text-align:center;z-index:8;}
+.feed-artist{position:absolute;top:8px;left:0;right:0;text-align:center;z-index:8;}
 .fa-name{font-size:15px;font-weight:700;color:var(--t1);letter-spacing:-0.2px;}
 .fa-track{font-size:11px;color:var(--t3);margin-top:2px;font-weight:400;}
 /* Social counters (below dots) */
@@ -221,15 +221,14 @@ body{display:flex;justify-content:center;align-items:center;}
 .pwa-desktop-wrap{display:flex;flex-direction:column;align-items:center;width:100%;}
 
 /* Drum Pad Area */
-.drum-pad-area{display:flex;align-items:stretch;gap:8px;padding:0 20px;width:280px;}
+.drum-pad-area{display:flex;align-items:stretch;gap:8px;padding:0 20px;width:280px;position:relative;}
 .drum-pad{flex:1;aspect-ratio:1;max-height:140px;border-radius:16px;background:linear-gradient(145deg,rgba(255,255,255,0.5),rgba(0,0,0,0.03));border:1.5px solid rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;touch-action:none;position:relative;overflow:hidden;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.8);}
 .drum-pad.active{background:linear-gradient(145deg,rgba(255,255,255,0.3),rgba(0,0,0,0.08));box-shadow:inset 0 2px 6px rgba(0,0,0,0.12);}
 .drum-pad-wave{position:absolute;inset:12px;overflow:hidden;pointer-events:none;opacity:0.4;}
 .drum-pad-wave-inner{position:absolute;top:0;bottom:0;display:flex;align-items:center;}
 .drum-pad-wave-inner .bar{flex:1;background:var(--t2);border-radius:1px;min-width:1px;}
-.drum-pad-pitch{position:absolute;right:8px;top:8px;bottom:8px;width:28px;background:rgba(0,0,0,0.05);border-radius:6px;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .15s;}
-.drum-pad-pitch.visible{opacity:1;}
-.drum-pad-pitch-mark{width:20px;height:4px;background:var(--accent);border-radius:2px;position:absolute;}
+.pitch-dial{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);pointer-events:none;opacity:0;transition:opacity .15s;z-index:10;}
+.pitch-dial.visible{opacity:1;}
 .pad-side-btns{display:flex;flex-direction:column;gap:6px;justify-content:center;}
 .pad-side-btn{width:42px;height:42px;border-radius:12px;border:1.5px solid rgba(0,0,0,0.06);background:var(--chrome);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);box-shadow:0 1px 4px rgba(0,0,0,0.06);transition:all .12s;}
 .pad-side-btn:active{transform:scale(0.94);}
@@ -466,6 +465,7 @@ function App() {
   const [showPitch, setShowPitch] = useState(false);
   const [padActive, setPadActive] = useState(false);
   const [scrubPos, setScrubPos] = useState(0);
+  const scrubPosRef = useRef(0);
   const [padFx, setPadFx] = useState(false);
   const dr = useRef(false);
   const lr = useRef(null);
@@ -705,10 +705,12 @@ function App() {
     if (!padTouchRef.current.direction && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
       padTouchRef.current.moved = true;
       padTouchRef.current.direction = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+      if (padTouchRef.current.direction === 'h') padTouchRef.current.startScrub = scrubPosRef.current;
     }
     if (padTouchRef.current.direction === 'h') {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const pos = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+      var rect = e.currentTarget.getBoundingClientRect();
+      var delta = -dx / rect.width;
+      var pos = Math.max(0, Math.min(1, (padTouchRef.current.startScrub || 0) + delta));
       setScrubPos(pos);
     } else if (padTouchRef.current.direction === 'v') {
       const range = 200;
@@ -798,6 +800,7 @@ function App() {
 
   useEffect(() => { recordingRef.current = recording; }, [recording]);
   useEffect(() => { recArcsRef.current = recArcs; }, [recArcs]);
+  useEffect(() => { scrubPosRef.current = scrubPos; }, [scrubPos]);
 
   /* RAF rotation engine */
   useEffect(() => {
@@ -1541,7 +1544,7 @@ function App() {
     className: "fa-track",
     onClick: e => { e.stopPropagation(); setEditingTitle(true); },
     style: { cursor: 'pointer', opacity: discs[ad].title ? 1 : 0.4 }
-  }, discs[ad].title || 'Tap to name your track')) : /*#__PURE__*/React.createElement("div", {
+  }, discs[ad].title || 'Name your track')) : /*#__PURE__*/React.createElement("div", {
     className: "feed-artist"
   }, /*#__PURE__*/React.createElement("div", {
     className: "fa-name"
@@ -1582,6 +1585,47 @@ function App() {
       setFsi(i);
     }
   }))), po && React.createElement("div", { className: "drum-pad-area", onClick: function(e) { e.stopPropagation(); }, onTouchStart: function(e) { e.stopPropagation(); }, onTouchEnd: function(e) { e.stopPropagation(); } },
+  React.createElement("div", { className: "pitch-dial" + (showPitch ? " visible" : "") },
+    (function() {
+      var r = 30, cx = 50, cy = 42;
+      /* Map pitch to angle: 0.5→-90°, 1.0→0°, 2.0→90° (0°=top) */
+      var p = padPitch;
+      var ang;
+      if (p <= 1.0) ang = -90 + ((p - 0.5) / 0.5) * 90;
+      else ang = ((p - 1.0) / 1.0) * 90;
+      var angRad = ang * Math.PI / 180;
+      var mx = cx + r * Math.sin(angRad);
+      var my = cy - r * Math.cos(angRad);
+      /* Arc track endpoints */
+      var sx = cx + r * Math.sin(-90 * Math.PI / 180);
+      var sy = cy - r * Math.cos(-90 * Math.PI / 180);
+      var ex = cx + r * Math.sin(90 * Math.PI / 180);
+      var ey = cy - r * Math.cos(90 * Math.PI / 180);
+      return React.createElement("svg", { width: 100, height: 56, viewBox: "0 0 100 56" },
+        /* Background */
+        React.createElement("rect", { x: 0, y: 0, width: 100, height: 56, rx: 12, fill: "rgba(0,0,0,0.75)" }),
+        /* Arc track */
+        React.createElement("path", {
+          d: "M " + sx + " " + sy + " A " + r + " " + r + " 0 0 1 " + ex + " " + ey,
+          fill: "none", stroke: "rgba(255,255,255,0.2)", strokeWidth: 3, strokeLinecap: "round"
+        }),
+        /* Center tick mark (1.0x) */
+        React.createElement("line", { x1: cx, y1: cy - r + 5, x2: cx, y2: cy - r - 2, stroke: "rgba(255,255,255,0.4)", strokeWidth: 1 }),
+        /* Marker dot */
+        React.createElement("circle", { cx: mx, cy: my, r: 4.5, fill: "var(--accent, #D42B40)" }),
+        /* Pitch label */
+        React.createElement("text", {
+          x: cx, y: cy + 4, textAnchor: "middle", fill: "rgba(255,255,255,0.5)",
+          fontSize: "7", fontFamily: "Space Grotesk,sans-serif", fontWeight: "600", letterSpacing: "1.5"
+        }, "PITCH"),
+        /* Value */
+        React.createElement("text", {
+          x: cx, y: cy - 10, textAnchor: "middle", fill: "#fff",
+          fontSize: "11", fontFamily: "Space Grotesk,sans-serif", fontWeight: "700"
+        }, p.toFixed(2) + "x")
+      );
+    })()
+  ),
   React.createElement("div", {
     className: "drum-pad" + (padActive ? " active" : ""),
     onTouchStart: onPadTouchStart,
@@ -1612,9 +1656,6 @@ function App() {
           })
         );
       })()
-    ),
-    React.createElement("div", { className: "drum-pad-pitch" + (showPitch ? " visible" : "") },
-      React.createElement("div", { className: "drum-pad-pitch-mark", style: { bottom: ((padPitch - 0.5) / 1.5 * 100) + "%" } })
     ),
     React.createElement("div", {
       style: { position: 'absolute', bottom: 8, left: 12, fontSize: '9px', fontWeight: 600, color: 'var(--t3)', letterSpacing: '1px', textTransform: 'uppercase', pointerEvents: 'none' }
