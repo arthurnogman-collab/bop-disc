@@ -189,7 +189,8 @@ body{display:flex;justify-content:center;align-items:center;}
 
 /* Onboarding Screen */
 .ob-screen{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
-.ob-icon{width:166px;height:166px;margin-bottom:16px;}
+.ob-icon-box{width:166px;height:166px;border-radius:38px;background:#FFD6DE;display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 6px 24px rgba(255,160,185,0.35),inset 0 1px 0 rgba(255,255,255,0.6);}
+.ob-icon{width:120px;height:120px;}
 .ob-title{font-family:'Quicksand',sans-serif;font-size:42px;font-weight:700;color:var(--t1);letter-spacing:3px;text-transform:none;line-height:1;margin-bottom:28px;}
 .ob-google-wrap{position:relative;width:100%;max-width:280px;margin-top:24px;}
 .ob-google-wrap>div{position:absolute!important;opacity:0!important;pointer-events:none!important;width:100%!important;height:100%!important;}
@@ -207,7 +208,8 @@ body{display:flex;justify-content:center;align-items:center;}
 /* PWA Install Screen */
 .pwa-screen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;padding-bottom:60px;transition:opacity .4s,transform .4s;}
 .pwa-screen.hidden{opacity:0;transform:scale(1.04);pointer-events:none;}
-.pwa-icon{width:166px;height:166px;margin-bottom:16px;}
+.pwa-icon-box{width:166px;height:166px;border-radius:38px;background:#FFD6DE;display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 6px 24px rgba(255,160,185,0.35),inset 0 1px 0 rgba(255,255,255,0.6);}
+.pwa-icon{width:120px;height:120px;}
 .pwa-title{font-family:'Quicksand',sans-serif;font-size:42px;font-weight:700;color:var(--t1);letter-spacing:3px;text-transform:none;line-height:1;margin-bottom:28px;}
 .pwa-steps{width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px;margin-bottom:36px;}
 .pwa-step{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.65);border-radius:14px;padding:13px 16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.6);}
@@ -222,11 +224,16 @@ body{display:flex;justify-content:center;align-items:center;}
 
 /* Drum Pad Area */
 .drum-pad-area{display:flex;align-items:stretch;gap:8px;padding:0 20px;width:280px;position:relative;}
-.drum-pad{flex:1;aspect-ratio:1;max-height:140px;border-radius:16px;background:linear-gradient(145deg,rgba(255,255,255,0.5),rgba(0,0,0,0.03));border:1.5px solid rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;touch-action:none;position:relative;overflow:hidden;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.8);}
-.drum-pad.active{background:linear-gradient(145deg,rgba(255,255,255,0.3),rgba(0,0,0,0.08));box-shadow:inset 0 2px 6px rgba(0,0,0,0.12);}
-.drum-pad-wave{position:absolute;inset:12px;overflow:hidden;pointer-events:none;opacity:0.4;}
+.drum-pad{flex:1;aspect-ratio:1;max-height:140px;border-radius:20px;background:radial-gradient(ellipse at 40% 35%,rgba(30,30,38,0.92),rgba(18,18,24,0.97));border:1.5px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;touch-action:none;position:relative;overflow:hidden;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.08);transition:box-shadow .15s,border-color .15s;}
+.drum-pad.active{border-color:rgba(255,255,255,0.15);box-shadow:0 4px 20px rgba(0,0,0,0.35),inset 0 0 20px rgba(255,255,255,0.04);}
+.drum-pad-wave{position:absolute;inset:12px;overflow:hidden;pointer-events:none;opacity:0.6;transition:opacity .15s;}
+.drum-pad.active .drum-pad-wave{opacity:1;}
 .drum-pad-wave-inner{position:absolute;top:0;bottom:0;display:flex;align-items:center;}
-.drum-pad-wave-inner .bar{flex:1;background:var(--t2);border-radius:1px;min-width:1px;}
+.drum-pad-wave-inner .bar{flex:1;border-radius:1px;min-width:1px;transition:background .1s;}
+.drum-pad .pad-groove{position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,0.06);pointer-events:none;}
+.drum-pad .pad-playhead{position:absolute;left:50%;top:10%;bottom:10%;width:1.5px;background:rgba(255,255,255,0.25);pointer-events:none;border-radius:1px;}
+.drum-pad .pad-label{position:absolute;bottom:8px;left:12px;font-size:10px;font-weight:600;color:rgba(255,255,255,0.35);letter-spacing:1.2px;text-transform:uppercase;pointer-events:none;font-family:'Space Grotesk',sans-serif;}
+.drum-pad .pad-zoom-badge{position:absolute;top:8px;right:10px;font-size:8px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:0.5px;pointer-events:none;font-family:'Space Grotesk',sans-serif;}
 .pitch-dial{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);pointer-events:none;opacity:0;transition:opacity .15s;z-index:10;}
 .pitch-dial.visible{opacity:1;}
 .pad-side-btns{display:flex;flex-direction:column;gap:6px;justify-content:center;}
@@ -337,11 +344,13 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
 
   return /*#__PURE__*/React.createElement("div", {
     className: "ob-screen"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ob-icon-box"
   }, /*#__PURE__*/React.createElement("img", {
     src: "/Boba.png",
     className: "ob-icon",
     alt: "Boba"
-  }), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
   }, "boba"), /*#__PURE__*/React.createElement("div", {
     className: "ob-google-wrap"
@@ -368,11 +377,13 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
 function DisplayNameScreen({ user, setUser, displayName, setDisplayName, setNeedsName }) {
   return /*#__PURE__*/React.createElement("div", {
     className: "ob-screen"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ob-icon-box"
   }, /*#__PURE__*/React.createElement("img", {
     src: "/Boba.png",
     className: "ob-icon",
     alt: "Boba"
-  }), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
   }, "Choose Display Name"), /*#__PURE__*/React.createElement("div", {
     className: "ob-form"
@@ -514,6 +525,9 @@ function App() {
   const [scrubPos, setScrubPos] = useState(0);
   const scrubPosRef = useRef(0);
   const [padFx, setPadFx] = useState(false);
+  const [padZoom, setPadZoom] = useState(1);
+  const padZoomRef = useRef(1);
+  const originalTsRef = useRef([0, 0, 0, 0]);
   const dr = useRef(false);
   const lr = useRef(null);
   const touchRef = useRef({
@@ -764,6 +778,14 @@ function App() {
   const onPadTouchStart = useCallback((e) => {
     if (e.touches) {
       padLastTouchRef.current = Date.now();
+      /* Pinch zoom: two fingers */
+      if (e.touches.length >= 2) {
+        var t1 = e.touches[0], t2 = e.touches[1];
+        var dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        padTouchRef.current = { pinch: true, startDist: dist, startZoom: padZoomRef.current };
+        try { e.preventDefault(); } catch(ex) {}
+        return;
+      }
     } else if (Date.now() - padLastTouchRef.current < 500) {
       return;
     }
@@ -791,6 +813,16 @@ function App() {
     if (!e.touches && Date.now() - padLastTouchRef.current < 500) return;
     e.preventDefault();
     if (!padTouchRef.current) return;
+    /* Pinch zoom: two-finger gesture */
+    if (padTouchRef.current.pinch && e.touches && e.touches.length >= 2) {
+      var t1 = e.touches[0], t2 = e.touches[1];
+      var dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      var scale = dist / padTouchRef.current.startDist;
+      var newZoom = Math.max(0.5, Math.min(4, padTouchRef.current.startZoom * scale));
+      setPadZoom(newZoom);
+      padZoomRef.current = newZoom;
+      return;
+    }
     const touch = e.touches ? e.touches[0] : e;
     const dx = touch.clientX - padTouchRef.current.startX;
     const dy = touch.clientY - padTouchRef.current.startY;
@@ -801,8 +833,11 @@ function App() {
     }
     if (padTouchRef.current.direction === 'h') {
       var rect = e.currentTarget.getBoundingClientRect();
-      var delta = -dx / rect.width;
-      var pos = Math.max(0, Math.min(1, (padTouchRef.current.startScrub || 0) + delta));
+      /* Zoom-aware scrub: zoomed in = slower, zoomed out = faster. Also reduced base speed (0.4x) */
+      var delta = -dx / (rect.width * padZoomRef.current * 2.5);
+      var pos = (padTouchRef.current.startScrub || 0) + delta;
+      /* Wrap around: scrolling past end loops to start */
+      pos = ((pos % 1) + 1) % 1;
       setScrubPos(pos);
     } else if (padTouchRef.current.direction === 'v') {
       const range = 200;
@@ -828,21 +863,38 @@ function App() {
   }, [stopPadSample]);
 
   const togglePadFx = useCallback(() => setPadFx(function(p) { var next = !p; padFxRef.current = next; return next; }), []);
-  const removeTrack = useCallback(() => {
+  /* Check if current track is modified from original */
+  const isTrackModified = mm && st >= 0 && discs[ad] && originalTsRef.current &&
+    discs[ad].ts[st] !== originalTsRef.current[st];
+
+  const removeOrRestoreTrack = useCallback(() => {
     if (st < 0) return;
-    /* Remove track from disc (set to -1 = empty) */
-    setDiscs(function(p) {
-      var n = p.slice();
-      var d = Object.assign({}, n[ad], { ts: n[ad].ts.slice() });
-      d.ts[st] = -1;
-      n[ad] = d;
-      return n;
-    });
-    /* Also clear any recorded arcs for this track */
-    setRecArcs(function(prev) {
-      return prev.filter(function(a) { return a && a.track !== st; });
-    });
-  }, [st, ad]);
+    var orig = originalTsRef.current;
+    var current = discs[ad] && discs[ad].ts[st];
+    if (current !== undefined && orig && current !== orig[st]) {
+      /* Track is modified → restore to original */
+      setDiscs(function(p) {
+        var n = p.slice();
+        var d = Object.assign({}, n[ad], { ts: n[ad].ts.slice() });
+        d.ts[st] = orig[st];
+        n[ad] = d;
+        return n;
+      });
+    } else {
+      /* Track is original → remove it */
+      setDiscs(function(p) {
+        var n = p.slice();
+        var d = Object.assign({}, n[ad], { ts: n[ad].ts.slice() });
+        d.ts[st] = -1;
+        n[ad] = d;
+        return n;
+      });
+      /* Also clear any recorded arcs for this track */
+      setRecArcs(function(prev) {
+        return prev.filter(function(a) { return a && a.track !== st; });
+      });
+    }
+  }, [st, ad, discs]);
 
   const feedItem = feedData[fi];
   const feedSlide = feedItem.slides[fsi] || feedItem.slides[0];
@@ -1596,25 +1648,7 @@ function App() {
     fill: "none",
     stroke: "rgba(0,0,0,0.03)",
     strokeWidth: "0.3"
-  }), !disc.lb && mm && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("text", {
-    x: CX,
-    y: CY - 5,
-    textAnchor: "middle",
-    fill: "rgba(0,0,0,0.5)",
-    fontFamily: "Space Grotesk,sans-serif",
-    fontSize: "8",
-    fontWeight: "300",
-    letterSpacing: "3"
-  }, "ADD"), /*#__PURE__*/React.createElement("text", {
-    x: CX,
-    y: CY + 8,
-    textAnchor: "middle",
-    fill: "rgba(0,0,0,0.8)",
-    fontFamily: "Space Grotesk,sans-serif",
-    fontSize: "11",
-    fontWeight: "700",
-    letterSpacing: "1.5"
-  }, "LABEL")), !disc.lb && React.createElement(React.Fragment, null, React.createElement("clipPath", {
+  }), !disc.lb && React.createElement(React.Fragment, null, React.createElement("clipPath", {
     id: "defLblClip"
   }, React.createElement("circle", {
     cx: CX, cy: CY, r: LABEL_R - 2
@@ -1626,7 +1660,7 @@ function App() {
     height: 28,
     clipPath: "url(#defLblClip)",
     preserveAspectRatio: "xMidYMid slice",
-    opacity: 0.15
+    opacity: 0.6
   })), /*#__PURE__*/React.createElement("circle", {
     cx: CX,
     cy: CY,
@@ -1770,14 +1804,19 @@ function App() {
     onMouseMove: onPadTouchMove,
     onMouseUp: onPadTouchEnd
   },
+    /* Center groove line */
+    React.createElement("div", { className: "pad-groove" }),
+    /* Center playhead */
+    React.createElement("div", { className: "pad-playhead" }),
     React.createElement("div", { className: "drum-pad-wave" },
       (function() {
         var dur = audioDurationRef.current || 6;
-        var windowSec = 2;
+        var windowSec = 2 / padZoom;
         var widthMul = Math.max(1, dur / windowSec);
         var widthPct = widthMul * 100;
         var maxOffset = widthPct - 100;
         var leftPct = -scrubPos * maxOffset;
+        var trackColor = TC[st] || 'rgba(255,255,255,0.5)';
         var bars = waveformData.length > 0 ? waveformData : Array.from({length: 200}, function(_, i) { return 0.2 + Math.sin(i * 0.5 + (st || 0)) * 0.4 + Math.random() * 0.15; });
         return React.createElement("div", {
           className: "drum-pad-wave-inner",
@@ -1786,15 +1825,14 @@ function App() {
           bars.map(function(peak, i) {
             return React.createElement("div", {
               key: i, className: "bar",
-              style: { height: Math.max(4, peak * 100) + '%' }
+              style: { height: Math.max(4, peak * 100) + '%', background: trackColor, opacity: 0.3 + peak * 0.6 }
             });
           })
         );
       })()
     ),
-    React.createElement("div", {
-      style: { position: 'absolute', bottom: 8, left: 12, fontSize: '9px', fontWeight: 600, color: 'var(--t3)', letterSpacing: '1px', textTransform: 'uppercase', pointerEvents: 'none' }
-    }, TN[st] || '')
+    React.createElement("div", { className: "pad-label" }, padActive ? "" : "Tap me"),
+    padZoom !== 1 && React.createElement("div", { className: "pad-zoom-badge" }, padZoom.toFixed(1) + "x")
   ),
   React.createElement("div", { className: "pad-side-btns" },
     React.createElement("button", {
@@ -1804,10 +1842,16 @@ function App() {
     React.createElement("button", {
       className: "pad-side-btn",
       style: { borderColor: TC[st] || 'var(--t3)', color: TC[st] || 'var(--t3)' },
-      onClick: removeTrack
-    }, React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
-      React.createElement("path", { d: "M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" })
-    )),
+      onClick: removeOrRestoreTrack
+    }, isTrackModified
+      ? React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+          React.createElement("path", { d: "M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8" }),
+          React.createElement("path", { d: "M21 3v5h-5" })
+        )
+      : React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+          React.createElement("path", { d: "M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" })
+        )
+    ),
     React.createElement("button", {
       className: "pad-side-btn",
       onClick: function() {}
@@ -2097,6 +2141,7 @@ function App() {
         setAd(0);
         setRecArcs([]);
         recArcsRef.current = [];
+        originalTsRef.current = [...feedSlide.s];
         setMM(true);
         setPl(false);
         setSt(3); /* default to vocal track */
@@ -2296,7 +2341,7 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary, null, React.createElement(App, null)));</script>
 
 <div class="pwa-screen" id="pwaScreen" oncontextmenu="return false">
-  <img src="/Boba.png" class="pwa-icon" alt="Boba"/>
+  <div class="pwa-icon-box"><img src="/Boba.png" class="pwa-icon" alt="Boba"/></div>
   <div class="pwa-title">boba</div>
 
   <!-- iOS steps -->
