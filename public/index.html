@@ -629,26 +629,37 @@ function App() {
   }, []);
 
   const playPadSample = useCallback((continuous) => {
+    /* Create AudioContext on demand if not yet initialized */
+    if (!audioContextRef.current) {
+      try {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      } catch(e) { console.error('Failed to create AudioContext:', e); return; }
+    }
     const ctx = audioContextRef.current;
-    const buf = audioBuffersRef.current[st];
-    if (!ctx || !buf || st < 0) return;
     if (ctx.state === 'suspended') ctx.resume();
+    const buf = audioBuffersRef.current[st];
+    if (!buf || st < 0) {
+      console.warn('playPadSample: no buffer for track', st, 'loaded:', Object.keys(audioBuffersRef.current));
+      return;
+    }
     if (padSourceRef.current) { try { padSourceRef.current.stop(); } catch(e) {} }
-    const source = ctx.createBufferSource();
-    source.buffer = buf;
-    source.playbackRate.value = padPitch;
-    source.loop = continuous;
-    const gain = ctx.createGain();
-    gain.gain.value = 0.5;
-    source.connect(gain);
-    gain.connect(ctx.destination);
-    const offset = scrubPos * buf.duration;
-    source.start(0, offset);
-    padSourceRef.current = source;
-    padGainRef.current = gain;
-    setPadActive(true);
-    padActiveRef.current = true;
-    source.onended = () => { if (!continuous) { setPadActive(false); padActiveRef.current = false; } };
+    try {
+      const source = ctx.createBufferSource();
+      source.buffer = buf;
+      source.playbackRate.value = padPitch;
+      source.loop = continuous;
+      const gain = ctx.createGain();
+      gain.gain.value = 0.5;
+      source.connect(gain);
+      gain.connect(ctx.destination);
+      const offset = scrubPos * buf.duration;
+      source.start(0, offset);
+      padSourceRef.current = source;
+      padGainRef.current = gain;
+      setPadActive(true);
+      padActiveRef.current = true;
+      source.onended = () => { if (!continuous) { setPadActive(false); padActiveRef.current = false; } };
+    } catch(e) { console.error('playPadSample error:', e); }
   }, [st, padPitch, scrubPos]);
 
   const stopPadSample = useCallback(() => {
@@ -676,7 +687,7 @@ function App() {
     } else if (Date.now() - padLastTouchRef.current < 500) {
       return;
     }
-    e.preventDefault();
+    try { e.preventDefault(); } catch(ex) { /* passive listener */ }
     if (audioContextRef.current && audioContextRef.current.state === 'suspended') audioContextRef.current.resume();
     const touch = e.touches ? e.touches[0] : e;
     padTouchRef.current = {
