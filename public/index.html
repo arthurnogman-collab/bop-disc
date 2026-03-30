@@ -230,18 +230,18 @@ body{display:flex;justify-content:center;align-items:center;}
 .drum-pad-wave-inner .bar{flex:1;border-radius:1px;min-width:1px;transition:background .1s;}
 .drum-pad .pad-groove{position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,0.06);pointer-events:none;}
 .drum-pad .pad-playhead{position:absolute;left:50%;top:10%;bottom:10%;width:1.5px;background:rgba(255,255,255,0.25);pointer-events:none;border-radius:1px;}
-.drum-pad .pad-label{position:absolute;bottom:8px;left:12px;font-size:10px;font-weight:600;color:rgba(255,255,255,0.35);letter-spacing:1.2px;text-transform:uppercase;pointer-events:none;font-family:'Space Grotesk',sans-serif;}
+.drum-pad .pad-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:rgba(255,255,255,0.12);letter-spacing:8px;text-transform:uppercase;pointer-events:none;font-family:'Space Grotesk',sans-serif;text-indent:8px;transition:opacity .15s;}
+.drum-pad.active .pad-label{opacity:0;}
 .drum-pad .pad-zoom-badge{position:absolute;top:8px;right:10px;font-size:8px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:0.5px;pointer-events:none;font-family:'Space Grotesk',sans-serif;}
 .pitch-dial{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);pointer-events:none;opacity:0;transition:opacity .15s;z-index:10;}
 .pitch-dial.visible{opacity:1;}
 .pad-side-btns{display:flex;flex-direction:column;gap:6px;justify-content:center;}
 .pad-side-btn{width:42px;height:42px;border-radius:12px;border:1.5px solid rgba(0,0,0,0.06);background:var(--chrome);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);box-shadow:0 1px 4px rgba(0,0,0,0.06);transition:all .12s;}
 .pad-side-btn:active{transform:scale(0.94);}
-.pad-side-btn.fx-on{border-color:var(--accent);color:var(--accent);}
+.pad-side-btn.fx-on{background:linear-gradient(180deg,#D8D8E0 0%,#E2E2EA 100%);box-shadow:inset 0 2px 4px rgba(0,0,0,0.1),inset 0 0 0 0.5px rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.08);}
 .pad-side-btn svg{width:18px;height:18px;}
 .vp-record{width:46px;padding:0;}
-.vp-record.recording{box-shadow:inset 0 2px 6px rgba(0,0,0,0.15),0 0 12px rgba(212,43,64,0.5);transform:scale(0.95);animation:rec-glow 1.2s ease-in-out infinite;}
-@keyframes rec-glow{0%,100%{box-shadow:inset 0 2px 6px rgba(0,0,0,0.15),0 0 8px rgba(212,43,64,0.3);}50%{box-shadow:inset 0 2px 6px rgba(0,0,0,0.15),0 0 18px rgba(255,60,80,0.6);}}
+.vp-record.recording{background:linear-gradient(180deg,#E0E0E8 0%,#EAEAF0 100%);box-shadow:inset 0 2px 4px rgba(0,0,0,0.1),inset 0 0 0 0.5px rgba(0,0,0,0.04);}
 .rec-layer-arc{pointer-events:none;}
 
 </style>
@@ -420,53 +420,15 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-/* Detect BPM from an AudioBuffer using onset detection */
-function detectTempo(buffer) {
-  var data = buffer.getChannelData(0);
-  var sr = buffer.sampleRate;
-  var winSize = Math.floor(sr * 0.01);
-  var hop = Math.floor(winSize / 2);
-  var energies = [];
-  for (var i = 0; i < data.length - winSize; i += hop) {
-    var sum = 0;
-    for (var j = i; j < i + winSize; j++) sum += data[j] * data[j];
-    energies.push(sum / winSize);
-  }
-  var flux = [0];
-  for (var i = 1; i < energies.length; i++) {
-    flux.push(Math.max(0, energies[i] - energies[i - 1]));
-  }
-  var meanFlux = flux.reduce(function(a, b) { return a + b; }, 0) / flux.length;
-  var thresh = meanFlux * 1.5;
-  var minGap = Math.floor(0.1 * sr / hop);
-  var onsets = [];
-  for (var i = 1; i < flux.length; i++) {
-    if (flux[i] > thresh) {
-      if (onsets.length === 0 || i - onsets[onsets.length - 1] >= minGap) {
-        onsets.push(i);
-      }
-    }
-  }
-  if (onsets.length < 4) return 120;
-  var iois = [];
-  for (var i = 1; i < onsets.length; i++) {
-    iois.push((onsets[i] - onsets[i - 1]) * hop / sr);
-  }
-  var bins = {};
-  for (var k = 0; k < iois.length; k++) {
-    var bpm = Math.round(60 / iois[k]);
-    if (bpm >= 60 && bpm <= 200) bins[bpm] = (bins[bpm] || 0) + 1;
-    var bpm2 = bpm * 2;
-    if (bpm2 >= 60 && bpm2 <= 200) bins[bpm2] = (bins[bpm2] || 0) + 0.5;
-    var bpmH = Math.round(bpm / 2);
-    if (bpmH >= 60 && bpmH <= 200) bins[bpmH] = (bins[bpmH] || 0) + 0.5;
-  }
-  var best = 120, bestC = 0;
-  var keys = Object.keys(bins);
-  for (var i = 0; i < keys.length; i++) {
-    if (bins[keys[i]] > bestC) { bestC = bins[keys[i]]; best = parseInt(keys[i]); }
-  }
-  return best;
+/* Track BPM — will come from metadata per track */
+var TRACK_BPM = 127;
+
+/* Quantize an angle to the nearest 1/16th note on the disc */
+function quantizeAngle(angle, bpm, duration) {
+  var beatsPerLoop = (bpm / 60) * duration;
+  var sixteenthsPerLoop = beatsPerLoop * 4;
+  var stepDeg = 360 / sixteenthsPerLoop;
+  return Math.round(angle / stepDeg) * stepDeg;
 }
 function App() {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('boba-user') || 'null'));
@@ -558,8 +520,8 @@ function App() {
   const scratchRevGainRef = useRef(null);
   const [waveformData, setWaveformData] = useState([]);
   const [audioLoaded, setAudioLoaded] = useState(false);
-  /* Tempo detection & metronome */
-  const detectedBPMRef = useRef(120);
+  /* BPM from track metadata & metronome */
+  const detectedBPMRef = useRef(TRACK_BPM);
   const metronomeNextRef = useRef(0);
   const drumActiveRef = useRef(true);
   /* FX chain refs */
@@ -602,11 +564,6 @@ function App() {
               }
             }
             reversedBuffersRef.current[i] = rev;
-            // Detect tempo from drum track
-            if (i === 0) {
-              detectedBPMRef.current = detectTempo(audioBuffer);
-              console.log('Detected BPM:', detectedBPMRef.current);
-            }
           } catch (e) {
             console.warn('Error loading track', i, trackNames[i], ':', e);
           }
@@ -792,9 +749,10 @@ function App() {
     };
     /* Hold = play */
     playPadSample(true);
-    /* If recording, start a new arc */
+    /* If recording, start a new arc (quantize start to 1/16th note grid) */
     if (recordingRef.current) {
-      var angle = ((180 - rotRef.current % 360) + 360) % 360;
+      var rawAngle = ((180 - rotRef.current % 360) + 360) % 360;
+      var angle = quantizeAngle(rawAngle, TRACK_BPM, audioDurationRef.current || 6);
       var newArc = { startAngle: angle, span: 0, track: st, color: TC[st], scrubPos: scrubPosRef.current, pitch: padPitch };
       var nextArcs = recArcsRef.current.concat(newArc);
       recArcsRef.current = nextArcs;
@@ -1655,14 +1613,13 @@ function App() {
   }, React.createElement("circle", {
     cx: CX, cy: CY, r: LABEL_R - 2
   })), React.createElement("image", {
-    href: "/Boba.png",
-    x: CX - 14,
-    y: CY - 14,
-    width: 28,
-    height: 28,
+    href: "/Bg.png",
+    x: CX - (LABEL_R - 2),
+    y: CY - (LABEL_R - 2),
+    width: (LABEL_R - 2) * 2,
+    height: (LABEL_R - 2) * 2,
     clipPath: "url(#defLblClip)",
-    preserveAspectRatio: "xMidYMid slice",
-    opacity: 0.6
+    preserveAspectRatio: "xMidYMid slice"
   })), /*#__PURE__*/React.createElement("circle", {
     cx: CX,
     cy: CY,
@@ -1833,14 +1790,18 @@ function App() {
         );
       })()
     ),
-    React.createElement("div", { className: "pad-label" }, padActive ? "" : "Tap me"),
+    React.createElement("div", { className: "pad-label" }, "TAP"),
     padZoom !== 1 && React.createElement("div", { className: "pad-zoom-badge" }, padZoom.toFixed(1) + "x")
   ),
   React.createElement("div", { className: "pad-side-btns" },
     React.createElement("button", {
       className: "pad-side-btn" + (padFx ? " fx-on" : ""),
       onClick: togglePadFx
-    }, "FX"),
+    }, React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round" },
+      React.createElement("circle", { cx: 6, cy: 12, r: 2.5 }),
+      React.createElement("circle", { cx: 13, cy: 12, r: 2, opacity: 0.6 }),
+      React.createElement("circle", { cx: 19, cy: 12, r: 1.5, opacity: 0.3 })
+    )),
     React.createElement("button", {
       className: "pad-side-btn",
       style: { borderColor: TC[st] || 'var(--t3)', color: TC[st] || 'var(--t3)' },
