@@ -578,6 +578,7 @@ function App() {
   const startAudioPlayback = React.useCallback((discState) => {
     const ctx = audioContextRef.current;
     if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
 
     // Stop existing
     Object.values(audioSourcesRef.current).forEach(({ source }) => {
@@ -687,13 +688,13 @@ function App() {
     /* If recording, start a new arc */
     if (recordingRef.current) {
       var angle = ((180 - rotRef.current % 360) + 360) % 360;
-      var newArc = { startAngle: angle, span: 0, track: st, color: TC[st] };
+      var newArc = { startAngle: angle, span: 0, track: st, color: TC[st], scrubPos: scrubPosRef.current, pitch: padPitch };
       var nextArcs = recArcsRef.current.concat(newArc);
       recArcsRef.current = nextArcs;
       activeArcIdxRef.current = nextArcs.length - 1;
       setRecArcs(nextArcs);
     }
-  }, [playPadSample, st]);
+  }, [playPadSample, st, padPitch]);
 
   const onPadTouchMove = useCallback((e) => {
     if (!e.touches && Date.now() - padLastTouchRef.current < 500) return;
@@ -858,13 +859,14 @@ function App() {
               if (buf) {
                 var src = ctx.createBufferSource();
                 src.buffer = buf;
+                src.playbackRate.value = a.pitch || 1.0;
                 src.loop = false;
                 var gn = ctx.createGain();
                 gn.gain.value = 0.5;
                 src.connect(gn);
                 gn.connect(ctx.destination);
-                var offset = (a.startAngle / 360) * dur2;
-                src.start(0, offset);
+                var arcOffset = (a.scrubPos !== undefined ? a.scrubPos : 0) * buf.duration;
+                src.start(0, arcOffset);
                 playbackSourcesRef.current[ai] = { source: src, gain: gn };
               }
             } catch(e) {}
