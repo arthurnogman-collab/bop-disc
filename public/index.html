@@ -459,8 +459,9 @@ function App() {
   const [commentText, setCommentText] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
   const [recording, setRecording] = useState(false);
-  const [recLayers, setRecLayers] = useState([]);
-  const [recLoopCount, setRecLoopCount] = useState(0);
+  const [recArcs, setRecArcs] = useState([]);
+  const [, forceArcRender] = useState(0);
+  const arcRenderTRef = useRef(0);
   const [padPitch, setPadPitch] = useState(1.0);
   const [showPitch, setShowPitch] = useState(false);
   const [padActive, setPadActive] = useState(false);
@@ -491,6 +492,10 @@ function App() {
   const padGainRef = useRef(null);
   const recStartTimeRef = useRef(null);
   const recordingRef = useRef(false);
+  const activeArcIdxRef = useRef(-1);
+  const recArcsRef = useRef([]);
+  const playbackSourcesRef = useRef({});
+  const playbackActiveArcsRef = useRef(new Set());
   const reversedBuffersRef = useRef({});
   const scratchSourceRef = useRef(null);
   const scratchGainRef = useRef(null);
@@ -580,7 +585,12 @@ function App() {
     });
     audioSourcesRef.current = {};
 
-    // Start new sources for active tracks
+    // Calculate song offset from disc position
+    var dur = audioDurationRef.current || 6;
+    var playAngle = ((180 - rotRef.current % 360) + 360) % 360;
+    var offset = (playAngle / 360) * dur;
+
+    // Start new sources for active tracks, synced to disc position
     for (let idx = 0; idx < 4; idx++) {
       if (discState.ts[idx] >= 0 && audioBuffersRef.current[idx]) {
         try {
@@ -593,7 +603,7 @@ function App() {
           src.connect(gainNode);
           gainNode.connect(ctx.destination);
 
-          src.start(ctx.currentTime);
+          src.start(ctx.currentTime, offset);
           audioSourcesRef.current[idx] = { source: src, gain: gainNode };
         } catch (e) {
           console.error('Audio playback error at ring', idx, ':', e);
@@ -609,6 +619,12 @@ function App() {
       try { source.stop(ctx.currentTime); } catch (e) {}
     });
     audioSourcesRef.current = {};
+    /* Also stop any arc playback sources */
+    Object.values(playbackSourcesRef.current).forEach(function(ps) {
+      try { ps.source.stop(); } catch(e) {}
+    });
+    playbackSourcesRef.current = {};
+    playbackActiveArcsRef.current.clear();
   }, []);
 
   const playPadSample = useCallback((continuous) => {
@@ -644,46 +660,20 @@ function App() {
     if (pl) { setPl(false); }
     setRecording(true);
     recStartTimeRef.current = performance.now();
-    setRecLoopCount(0);
     const dur = audioDurationRef.current || 6;
     angVelRef.current = 360 / dur;
   }, [pl]);
 
   const stopRecording = useCallback(() => {
     setRecording(false);
+    activeArcIdxRef.current = -1;
   }, []);
-
-  const registerRecHit = useCallback(() => {
-    if (!recStartTimeRef.current) return;
-    const elapsed = performance.now() - recStartTimeRef.current;
-    const dur = (audioDurationRef.current || 6) * 1000;
-    /* Place the mark where the playhead triangle points on the disc.
-       Playhead is at the bottom (180° in disc coords where 0°=top).
-       The disc has rotated by rotRef.current degrees, so the disc-coordinate
-       angle at the playhead is (180 - rotRef.current). */
-    const angle = ((180 - rotRef.current % 360) + 360) % 360;
-    const currentLoop = Math.floor(elapsed / dur);
-    const trackIdx = st; /* remember which ring this was recorded on */
-    setRecLoopCount(prev => {
-      const newCount = Math.max(prev, currentLoop);
-      return newCount;
-    });
-    setRecLayers(prev => {
-      const updated = [...prev];
-      const loopIdx = currentLoop;
-      if (!updated[loopIdx]) {
-        updated[loopIdx] = { color: REC_COLORS[loopIdx % REC_COLORS.length], hits: [], track: trackIdx };
-      }
-      updated[loopIdx].hits.push({ angle, time: elapsed });
-      return updated;
-    });
-  }, [st]);
 
   const onPadTouchStart = useCallback((e) => {
     if (e.touches) {
       padLastTouchRef.current = Date.now();
     } else if (Date.now() - padLastTouchRef.current < 500) {
-      return; /* ignore synthetic mouse event after touch */
+      return;
     }
     e.preventDefault();
     if (audioContextRef.current && audioContextRef.current.state === 'suspended') audioContextRef.current.resume();
@@ -692,8 +682,18 @@ function App() {
       startX: touch.clientX, startY: touch.clientY,
       startTime: performance.now(), moved: false, direction: null
     };
-    if (recordingRef.current) registerRecHit();
-  }, [registerRecHit]);
+    /* Hold = play */
+    playPadSample(true);
+    /* If recording, start a new arc */
+    if (recordingRef.current) {
+      var angle = ((180 - rotRef.current % 360) + 360) % 360;
+      var newArc = { startAngle: angle, span: 0, track: st, color: TC[st] };
+      var nextArcs = recArcsRef.current.concat(newArc);
+      recArcsRef.current = nextArcs;
+      activeArcIdxRef.current = nextArcs.length - 1;
+      setRecArcs(nextArcs);
+    }
+  }, [playPadSample, st]);
 
   const onPadTouchMove = useCallback((e) => {
     if (!e.touches && Date.now() - padLastTouchRef.current < 500) return;
@@ -723,20 +723,15 @@ function App() {
   const onPadTouchEnd = useCallback((e) => {
     if (!e.touches && Date.now() - padLastTouchRef.current < 500) return;
     if (!padTouchRef.current) return;
-    if (!padTouchRef.current.moved) {
-      /* Tap — toggle play/pause */
-      if (recordingRef.current) {
-        /* During recording, each tap plays a one-shot hit */
-        playPadSample(false);
-      } else if (padActiveRef.current) {
-        stopPadSample();
-      } else {
-        playPadSample(true);
-      }
+    /* Release = stop */
+    stopPadSample();
+    /* If recording, finalize the active arc */
+    if (recordingRef.current && activeArcIdxRef.current >= 0) {
+      activeArcIdxRef.current = -1;
     }
     if (padTouchRef.current.direction === 'v') setShowPitch(false);
     padTouchRef.current = null;
-  }, [playPadSample, stopPadSample]);
+  }, [stopPadSample]);
 
   const togglePadFx = useCallback(() => setPadFx(p => !p), []);
   const removeTrack = useCallback(() => {
@@ -749,9 +744,9 @@ function App() {
       n[ad] = d;
       return n;
     });
-    /* Also clear any recording layers for this track */
-    setRecLayers(function(prev) {
-      return prev.filter(function(l) { return l && l.track !== st; });
+    /* Also clear any recorded arcs for this track */
+    setRecArcs(function(prev) {
+      return prev.filter(function(a) { return a && a.track !== st; });
     });
   }, [st, ad]);
 
@@ -802,26 +797,22 @@ function App() {
   }, [pl]);
 
   useEffect(() => { recordingRef.current = recording; }, [recording]);
+  useEffect(() => { recArcsRef.current = recArcs; }, [recArcs]);
 
   /* RAF rotation engine */
   useEffect(() => {
-    const PLAY_SPEED = 90; /* deg/sec ≈ 33 RPM */
     function targetSpeed() {
-      if (recordingRef.current) {
-        const dur = audioDurationRef.current || 6;
-        return 360 / dur;
-      }
-      return plRef.current ? PLAY_SPEED : 0;
+      var dur = audioDurationRef.current || 6;
+      if (recordingRef.current || plRef.current) return 360 / dur;
+      return 0;
     }
     function tick(ts) {
       if (!lastTRef.current) lastTRef.current = ts;
-      const dt = Math.min((ts - lastTRef.current) / 1000, 0.1);
+      var dt = Math.min((ts - lastTRef.current) / 1000, 0.1);
       lastTRef.current = ts;
-      const tgt = targetSpeed();
-      const diff = tgt - angVelRef.current;
-      /* Friction when spinning faster than target (inertia coast-down): 150 deg/s²
-         Acceleration when spinning slower than target (spin-up): 300 deg/s² */
-      const rate = diff < 0 ? 150 : 300;
+      var tgt = targetSpeed();
+      var diff = tgt - angVelRef.current;
+      var rate = diff < 0 ? 150 : 300;
       if (Math.abs(diff) > 0.5) {
         angVelRef.current += Math.sign(diff) * Math.min(Math.abs(diff), rate * dt);
       } else {
@@ -830,6 +821,57 @@ function App() {
       if (!discDragRef.current) {
         rotRef.current = (rotRef.current + angVelRef.current * dt) % 360;
         if (svgRef.current) svgRef.current.style.transform = `rotate(${rotRef.current}deg)`;
+      }
+      /* Grow active recording arc */
+      if (recordingRef.current && activeArcIdxRef.current >= 0) {
+        var arcs = recArcsRef.current;
+        var arc = arcs[activeArcIdxRef.current];
+        if (arc) {
+          var curAngle = ((180 - rotRef.current % 360) + 360) % 360;
+          arc.span = ((arc.startAngle - curAngle) + 360) % 360;
+          /* Trigger re-render ~20fps for visual update */
+          if (ts - arcRenderTRef.current > 50) {
+            arcRenderTRef.current = ts;
+            forceArcRender(function(c) { return c + 1; });
+          }
+        }
+      }
+      /* Playback: trigger/stop samples when playhead enters/leaves arcs */
+      if (plRef.current) {
+        var playAngle = ((180 - rotRef.current % 360) + 360) % 360;
+        var arcs2 = recArcsRef.current;
+        var dur2 = audioDurationRef.current || 6;
+        var ctx = audioContextRef.current;
+        for (var ai = 0; ai < arcs2.length; ai++) {
+          var a = arcs2[ai];
+          if (!a || a.span < 1) continue;
+          var dist = ((a.startAngle - playAngle) + 360) % 360;
+          var inside = dist <= a.span && dist >= 0;
+          var wasIn = playbackActiveArcsRef.current.has(ai);
+          if (inside && !wasIn && ctx) {
+            playbackActiveArcsRef.current.add(ai);
+            try {
+              var buf = audioBuffersRef.current[a.track];
+              if (buf) {
+                var src = ctx.createBufferSource();
+                src.buffer = buf;
+                src.loop = false;
+                var gn = ctx.createGain();
+                gn.gain.value = 0.5;
+                src.connect(gn);
+                gn.connect(ctx.destination);
+                var offset = (a.startAngle / 360) * dur2;
+                src.start(0, offset);
+                playbackSourcesRef.current[ai] = { source: src, gain: gn };
+              }
+            } catch(e) {}
+          } else if (!inside && wasIn) {
+            playbackActiveArcsRef.current.delete(ai);
+            var ps = playbackSourcesRef.current[ai];
+            if (ps) { try { ps.source.stop(); } catch(e) {} }
+            delete playbackSourcesRef.current[ai];
+          }
+        }
       }
       rafRef.current = requestAnimationFrame(tick);
     }
@@ -1266,24 +1308,23 @@ function App() {
     fill: "none",
     stroke: `rgba(255,255,255,${i % 3 === 0 ? 0.025 : 0.01})`,
     strokeWidth: 0.3
-  })), recLayers.map(function(layer, li) {
-    return layer && layer.hits.map(function(hit, hi) {
-      var ringData = RINGS[layer.track !== undefined ? layer.track : st] || RINGS[0];
-      var mr = ringData[0], sw = ringData[1];
-      var startDeg = hit.angle - 5;
-      var endDeg = hit.angle + 5;
-      var startRad = (startDeg - 90) * Math.PI / 180;
-      var endRad = (endDeg - 90) * Math.PI / 180;
-      var x1 = CX + mr * Math.cos(startRad);
-      var y1 = CY + mr * Math.sin(startRad);
-      var x2 = CX + mr * Math.cos(endRad);
-      var y2 = CY + mr * Math.sin(endRad);
-      return React.createElement("path", {
-        key: "rec-" + li + "-" + hi,
-        d: "M " + x1 + " " + y1 + " A " + mr + " " + mr + " 0 0 1 " + x2 + " " + y2,
-        fill: "none", stroke: layer.color, strokeWidth: sw * 0.8, opacity: 0.7,
-        className: "rec-layer-arc"
-      });
+  })), recArcs.map(function(arc, ai) {
+    if (!arc || arc.span < 0.5) return null;
+    var ringData = RINGS[arc.track] || RINGS[0];
+    var mr = ringData[0], sw = ringData[1];
+    var endAngle = ((arc.startAngle - arc.span) + 360) % 360;
+    var startRad = (arc.startAngle - 90) * Math.PI / 180;
+    var endRad = (endAngle - 90) * Math.PI / 180;
+    var x1 = CX + mr * Math.cos(startRad);
+    var y1 = CY + mr * Math.sin(startRad);
+    var x2 = CX + mr * Math.cos(endRad);
+    var y2 = CY + mr * Math.sin(endRad);
+    var largeArc = arc.span > 180 ? 1 : 0;
+    return React.createElement("path", {
+      key: "rec-" + ai,
+      d: "M " + x1 + " " + y1 + " A " + mr + " " + mr + " 0 " + largeArc + " 0 " + x2 + " " + y2,
+      fill: "none", stroke: arc.color, strokeWidth: sw * 0.8, opacity: 0.7,
+      className: "rec-layer-arc"
     });
   }), RINGS.map(([mr, sw], ti) => {
     const src = disc.ts[ti];
