@@ -14,7 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Shizuru&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-ms-user-select:none;touch-action:manipulation;}
 :root{
   --bg:#EDEDF1;--bg2:#E3E3E9;--bg3:#D6D6DE;
   --surface:rgba(255,255,255,0.6);--surface2:rgba(255,255,255,0.3);
@@ -189,7 +189,7 @@ body{display:flex;justify-content:center;align-items:center;}
 
 /* Onboarding Screen */
 .ob-screen{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
-.ob-icon{width:72px;height:72px;margin-bottom:20px;}
+.ob-icon{width:48px;height:48px;margin-bottom:20px;}
 .ob-title{font-family:'Shizuru',sans-serif;font-size:52px;font-weight:400;color:var(--t1);letter-spacing:8px;text-transform:uppercase;line-height:1;margin-bottom:40px;}
 .ob-google-wrap{position:relative;width:100%;max-width:280px;margin-top:24px;}
 .ob-google-wrap>div{position:absolute!important;opacity:0!important;pointer-events:none!important;width:100%!important;height:100%!important;}
@@ -207,7 +207,7 @@ body{display:flex;justify-content:center;align-items:center;}
 /* PWA Install Screen */
 .pwa-screen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;padding-bottom:100px;transition:opacity .4s,transform .4s;}
 .pwa-screen.hidden{opacity:0;transform:scale(1.04);pointer-events:none;}
-.pwa-icon{width:72px;height:72px;margin-bottom:20px;}
+.pwa-icon{width:48px;height:48px;margin-bottom:20px;}
 .pwa-title{font-family:'Shizuru',sans-serif;font-size:52px;font-weight:400;color:var(--t1);letter-spacing:8px;text-transform:uppercase;line-height:1;margin-bottom:40px;}
 .pwa-steps{width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px;margin-bottom:36px;}
 .pwa-step{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.65);border-radius:14px;padding:13px 16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.6);}
@@ -244,7 +244,7 @@ body{display:flex;justify-content:center;align-items:center;}
 </style>
 </head>
 <body>
-<div id="root"></div>
+<div id="root" oncontextmenu="return false"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
@@ -977,7 +977,6 @@ function App() {
       } else {
         addD();
       }
-      setSt(-1);
     } else {
       const maxS = feedItem.slides.length - 1;
       if (fsi < maxS) setFsi(fsi + 1);else if (fi < feedData.length - 1) {
@@ -990,7 +989,6 @@ function App() {
     if (mm) {
       if (ad > 0) {
         setAd(ad - 1);
-        setSt(-1);
       }
     } else {
       if (fsi > 0) setFsi(fsi - 1);else if (fi > 0) {
@@ -1122,10 +1120,8 @@ function App() {
           } else {
             addD();
           }
-          setSt(-1);
         } else if (dx > 0 && ad > 0) {
           setAd(ad - 1);
-          setSt(-1);
         }
       }
     } else {
@@ -1344,21 +1340,32 @@ function App() {
         setSt(ti);
       }
     }
-  })), !pl && mm && RINGS.map(([mr, sw], ti) => disc.ts[ti] !== -1 && /*#__PURE__*/React.createElement("text", {
+  })), mm && RINGS.map(([mr, sw], ti) => disc.ts[ti] !== -1 && /*#__PURE__*/React.createElement("g", {
     key: "lbl" + ti,
-    x: CX,
-    y: CY - mr + sw / 2,
-    textAnchor: "middle",
-    fill: "rgba(255,255,255,0.7)",
-    fontFamily: "Space Grotesk,sans-serif",
-    fontSize: "8",
-    fontWeight: "600",
-    letterSpacing: "1.5",
-    style: {
-      textTransform: 'uppercase',
-      pointerEvents: 'none'
-    }
-  }, TN[ti])), /*#__PURE__*/React.createElement("g", {
+    style: { pointerEvents: 'none' }
+  },
+    React.createElement("rect", {
+      x: CX - 23,
+      y: CY - mr + sw / 2 - 8,
+      width: 46,
+      height: 16,
+      rx: 4,
+      fill: TC[ti],
+      opacity: st === ti ? 1 : 0.75
+    }),
+    React.createElement("text", {
+      x: CX,
+      y: CY - mr + sw / 2 + 1,
+      textAnchor: "middle",
+      dominantBaseline: "central",
+      fill: "#fff",
+      fontFamily: "Space Grotesk,sans-serif",
+      fontSize: "9",
+      fontWeight: "700",
+      letterSpacing: "1.2",
+      style: { textTransform: 'uppercase' }
+    }, TN[ti])
+  )), /*#__PURE__*/React.createElement("g", {
     className: "v-label-group",
     onClick: e => {
       e.stopPropagation();
@@ -1460,9 +1467,7 @@ function App() {
     className: "main",
     onTouchStart: onTS,
     onTouchEnd: onTE,
-    onClick: () => {
-      if (mm) setSt(-1);
-    }
+    onClick: () => {}
   }, mm ? /*#__PURE__*/React.createElement("div", {
     className: "feed-artist"
   }, editingTitle ? /*#__PURE__*/React.createElement("input", {
@@ -1502,7 +1507,6 @@ function App() {
     onClick: e => {
       e.stopPropagation();
       setAd(i);
-      setSt(-1);
     }
   })), discs.length < 8 && /*#__PURE__*/React.createElement("div", {
     className: "dot add-d",
@@ -1804,8 +1808,7 @@ function App() {
     style: { padding: '10px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', opacity: (commentText.trim() && !commentLoading) ? 1 : 0.5 }
   }, "Send")))), /*#__PURE__*/React.createElement("div", {
     className: "btn-bar"
-  }, po ?
-  React.createElement("button", {
+  }, po && React.createElement("button", {
     className: "vp-btn vp-record" + (recording ? " recording" : ""),
     onClick: function() { recording ? stopRecording() : startRecording(); }
   }, recording ?
@@ -1815,8 +1818,7 @@ function App() {
     React.createElement("svg", { width: "15", height: "15", viewBox: "0 0 16 16" },
       React.createElement("circle", { cx: 8, cy: 8, r: 5, fill: "#D42B40" })
     )
-  )
-: /*#__PURE__*/React.createElement("button", {
+  ), /*#__PURE__*/React.createElement("button", {
     className: "vp-btn vp-play" + (pl ? " pressed" : ""),
     onClick: () => {
       const newPl = !pl;
@@ -1865,13 +1867,14 @@ function App() {
         setAd(0);
         setMM(true);
         setPl(false);
+        setSt(3); /* default to vocal track */
       } else {
         // Exiting mix: just exit, changes are saved in disc state
         setMM(false);
         setPl(false);
         setEditingTitle(false);
+        setSt(-1);
       }
-      setSt(-1);
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "led" + (mm ? " on" : "")
@@ -2056,7 +2059,7 @@ function App() {
 
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary, null, React.createElement(App, null)));</script>
 
-<div class="pwa-screen" id="pwaScreen">
+<div class="pwa-screen" id="pwaScreen" oncontextmenu="return false">
   <img src="/icon.svg" class="pwa-icon" alt="Play"/>
   <div class="pwa-title">Play</div>
 
