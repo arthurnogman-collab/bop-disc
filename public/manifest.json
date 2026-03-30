@@ -1,6 +1,6 @@
 {
-  "name": "Wax",
-  "short_name": "Wax",
+  "name": "Boba",
+  "short_name": "Boba",
   "description": "Remix app — mix tracks from classic records",
   "start_url": "/",
   "display": "standalone",
@@ -8,7 +8,7 @@
   "theme_color": "#EDEDF1",
   "orientation": "portrait",
   "icons": [
-    { "src": "/play.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/Boba.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any maskable" },
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
