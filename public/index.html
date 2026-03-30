@@ -1671,22 +1671,7 @@ function App() {
     onTouchStart: onTS,
     onTouchEnd: onTE,
     onClick: () => {}
-  }, mm ? /*#__PURE__*/React.createElement("div", {
-    className: "feed-artist"
-  }, editingTitle ? /*#__PURE__*/React.createElement("input", {
-    className: "fa-title-input",
-    autoFocus: true,
-    placeholder: "Name your track",
-    value: discs[ad].title || '',
-    onChange: e => { const v = e.target.value; setDiscs(p => { const n = [...p]; n[ad] = { ...n[ad], title: v }; return n; }); },
-    onBlur: () => setEditingTitle(false),
-    onKeyDown: e => { if (e.key === 'Enter') setEditingTitle(false); },
-    style: { background: 'none', border: 'none', borderBottom: '1.5px solid var(--t3)', outline: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '600', color: 'var(--t1)', textAlign: 'center', width: '100%', maxWidth: '220px', padding: '4px 0' }
-  }) : /*#__PURE__*/React.createElement("div", {
-    className: "fa-track",
-    onClick: e => { e.stopPropagation(); setEditingTitle(true); },
-    style: { cursor: 'pointer', opacity: discs[ad].title ? 1 : 0.4 }
-  }, discs[ad].title || 'Name your track')) : /*#__PURE__*/React.createElement("div", {
+  }, !mm && /*#__PURE__*/React.createElement("div", {
     className: "feed-artist",
     style: { top: 0, height: 'calc(50% - 170px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }
   }, /*#__PURE__*/React.createElement("div", {
@@ -1822,8 +1807,8 @@ function App() {
       React.createElement("path", { d: "M2 12c0 0 2-4 5-4s3 8 5 8 2-8 5-8 5 4 5 4" })
     ))
   )
-), mm && React.createElement("div", {
-  style: { position:'absolute', bottom:'15%', left:0, right:0, display:'flex', alignItems:'center', justifyContent:'center', gap:'20px', zIndex:10, pointerEvents:'none' }
+)), mm && React.createElement("div", {
+  style: { position:'absolute', bottom:'10%', left:0, right:0, display:'flex', alignItems:'center', justifyContent:'center', gap:'20px', zIndex:10, pointerEvents:'none' }
 },
   po && React.createElement("button", {
     className: "vp-btn vp-record" + (recording ? " recording" : ""),
@@ -1894,7 +1879,7 @@ function App() {
     strokeWidth: "1.8"
   }, /*#__PURE__*/React.createElement("polygon", {
     points: "5 3 19 12 5 21 5 3"
-  })), fmtK(feedData[fi].plays)))), /*#__PURE__*/React.createElement("input", {
+  })), fmtK(feedData[fi].plays))), /*#__PURE__*/React.createElement("input", {
     ref: lr,
     type: "file",
     accept: "image/*",
