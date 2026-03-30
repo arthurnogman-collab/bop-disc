@@ -46,7 +46,7 @@ body{display:flex;justify-content:center;align-items:center;}
 .dot.add-d{border:1.5px solid var(--t4);background:transparent;}
 
 .main{flex:1;position:relative;overflow:hidden;min-height:0;z-index:1;}
-.disc-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-52%);display:flex;flex-direction:column;align-items:center;gap:10px;}
+.disc-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-48%);display:flex;flex-direction:column;align-items:center;gap:10px;}
 .v-wrap{width:340px;height:340px;position:relative;flex-shrink:0;}
 .v-svg{overflow:visible;transform-origin:50% 50%;will-change:transform;touch-action:none;}
 .ring-hit{cursor:pointer;}
@@ -75,7 +75,7 @@ body{display:flex;justify-content:center;align-items:center;}
 /* Feed artist name (above disc) */
 .feed-artist{position:absolute;top:8px;left:0;right:0;text-align:center;z-index:8;}
 .fa-name{font-size:15px;font-weight:700;color:var(--t1);letter-spacing:-0.2px;}
-.fa-track{font-size:11px;color:var(--t3);margin-top:2px;font-weight:400;}
+.fa-track{font-size:13px;color:var(--t3);margin-top:2px;font-weight:500;}
 /* Social counters (below dots) */
 .feed-social{display:flex;align-items:center;justify-content:center;gap:20px;}
 .fs-item{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:500;color:var(--t4);}
@@ -235,7 +235,8 @@ body{display:flex;justify-content:center;align-items:center;}
 .pad-side-btn.fx-on{border-color:var(--accent);color:var(--accent);}
 .pad-side-btn svg{width:18px;height:18px;}
 .vp-record{width:46px;padding:0;}
-.vp-record.recording{box-shadow:inset 0 2px 6px rgba(0,0,0,0.15);transform:scale(0.95);}
+.vp-record.recording{box-shadow:inset 0 2px 6px rgba(0,0,0,0.15),0 0 12px rgba(212,43,64,0.5);transform:scale(0.95);animation:rec-glow 1.2s ease-in-out infinite;}
+@keyframes rec-glow{0%,100%{box-shadow:inset 0 2px 6px rgba(0,0,0,0.15),0 0 8px rgba(212,43,64,0.3);}50%{box-shadow:inset 0 2px 6px rgba(0,0,0,0.15),0 0 18px rgba(255,60,80,0.6);}}
 .rec-layer-arc{pointer-events:none;}
 
 </style>
@@ -414,6 +415,54 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+/* Detect BPM from an AudioBuffer using onset detection */
+function detectTempo(buffer) {
+  var data = buffer.getChannelData(0);
+  var sr = buffer.sampleRate;
+  var winSize = Math.floor(sr * 0.01);
+  var hop = Math.floor(winSize / 2);
+  var energies = [];
+  for (var i = 0; i < data.length - winSize; i += hop) {
+    var sum = 0;
+    for (var j = i; j < i + winSize; j++) sum += data[j] * data[j];
+    energies.push(sum / winSize);
+  }
+  var flux = [0];
+  for (var i = 1; i < energies.length; i++) {
+    flux.push(Math.max(0, energies[i] - energies[i - 1]));
+  }
+  var meanFlux = flux.reduce(function(a, b) { return a + b; }, 0) / flux.length;
+  var thresh = meanFlux * 1.5;
+  var minGap = Math.floor(0.1 * sr / hop);
+  var onsets = [];
+  for (var i = 1; i < flux.length; i++) {
+    if (flux[i] > thresh) {
+      if (onsets.length === 0 || i - onsets[onsets.length - 1] >= minGap) {
+        onsets.push(i);
+      }
+    }
+  }
+  if (onsets.length < 4) return 120;
+  var iois = [];
+  for (var i = 1; i < onsets.length; i++) {
+    iois.push((onsets[i] - onsets[i - 1]) * hop / sr);
+  }
+  var bins = {};
+  for (var k = 0; k < iois.length; k++) {
+    var bpm = Math.round(60 / iois[k]);
+    if (bpm >= 60 && bpm <= 200) bins[bpm] = (bins[bpm] || 0) + 1;
+    var bpm2 = bpm * 2;
+    if (bpm2 >= 60 && bpm2 <= 200) bins[bpm2] = (bins[bpm2] || 0) + 0.5;
+    var bpmH = Math.round(bpm / 2);
+    if (bpmH >= 60 && bpmH <= 200) bins[bpmH] = (bins[bpmH] || 0) + 0.5;
+  }
+  var best = 120, bestC = 0;
+  var keys = Object.keys(bins);
+  for (var i = 0; i < keys.length; i++) {
+    if (bins[keys[i]] > bestC) { bestC = bins[keys[i]]; best = parseInt(keys[i]); }
+  }
+  return best;
+}
 function App() {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('boba-user') || 'null'));
   const [needsName, setNeedsName] = useState(false);
@@ -501,6 +550,13 @@ function App() {
   const scratchRevGainRef = useRef(null);
   const [waveformData, setWaveformData] = useState([]);
   const [audioLoaded, setAudioLoaded] = useState(false);
+  /* Tempo detection & metronome */
+  const detectedBPMRef = useRef(120);
+  const metronomeNextRef = useRef(0);
+  const drumActiveRef = useRef(true);
+  /* FX chain refs */
+  const padFxRef = useRef(false);
+  const fxNodesRef = useRef(null);
 
   // Web Audio API setup
   const audioContextRef = useRef(null);
@@ -515,14 +571,15 @@ function App() {
       if (!audioContextRef.current) {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         audioContextRef.current = ctx;
-        
-        // Load audio stems
+
+        // Load audio stems — per-track try/catch so one failure doesn't block others
         const trackNames = ['drums', 'base', 'fill', 'vocal'];
         const urls = trackNames.map(name => `/albums/Easy Peelers-Polymorph/${name}/main.mp3`);
-        
-        try {
-          for (let i = 0; i < urls.length; i++) {
+
+        for (let i = 0; i < urls.length; i++) {
+          try {
             const response = await fetch(urls[i]);
+            if (!response.ok) { console.warn('Failed to fetch track', i, trackNames[i], response.status); continue; }
             const arrayBuffer = await response.arrayBuffer();
             const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
             audioBuffersRef.current[i] = audioBuffer;
@@ -537,11 +594,16 @@ function App() {
               }
             }
             reversedBuffersRef.current[i] = rev;
+            // Detect tempo from drum track
+            if (i === 0) {
+              detectedBPMRef.current = detectTempo(audioBuffer);
+              console.log('Detected BPM:', detectedBPMRef.current);
+            }
+          } catch (e) {
+            console.warn('Error loading track', i, trackNames[i], ':', e);
           }
-          setAudioLoaded(true);
-        } catch (e) {
-          console.error('Error loading audio:', e);
         }
+        setAudioLoaded(true);
       }
     };
     initAudio();
@@ -621,6 +683,29 @@ function App() {
     playbackActiveArcsRef.current.clear();
   }, []);
 
+  /* Create or retrieve the FX chain (delay + reverb) */
+  const getOrCreateFxChain = useCallback((ctx) => {
+    if (fxNodesRef.current) return fxNodesRef.current;
+    var beatTime = 60 / detectedBPMRef.current;
+    var delayTime = beatTime / 2;
+    var input = ctx.createGain(); input.gain.value = 1.0;
+    var dry = ctx.createGain(); dry.gain.value = 0.7;
+    var wet = ctx.createGain(); wet.gain.value = 0.45;
+    var delay = ctx.createDelay(2.0); delay.delayTime.value = delayTime;
+    var feedback = ctx.createGain(); feedback.gain.value = 0.35;
+    var revDelay = ctx.createDelay(2.0); revDelay.delayTime.value = delayTime * 1.5;
+    var revFeedback = ctx.createGain(); revFeedback.gain.value = 0.2;
+    var revWet = ctx.createGain(); revWet.gain.value = 0.25;
+    input.connect(dry); dry.connect(ctx.destination);
+    input.connect(delay); delay.connect(feedback); feedback.connect(delay);
+    delay.connect(wet); wet.connect(ctx.destination);
+    input.connect(revDelay); revDelay.connect(revFeedback); revFeedback.connect(revDelay);
+    revDelay.connect(revWet); revWet.connect(ctx.destination);
+    var chain = { input: input, dry: dry, wet: wet, delay: delay, feedback: feedback, revDelay: revDelay, revFeedback: revFeedback, revWet: revWet };
+    fxNodesRef.current = chain;
+    return chain;
+  }, []);
+
   const playPadSample = useCallback((continuous) => {
     /* Create AudioContext on demand if not yet initialized */
     if (!audioContextRef.current) {
@@ -644,7 +729,12 @@ function App() {
       const gain = ctx.createGain();
       gain.gain.value = 0.5;
       source.connect(gain);
-      gain.connect(ctx.destination);
+      if (padFxRef.current) {
+        var fxChain = getOrCreateFxChain(ctx);
+        gain.connect(fxChain.input);
+      } else {
+        gain.connect(ctx.destination);
+      }
       const offset = scrubPos * buf.duration;
       source.start(0, offset);
       padSourceRef.current = source;
@@ -653,7 +743,7 @@ function App() {
       padActiveRef.current = true;
       source.onended = () => { if (!continuous) { setPadActive(false); padActiveRef.current = false; } };
     } catch(e) { console.error('playPadSample error:', e); }
-  }, [st, padPitch, scrubPos]);
+  }, [st, padPitch, scrubPos, getOrCreateFxChain]);
 
   const stopPadSample = useCallback(() => {
     if (padSourceRef.current) { try { padSourceRef.current.stop(); } catch(e) {} padSourceRef.current = null; }
@@ -737,7 +827,7 @@ function App() {
     padTouchRef.current = null;
   }, [stopPadSample]);
 
-  const togglePadFx = useCallback(() => setPadFx(p => !p), []);
+  const togglePadFx = useCallback(() => setPadFx(function(p) { var next = !p; padFxRef.current = next; return next; }), []);
   const removeTrack = useCallback(() => {
     if (st < 0) return;
     /* Remove track from disc (set to -1 = empty) */
@@ -801,8 +891,19 @@ function App() {
   }, [pl]);
 
   useEffect(() => { recordingRef.current = recording; }, [recording]);
+  /* Load arcs from disc when switching discs in mix mode */
+  useEffect(() => {
+    if (mm && discs[ad] && discs[ad].arcs) {
+      setRecArcs(discs[ad].arcs);
+      recArcsRef.current = discs[ad].arcs;
+    }
+  }, [ad, mm]);
   useEffect(() => { recArcsRef.current = recArcs; }, [recArcs]);
   useEffect(() => { scrubPosRef.current = scrubPos; }, [scrubPos]);
+  /* Sync drum-active ref for metronome logic in RAF loop */
+  useEffect(() => {
+    drumActiveRef.current = mm ? (discs[ad] && discs[ad].ts[0] >= 0) : true;
+  }, [mm, ad, discs]);
 
   /* RAF rotation engine */
   useEffect(() => {
@@ -865,7 +966,12 @@ function App() {
                 var gn = ctx.createGain();
                 gn.gain.value = 0.5;
                 src.connect(gn);
-                gn.connect(ctx.destination);
+                /* Route through FX chain if active */
+                if (padFxRef.current && fxNodesRef.current) {
+                  gn.connect(fxNodesRef.current.input);
+                } else {
+                  gn.connect(ctx.destination);
+                }
                 var arcOffset = (a.scrubPos !== undefined ? a.scrubPos : 0) * buf.duration;
                 src.start(0, arcOffset);
                 playbackSourcesRef.current[ai] = { source: src, gain: gn };
@@ -876,6 +982,32 @@ function App() {
             var ps = playbackSourcesRef.current[ai];
             if (ps) { try { ps.source.stop(); } catch(e) {} }
             delete playbackSourcesRef.current[ai];
+          }
+        }
+      }
+      /* Metronome: play clicks when drums are removed and playback is active */
+      if (plRef.current && !drumActiveRef.current) {
+        var mctx = audioContextRef.current;
+        if (mctx) {
+          var beatInterval = 60 / detectedBPMRef.current;
+          var now = mctx.currentTime;
+          if (metronomeNextRef.current < now - 0.1) metronomeNextRef.current = now;
+          var schedAhead = 0.15;
+          while (metronomeNextRef.current < now + schedAhead) {
+            var clickTime = metronomeNextRef.current;
+            try {
+              var osc = mctx.createOscillator();
+              osc.frequency.value = 800;
+              osc.type = 'sine';
+              var env = mctx.createGain();
+              env.gain.setValueAtTime(0.15, clickTime);
+              env.gain.exponentialRampToValueAtTime(0.001, clickTime + 0.04);
+              osc.connect(env);
+              env.connect(mctx.destination);
+              osc.start(clickTime);
+              osc.stop(clickTime + 0.06);
+            } catch(me) {}
+            metronomeNextRef.current += beatInterval;
           }
         }
       }
@@ -1911,12 +2043,9 @@ function App() {
   }, po && React.createElement("button", {
     className: "vp-btn vp-record" + (recording ? " recording" : ""),
     onClick: function() { recording ? stopRecording() : startRecording(); }
-  }, recording ?
+  },
     React.createElement("svg", { width: "15", height: "15", viewBox: "0 0 16 16" },
-      React.createElement("rect", { x: 4, y: 4, width: 8, height: 8, rx: 1.5, fill: "currentColor" })
-    ) :
-    React.createElement("svg", { width: "15", height: "15", viewBox: "0 0 16 16" },
-      React.createElement("circle", { cx: 8, cy: 8, r: 5, fill: "#D42B40" })
+      React.createElement("circle", { cx: 8, cy: 8, r: 5, fill: recording ? "#FF3C50" : "#8B1A2E" })
     )
   ), /*#__PURE__*/React.createElement("button", {
     className: "vp-btn vp-play" + (pl ? " pressed" : ""),
@@ -1961,18 +2090,27 @@ function App() {
           samps: [0, 0, 0, 0],
           cuts: [[0, 1], [0, 1], [0, 1], [0, 1]],
           color: 0,
-          title: ''
+          title: '',
+          arcs: []
         };
         setDiscs([newDisc]);
         setAd(0);
+        setRecArcs([]);
+        recArcsRef.current = [];
         setMM(true);
         setPl(false);
         setSt(3); /* default to vocal track */
       } else {
-        // Exiting mix: just exit, changes are saved in disc state
+        // Exiting mix: save recArcs to current disc, then exit
+        setDiscs(function(p) {
+          var n = p.slice();
+          n[ad] = Object.assign({}, n[ad], { arcs: recArcsRef.current.slice() });
+          return n;
+        });
         setMM(false);
         setPl(false);
         setEditingTitle(false);
+        setRecording(false);
         setSt(-1);
       }
     }
