@@ -652,8 +652,13 @@ function App() {
     if (!recStartTimeRef.current) return;
     const elapsed = performance.now() - recStartTimeRef.current;
     const dur = (audioDurationRef.current || 6) * 1000;
-    const angle = ((elapsed / dur) * 360) % 360;
+    /* Place the mark where the playhead triangle points on the disc.
+       Playhead is at the bottom (180° in disc coords where 0°=top).
+       The disc has rotated by rotRef.current degrees, so the disc-coordinate
+       angle at the playhead is (180 - rotRef.current). */
+    const angle = ((180 - rotRef.current % 360) + 360) % 360;
     const currentLoop = Math.floor(elapsed / dur);
+    const trackIdx = st; /* remember which ring this was recorded on */
     setRecLoopCount(prev => {
       const newCount = Math.max(prev, currentLoop);
       return newCount;
@@ -662,28 +667,22 @@ function App() {
       const updated = [...prev];
       const loopIdx = currentLoop;
       if (!updated[loopIdx]) {
-        updated[loopIdx] = { color: REC_COLORS[loopIdx % REC_COLORS.length], hits: [] };
+        updated[loopIdx] = { color: REC_COLORS[loopIdx % REC_COLORS.length], hits: [], track: trackIdx };
       }
       updated[loopIdx].hits.push({ angle, time: elapsed });
       return updated;
     });
-  }, []);
+  }, [st]);
 
   const onPadTouchStart = useCallback((e) => {
     e.preventDefault();
     const touch = e.touches ? e.touches[0] : e;
     padTouchRef.current = {
       startX: touch.clientX, startY: touch.clientY,
-      startTime: performance.now(), moved: false, direction: null, holding: false,
-      holdTimer: setTimeout(() => {
-        if (padTouchRef.current && !padTouchRef.current.moved) {
-          padTouchRef.current.holding = true;
-          playPadSample(true);
-        }
-      }, 200)
+      startTime: performance.now(), moved: false, direction: null
     };
     if (recordingRef.current) registerRecHit();
-  }, [playPadSample, registerRecHit]);
+  }, [registerRecHit]);
 
   const onPadTouchMove = useCallback((e) => {
     e.preventDefault();
@@ -693,7 +692,6 @@ function App() {
     const dy = touch.clientY - padTouchRef.current.startY;
     if (!padTouchRef.current.direction && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
       padTouchRef.current.moved = true;
-      clearTimeout(padTouchRef.current.holdTimer);
       padTouchRef.current.direction = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
     }
     if (padTouchRef.current.direction === 'h') {
@@ -712,22 +710,37 @@ function App() {
 
   const onPadTouchEnd = useCallback((e) => {
     if (!padTouchRef.current) return;
-    clearTimeout(padTouchRef.current.holdTimer);
-    if (padTouchRef.current.holding) {
-      stopPadSample();
-    } else if (!padTouchRef.current.moved) {
-      playPadSample(false);
+    if (!padTouchRef.current.moved) {
+      /* Tap — toggle play/pause */
+      if (recordingRef.current) {
+        /* During recording, each tap plays a one-shot hit */
+        playPadSample(false);
+      } else if (padActive) {
+        stopPadSample();
+      } else {
+        playPadSample(true);
+      }
     }
     if (padTouchRef.current.direction === 'v') setShowPitch(false);
     padTouchRef.current = null;
-  }, [playPadSample, stopPadSample]);
+  }, [playPadSample, stopPadSample, padActive]);
 
   const togglePadFx = useCallback(() => setPadFx(p => !p), []);
-  const lastLayerColor = recLayers.length > 0 ? recLayers[recLayers.length - 1]?.color : null;
-  const removeLastLayer = useCallback(() => {
-    if (recLayers.length === 0) return;
-    setRecLayers(prev => prev.slice(0, -1));
-  }, [recLayers]);
+  const removeTrack = useCallback(() => {
+    if (st < 0) return;
+    /* Remove track from disc (set to -1 = empty) */
+    setDiscs(function(p) {
+      var n = p.slice();
+      var d = Object.assign({}, n[ad], { ts: n[ad].ts.slice() });
+      d.ts[st] = -1;
+      n[ad] = d;
+      return n;
+    });
+    /* Also clear any recording layers for this track */
+    setRecLayers(function(prev) {
+      return prev.filter(function(l) { return l && l.track !== st; });
+    });
+  }, [st, ad]);
 
   const feedItem = feedData[fi];
   const feedSlide = feedItem.slides[fsi] || feedItem.slides[0];
@@ -1246,7 +1259,7 @@ function App() {
     strokeWidth: 0.3
   })), recLayers.map(function(layer, li) {
     return layer && layer.hits.map(function(hit, hi) {
-      var ringData = RINGS[st] || RINGS[0];
+      var ringData = RINGS[layer.track !== undefined ? layer.track : st] || RINGS[0];
       var mr = ringData[0], sw = ringData[1];
       var startDeg = hit.angle - 5;
       var endDeg = hit.angle + 5;
@@ -1554,8 +1567,8 @@ function App() {
     )),
     React.createElement("button", {
       className: "pad-side-btn",
-      style: lastLayerColor ? { borderColor: lastLayerColor, color: lastLayerColor } : {},
-      onClick: removeLastLayer
+      style: { borderColor: TC[st] || 'var(--t3)', color: TC[st] || 'var(--t3)' },
+      onClick: removeTrack
     }, React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
       React.createElement("path", { d: "M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" })
     )),
