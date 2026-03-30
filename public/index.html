@@ -485,6 +485,8 @@ function App() {
   const dragLastTRef = useRef(0); /* timestamp of last drag move */
   const dragLastARef = useRef(0); /* angle at last drag move */
   const padTouchRef = useRef(null);
+  const padActiveRef = useRef(false);
+  const padLastTouchRef = useRef(0);
   const padSourceRef = useRef(null);
   const padGainRef = useRef(null);
   const recStartTimeRef = useRef(null);
@@ -613,6 +615,7 @@ function App() {
     const ctx = audioContextRef.current;
     const buf = audioBuffersRef.current[st];
     if (!ctx || !buf || st < 0) return;
+    if (ctx.state === 'suspended') ctx.resume();
     if (padSourceRef.current) { try { padSourceRef.current.stop(); } catch(e) {} }
     const source = ctx.createBufferSource();
     source.buffer = buf;
@@ -627,12 +630,14 @@ function App() {
     padSourceRef.current = source;
     padGainRef.current = gain;
     setPadActive(true);
-    source.onended = () => { if (!continuous) setPadActive(false); };
+    padActiveRef.current = true;
+    source.onended = () => { if (!continuous) { setPadActive(false); padActiveRef.current = false; } };
   }, [st, padPitch, scrubPos]);
 
   const stopPadSample = useCallback(() => {
     if (padSourceRef.current) { try { padSourceRef.current.stop(); } catch(e) {} padSourceRef.current = null; }
     setPadActive(false);
+    padActiveRef.current = false;
   }, []);
 
   const startRecording = useCallback(() => {
@@ -675,7 +680,13 @@ function App() {
   }, [st]);
 
   const onPadTouchStart = useCallback((e) => {
+    if (e.touches) {
+      padLastTouchRef.current = Date.now();
+    } else if (Date.now() - padLastTouchRef.current < 500) {
+      return; /* ignore synthetic mouse event after touch */
+    }
     e.preventDefault();
+    if (audioContextRef.current && audioContextRef.current.state === 'suspended') audioContextRef.current.resume();
     const touch = e.touches ? e.touches[0] : e;
     padTouchRef.current = {
       startX: touch.clientX, startY: touch.clientY,
@@ -685,6 +696,7 @@ function App() {
   }, [registerRecHit]);
 
   const onPadTouchMove = useCallback((e) => {
+    if (!e.touches && Date.now() - padLastTouchRef.current < 500) return;
     e.preventDefault();
     if (!padTouchRef.current) return;
     const touch = e.touches ? e.touches[0] : e;
@@ -709,13 +721,14 @@ function App() {
   }, []);
 
   const onPadTouchEnd = useCallback((e) => {
+    if (!e.touches && Date.now() - padLastTouchRef.current < 500) return;
     if (!padTouchRef.current) return;
     if (!padTouchRef.current.moved) {
       /* Tap — toggle play/pause */
       if (recordingRef.current) {
         /* During recording, each tap plays a one-shot hit */
         playPadSample(false);
-      } else if (padActive) {
+      } else if (padActiveRef.current) {
         stopPadSample();
       } else {
         playPadSample(true);
@@ -723,7 +736,7 @@ function App() {
     }
     if (padTouchRef.current.direction === 'v') setShowPitch(false);
     padTouchRef.current = null;
-  }, [playPadSample, stopPadSample, padActive]);
+  }, [playPadSample, stopPadSample]);
 
   const togglePadFx = useCallback(() => setPadFx(p => !p), []);
   const removeTrack = useCallback(() => {
@@ -1340,13 +1353,13 @@ function App() {
         setSt(ti);
       }
     }
-  })), mm && RINGS.map(([mr, sw], ti) => disc.ts[ti] !== -1 && /*#__PURE__*/React.createElement("g", {
+  })), mm && RINGS.map(([mr, sw], ti) => /*#__PURE__*/React.createElement("g", {
     key: "lbl" + ti,
     style: { pointerEvents: 'none' }
   },
     React.createElement("rect", {
       x: CX - 23,
-      y: CY - mr + sw / 2 - 8,
+      y: CY - mr - 8,
       width: 46,
       height: 16,
       rx: 4,
@@ -1355,7 +1368,7 @@ function App() {
     }),
     React.createElement("text", {
       x: CX,
-      y: CY - mr + sw / 2 + 1,
+      y: CY - mr,
       textAnchor: "middle",
       dominantBaseline: "central",
       fill: "#fff",
