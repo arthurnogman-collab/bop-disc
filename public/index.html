@@ -1531,6 +1531,8 @@ function App() {
         setRecArcs([]); recArcsRef.current = [];
         setChainMixes(null); chainMixesRef.current = null;
         setChainIndex(0); chainIndexRef.current = 0;
+        rotRef.current = 0; angVelRef.current = 0;
+        if (svgRef.current) svgRef.current.style.transform = 'rotate(0deg)';
         setFi(fi + 1); setFsi(0); setPl(true);
         var nxt = feedData[fi + 1];
         if (nxt && nxt.arcs) { recArcsRef.current = nxt.arcs; setRecArcs(nxt.arcs); }
@@ -1549,6 +1551,8 @@ function App() {
         setRecArcs([]); recArcsRef.current = [];
         setChainMixes(null); chainMixesRef.current = null;
         setChainIndex(0); chainIndexRef.current = 0;
+        rotRef.current = 0; angVelRef.current = 0;
+        if (svgRef.current) svgRef.current.style.transform = 'rotate(0deg)';
         setFi(fi - 1); setFsi(0); setPl(true);
         var prv = feedData[fi - 1];
         if (prv && prv.arcs) { recArcsRef.current = prv.arcs; setRecArcs(prv.arcs); }
@@ -1684,16 +1688,19 @@ function App() {
         if (dy < 0 && fi < feedData.length - 1) newFi = fi + 1;
         if (dy > 0 && fi > 0) newFi = fi - 1;
         if (newFi !== fi) {
-          /* Stop current audio and switch — keep playing if was playing */
-          var wasPlaying = pl;
+          /* Stop current audio and switch — keep playing */
           stopAudioPlayback();
           setRecArcs([]); recArcsRef.current = [];
           setChainMixes(null); chainMixesRef.current = null;
           setChainIndex(0); chainIndexRef.current = 0;
+          /* Reset disc so arcs visually match audio */
+          rotRef.current = 0;
+          angVelRef.current = 0;
+          if (svgRef.current) svgRef.current.style.transform = 'rotate(0deg)';
           setFi(newFi);
           setFsi(0);
           /* Auto-play the new feed item */
-          if (wasPlaying || true) {
+          if (true) {
             setPl(true);
             var nextItem = feedData[newFi];
             if (nextItem && nextItem.arcs && nextItem.arcs.length > 0) {
@@ -1747,8 +1754,8 @@ function App() {
   const discSvg = /*#__PURE__*/React.createElement("svg", {
     ref: svgRef,
     className: "v-svg",
-    onMouseDown: onDiscDragStart,
-    onTouchStart: onDiscDragStart,
+    onMouseDown: mm ? onDiscDragStart : undefined,
+    onTouchStart: mm ? onDiscDragStart : undefined,
     width: SVS,
     height: SVS,
     viewBox: "0 0 " + SVS + " " + SVS
