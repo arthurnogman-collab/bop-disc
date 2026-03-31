@@ -1968,6 +1968,12 @@ function App() {
           for (var j = i; j < Math.min(i + step, raw.length); j++) { sum += raw[j]; cnt++; }
           bars.push(sum / cnt);
         }
+        var dur = audioDurationRef.current || 6;
+        var windowSec = 2 / padZoom;
+        var widthMul = Math.max(1, dur / windowSec);
+        var widthPct = widthMul * 100;
+        var maxOffset = widthPct - 100;
+        var leftPct = -scrubPos * maxOffset;
         var n = bars.length;
         var vw = 400;
         var vh = 100;
@@ -1996,15 +2002,19 @@ function App() {
           }
         }
         d += ' Z';
-        return React.createElement("svg", { viewBox: "0 0 " + vw + " " + vh, preserveAspectRatio: "none" },
-          React.createElement("defs", null,
-            React.createElement("linearGradient", { id: "waveGrad", x1: "0", y1: "0", x2: "0", y2: "1" },
-              React.createElement("stop", { offset: "0%", stopColor: "rgba(120,105,155,0.5)" }),
-              React.createElement("stop", { offset: "50%", stopColor: "rgba(120,105,155,0.2)" }),
-              React.createElement("stop", { offset: "100%", stopColor: "rgba(120,105,155,0.5)" })
-            )
-          ),
-          React.createElement("path", { d: d, fill: "url(#waveGrad)", stroke: "rgba(110,95,150,0.6)", strokeWidth: "1.2", strokeLinejoin: "round" })
+        return React.createElement("div", {
+          style: { position: 'absolute', top: 0, bottom: 0, width: widthPct + '%', left: leftPct + '%' }
+        },
+          React.createElement("svg", { viewBox: "0 0 " + vw + " " + vh, preserveAspectRatio: "none", style: { width: '100%', height: '100%' } },
+            React.createElement("defs", null,
+              React.createElement("linearGradient", { id: "waveGrad", x1: "0", y1: "0", x2: "0", y2: "1" },
+                React.createElement("stop", { offset: "0%", stopColor: "rgba(120,105,155,0.5)" }),
+                React.createElement("stop", { offset: "50%", stopColor: "rgba(120,105,155,0.2)" }),
+                React.createElement("stop", { offset: "100%", stopColor: "rgba(120,105,155,0.5)" })
+              )
+            ),
+            React.createElement("path", { d: d, fill: "url(#waveGrad)", stroke: "rgba(110,95,150,0.6)", strokeWidth: "1.2", strokeLinejoin: "round" })
+          )
         );
       })()
     ),
