@@ -639,7 +639,7 @@ function App() {
   const audioSourcesRef = useRef({});
   const audioDurationRef = useRef(0);
   const audioStartTimeRef = useRef(0);
-  
+
   // Initialize Web Audio API
   useEffect(() => {
     const initAudio = async () => {
@@ -1066,7 +1066,7 @@ function App() {
     setRecArcs(curArcs); recArcsRef.current = curArcs;
   }, [fi]);
 
-  /* Keep screen awake while in mix mode or playing */
+  /* Keep screen awake while in mix mode or playing & resume audio after sleep */
   useEffect(() => {
     var wakeLock = null;
     async function acquire() {
@@ -1079,7 +1079,16 @@ function App() {
     if (mm || pl) {
       acquire();
       /* Re-acquire on visibility change (browser releases on tab switch) */
-      var onVis = function() { if (document.visibilityState === 'visible' && (mm || pl)) acquire(); };
+      var onVis = function() {
+        if (document.visibilityState === 'visible') {
+          if (mm || pl) acquire();
+          /* Resume AudioContext if it was suspended after phone sleep */
+          var ctx = audioContextRef.current;
+          if (ctx && ctx.state === 'suspended') {
+            ctx.resume();
+          }
+        }
+      };
       document.addEventListener('visibilitychange', onVis);
       return function() {
         document.removeEventListener('visibilitychange', onVis);
@@ -1649,8 +1658,8 @@ function App() {
       r: mr,
       fill: "none",
       stroke: discColor,
-      strokeWidth: sw,
-      opacity: 0.88
+      strokeWidth: sw + 1,
+      opacity: 1
     }) : null;
   }), grooves.map((r, i) => /*#__PURE__*/React.createElement("circle", {
     key: i,
@@ -1675,7 +1684,7 @@ function App() {
     return React.createElement("path", {
       key: "rec-" + ai,
       d: "M " + x1 + " " + y1 + " A " + mr + " " + mr + " 0 " + largeArc + " 0 " + x2 + " " + y2,
-      fill: "none", stroke: arc.color, strokeWidth: sw * 0.8, opacity: 0.7,
+      fill: "none", stroke: arc.color, strokeWidth: sw * 0.85, opacity: 0.85,
       className: "rec-layer-arc"
     });
   }), RINGS.map(([mr, sw], ti) => {
