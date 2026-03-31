@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Groove</title>
+<title>Wax</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Groove">
+<meta name="apple-mobile-web-app-title" content="Wax">
 <meta name="theme-color" content="#EDEDF1">
 <link rel="apple-touch-icon" href="/icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Quicksand:wght@500;600;700&family=Shizuru&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-ms-user-select:none;touch-action:manipulation;}
@@ -83,7 +83,7 @@ body{display:flex;justify-content:center;align-items:center;}
 .fa-name{font-size:15px;font-weight:700;color:var(--t1);letter-spacing:-0.2px;}
 .fa-track{font-size:13px;color:var(--t3);margin-top:2px;font-weight:500;}
 /* Social counters (below dots) */
-.feed-social{display:flex;align-items:center;justify-content:center;gap:20px;}
+.feed-social{position:absolute;top:calc(50% + 190px);left:0;right:0;display:flex;align-items:center;justify-content:center;gap:20px;}
 .fs-item{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:500;color:var(--t4);}
 .fs-item svg{width:13px;height:13px;opacity:0.5;}
 .fs-item.liked{color:var(--accent);}
@@ -195,8 +195,8 @@ body{display:flex;justify-content:center;align-items:center;}
 
 /* Onboarding Screen */
 .ob-screen{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
-.ob-icon{width:166px;height:166px;margin-bottom:16px;}
-.ob-title{font-family:'Quicksand',sans-serif;font-size:42px;font-weight:700;color:var(--t1);letter-spacing:3px;text-transform:none;line-height:1;margin-bottom:28px;}
+.ob-icon{width:166px;height:166px;margin-bottom:16px;border-radius:36px;}
+.ob-title{font-family:'Shizuru',cursive;font-size:42px;font-weight:400;color:var(--t1);letter-spacing:3px;text-transform:none;line-height:1;margin-bottom:28px;}
 .ob-google-wrap{position:relative;width:100%;max-width:280px;margin-top:24px;}
 .ob-google-wrap>div{position:absolute!important;opacity:0!important;pointer-events:none!important;width:100%!important;height:100%!important;}
 .ob-google-btn{width:100%;padding:15px 24px;border-radius:14px;border:1px solid rgba(0,0,0,0.08);background:rgba(255,255,255,0.65);backdrop-filter:blur(8px);font-family:inherit;font-size:14px;font-weight:500;color:var(--t1);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s,box-shadow .2s;letter-spacing:0.2px;}
@@ -213,8 +213,8 @@ body{display:flex;justify-content:center;align-items:center;}
 /* PWA Install Screen */
 .pwa-screen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;padding-bottom:60px;transition:opacity .4s,transform .4s;}
 .pwa-screen.hidden{opacity:0;transform:scale(1.04);pointer-events:none;}
-.pwa-icon{width:166px;height:166px;margin-bottom:16px;}
-.pwa-title{font-family:'Quicksand',sans-serif;font-size:42px;font-weight:700;color:var(--t1);letter-spacing:3px;text-transform:none;line-height:1;margin-bottom:28px;}
+.pwa-icon{width:166px;height:166px;margin-bottom:16px;border-radius:36px;}
+.pwa-title{font-family:'Shizuru',cursive;font-size:42px;font-weight:400;color:var(--t1);letter-spacing:3px;text-transform:none;line-height:1;margin-bottom:28px;}
 .pwa-steps{width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px;margin-bottom:36px;}
 .pwa-step{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.65);border-radius:14px;padding:13px 16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.6);}
 .pwa-step-icon{width:36px;height:36px;border-radius:10px;background:var(--t1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;}
@@ -349,12 +349,12 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
   return /*#__PURE__*/React.createElement("div", {
     className: "ob-screen"
   }, /*#__PURE__*/React.createElement("img", {
-    src: "/groove.svg",
+    src: "/wax.png",
     className: "ob-icon",
-    alt: "Groove"
+    alt: "Wax"
   }), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
-  }, "groove"), /*#__PURE__*/React.createElement("div", {
+  }, "wax"), /*#__PURE__*/React.createElement("div", {
     className: "ob-google-wrap"
   }, /*#__PURE__*/React.createElement("div", {
     ref: googleButtonRef
@@ -380,9 +380,9 @@ function DisplayNameScreen({ user, setUser, displayName, setDisplayName, setNeed
   return /*#__PURE__*/React.createElement("div", {
     className: "ob-screen"
   }, /*#__PURE__*/React.createElement("img", {
-    src: "/groove.svg",
+    src: "/wax.png",
     className: "ob-icon",
-    alt: "Groove"
+    alt: "Wax"
   }), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
   }, "Choose Display Name"), /*#__PURE__*/React.createElement("div", {
@@ -763,8 +763,7 @@ function App() {
     playPadSample(true);
     /* If recording, start a new arc (quantize start to 1/16th note grid) */
     if (recordingRef.current) {
-      var rawAngle = ((180 - rotRef.current % 360) + 360) % 360;
-      var angle = quantizeAngle(rawAngle, TRACK_BPM, audioDurationRef.current || 6);
+      var angle = ((180 - rotRef.current % 360) + 360) % 360;
       var newArc = { startAngle: angle, span: 0, track: st, color: TC[st], scrubPos: scrubPosRef.current, pitch: padPitch };
       var nextArcs = recArcsRef.current.concat(newArc);
       recArcsRef.current = nextArcs;
@@ -818,8 +817,34 @@ function App() {
     if (!padTouchRef.current) return;
     /* Release = stop */
     stopPadSample();
-    /* If recording, finalize the active arc */
+    /* If recording, finalize the active arc and remove overlapping arcs on same track */
     if (recordingRef.current && activeArcIdxRef.current >= 0) {
+      var finIdx = activeArcIdxRef.current;
+      var finArc = recArcsRef.current[finIdx];
+      if (finArc && finArc.span > 0) {
+        /* Remove older arcs on the same track that overlap with the new arc */
+        var filtered = recArcsRef.current.filter(function(a, i) {
+          if (i === finIdx) return true; /* keep the new arc */
+          if (a.track !== finArc.track) return true; /* different track, keep */
+          /* Check if arc a overlaps with finArc (both are circular arcs on 0-360 range) */
+          var fStart = finArc.startAngle;
+          var fEnd = ((fStart - finArc.span) + 360) % 360;
+          var aStart = a.startAngle;
+          var aEnd = ((aStart - a.span) + 360) % 360;
+          /* Check if any point of a is inside finArc's range */
+          function angleInArc(angle, arcStart, arcSpan) {
+            var dist = ((arcStart - angle) + 360) % 360;
+            return dist <= arcSpan;
+          }
+          var overlap = angleInArc(aStart, fStart, finArc.span) || angleInArc(aEnd, fStart, finArc.span) ||
+                         angleInArc(fStart, aStart, a.span) || angleInArc(fEnd, aStart, a.span);
+          return !overlap;
+        });
+        if (filtered.length !== recArcsRef.current.length) {
+          recArcsRef.current = filtered;
+          setRecArcs(filtered);
+        }
+      }
       activeArcIdxRef.current = -1;
     }
     if (padTouchRef.current.direction === 'v') setShowPitch(false);
@@ -1546,12 +1571,12 @@ function App() {
     const cutOff = cut[0] * circ;
     return /*#__PURE__*/React.createElement("g", {
       key: ti
-    }, sel && !isEmpty && /*#__PURE__*/React.createElement("circle", {
+    }, sel && /*#__PURE__*/React.createElement("circle", {
       cx: CX,
       cy: CY,
       r: mr,
       fill: "none",
-      stroke: TC[src],
+      stroke: isEmpty ? "rgba(255,255,255,0.3)" : TC[src],
       strokeWidth: sw,
       opacity: 0.4
     }));
@@ -1629,7 +1654,51 @@ function App() {
       letterSpacing: "1.2",
       style: { textTransform: 'uppercase' }
     }, TN[ti])
-  )), /*#__PURE__*/React.createElement("g", {
+  )), mm && st >= 0 && (function() {
+    var ringR = RINGS[st][0];
+    var btnR = 11;
+    var gap = 26;
+    var baseY = CY;
+    var bx = Math.min(CX + ringR, SVS - btnR - 2);
+    return React.createElement("g", { className: "track-actions" },
+      /* FX button */
+      React.createElement("g", {
+        className: "track-action-btn" + (padFx ? " active" : ""),
+        onClick: function(e) { e.stopPropagation(); togglePadFx(); },
+        style: { cursor: 'pointer' }
+      },
+        React.createElement("circle", { cx: bx, cy: baseY - gap, r: btnR, fill: padFx ? "var(--accent)" : "rgba(255,255,255,0.85)", stroke: padFx ? "var(--accent)" : "rgba(0,0,0,0.1)", strokeWidth: 1 }),
+        React.createElement("text", { x: bx, y: baseY - gap + 1, textAnchor: "middle", dominantBaseline: "central", fill: padFx ? "#fff" : "var(--t2)", fontSize: "9", fontWeight: "700", fontFamily: "Space Grotesk,sans-serif" }, "FX")
+      ),
+      /* Remove / Restore button */
+      React.createElement("g", {
+        className: "track-action-btn",
+        onClick: function(e) { e.stopPropagation(); removeOrRestoreTrack(); },
+        style: { cursor: 'pointer' }
+      },
+        React.createElement("circle", { cx: bx, cy: baseY, r: btnR, fill: "rgba(255,255,255,0.85)", stroke: "rgba(0,0,0,0.1)", strokeWidth: 1 }),
+        showBackBtn
+          ? React.createElement("g", { transform: "translate(" + (bx - 7) + "," + (baseY - 7) + ") scale(0.583)" },
+              React.createElement("path", { d: "M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8", fill: "none", stroke: "var(--t2)", strokeWidth: "2.5" }),
+              React.createElement("path", { d: "M21 3v5h-5", fill: "none", stroke: "var(--t2)", strokeWidth: "2.5" })
+            )
+          : React.createElement("g", { transform: "translate(" + (bx - 7) + "," + (baseY - 7) + ") scale(0.583)" },
+              React.createElement("path", { d: "M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6", fill: "none", stroke: "var(--t2)", strokeWidth: "2.5" })
+            )
+      ),
+      /* Wave / Info button */
+      React.createElement("g", {
+        className: "track-action-btn",
+        onClick: function(e) { e.stopPropagation(); },
+        style: { cursor: 'pointer' }
+      },
+        React.createElement("circle", { cx: bx, cy: baseY + gap, r: btnR, fill: "rgba(255,255,255,0.85)", stroke: "rgba(0,0,0,0.1)", strokeWidth: 1 }),
+        React.createElement("g", { transform: "translate(" + (bx - 7) + "," + (baseY + gap - 7) + ") scale(0.583)" },
+          React.createElement("path", { d: "M2 12c0 0 2-4 5-4s3 8 5 8 2-8 5-8 5 4 5 4", fill: "none", stroke: "var(--t2)", strokeWidth: "2.5" })
+        )
+      )
+    );
+  })(), /*#__PURE__*/React.createElement("g", {
     className: "v-label-group",
     onClick: e => {
       e.stopPropagation();
@@ -1823,58 +1892,8 @@ function App() {
     React.createElement("div", { className: "pad-label" }, "TAP"),
     padZoom !== 1 && React.createElement("div", { className: "pad-zoom-badge" }, padZoom.toFixed(1) + "x")
   ),
-  React.createElement("div", { className: "pad-side-btns" },
-    React.createElement("button", {
-      className: "pad-side-btn" + (padFx ? " fx-on" : ""),
-      onClick: togglePadFx
-    }, React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round" },
-      React.createElement("circle", { cx: 6, cy: 12, r: 2.5 }),
-      React.createElement("circle", { cx: 13, cy: 12, r: 2, opacity: 0.6 }),
-      React.createElement("circle", { cx: 19, cy: 12, r: 1.5, opacity: 0.3 })
-    )),
-    React.createElement("button", {
-      className: "pad-side-btn",
-      style: {},
-      onClick: removeOrRestoreTrack
-    }, showBackBtn
-      ? React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
-          React.createElement("path", { d: "M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8" }),
-          React.createElement("path", { d: "M21 3v5h-5" })
-        )
-      : React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
-          React.createElement("path", { d: "M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" })
-        )
-    ),
-    React.createElement("button", {
-      className: "pad-side-btn",
-      onClick: function() {}
-    }, React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
-      React.createElement("path", { d: "M2 12c0 0 2-4 5-4s3 8 5 8 2-8 5-8 5 4 5 4" })
-    ))
-  )
-)), mm && React.createElement("div", {
-  style: { position:'absolute', bottom:'10%', left:0, right:0, display:'flex', alignItems:'center', justifyContent:'center', gap:'20px', zIndex:10, pointerEvents:'none' }
-},
-  po && React.createElement("button", {
-    className: "vp-btn vp-record" + (recording ? " recording" : ""),
-    style: { pointerEvents:'auto' },
-    onClick: function() { recording ? stopRecording() : startRecording(); }
-  },
-    React.createElement("svg", { width: "15", height: "15", viewBox: "0 0 16 16" },
-      React.createElement("circle", { cx: 8, cy: 8, r: 5, fill: recording ? "#FF3C50" : "#8B1A2E" })
-    )
-  ),
-  React.createElement("button", {
-    className: "vp-btn vp-play" + (pl ? " pressed" : ""),
-    style: { pointerEvents:'auto' },
-    onClick: function() { setPl(!pl); }
-  }, pl ? React.createElement("svg", { viewBox: "0 0 16 16" },
-    React.createElement("rect", { x: "3", y: "2", width: "3.5", height: "12", rx: "1", fill: "currentColor" }),
-    React.createElement("rect", { x: "9.5", y: "2", width: "3.5", height: "12", rx: "1", fill: "currentColor" })
-  ) : React.createElement("svg", { viewBox: "0 0 16 16" },
-    React.createElement("path", { d: "M4 2v12l10-6z", fill: "currentColor" })
-  ))
-), !mm && /*#__PURE__*/React.createElement("div", {
+  null
+)), !mm && /*#__PURE__*/React.createElement("div", {
     className: "feed-social"
   }, /*#__PURE__*/React.createElement("div", {
     className: "fs-item" + (likedPosts[fi] ? " liked" : ""),
@@ -2100,7 +2119,7 @@ function App() {
       setCommentLoading(false);
     },
     style: { padding: '10px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', opacity: (commentText.trim() && !commentLoading) ? 1 : 0.5 }
-  }, "Send")))), !mm && /*#__PURE__*/React.createElement("div", {
+  }, "Send")))), /*#__PURE__*/React.createElement("div", {
     className: "btn-bar"
   }, po && React.createElement("button", {
     className: "vp-btn vp-record" + (recording ? " recording" : ""),
@@ -2386,12 +2405,12 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary, null, React.createElement(App, null)));</script>
 
 <div class="pwa-screen" id="pwaScreen" oncontextmenu="return false">
-  <img src="/groove.svg" class="pwa-icon" alt="Groove"/>
-  <div class="pwa-title">groove</div>
+  <img src="/wax.png" class="pwa-icon" alt="Wax"/>
+  <div class="pwa-title">wax</div>
 
   <!-- iOS steps -->
   <div id="iosWrap" style="display:none">
-  <div class="pwa-msg">Groove only works in app mode</div>
+  <div class="pwa-msg">Wax only works in app mode</div>
   <div class="pwa-steps" id="iosSteps">
     <div class="pwa-step">
       <div class="pwa-step-icon">
@@ -2424,13 +2443,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(
 
   <!-- Android install button -->
   <div id="androidWrap" style="display:none" class="pwa-desktop-wrap">
-    <div class="pwa-msg">Groove only works in app mode</div>
+    <div class="pwa-msg">Wax only works in app mode</div>
     <button class="pwa-install-native" id="androidInstallBtn" onclick="triggerAndroidInstall()">Install</button>
   </div>
 
   <!-- Desktop install -->
   <div id="desktopWrap" style="display:none" class="pwa-desktop-wrap">
-    <div class="pwa-msg">Groove only works in app mode.<br>Install it to your device to continue.</div>
+    <div class="pwa-msg">Wax only works in app mode.<br>Install it to your device to continue.</div>
     <button class="pwa-install-native" id="desktopInstallBtn" onclick="triggerDesktopInstall()">Install</button>
   </div>
 

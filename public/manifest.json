@@ -1,6 +1,6 @@
 {
-  "name": "Groove",
-  "short_name": "Groove",
+  "name": "Wax",
+  "short_name": "Wax",
   "description": "Remix app — mix tracks from classic records",
   "start_url": "/",
   "display": "standalone",
