@@ -60,9 +60,9 @@ body{display:flex;justify-content:center;align-items:center;}
 .v-wrap{width:340px;height:340px;position:relative;flex-shrink:0;}
 .disc-overlay{position:absolute;inset:0;pointer-events:none;z-index:5;}
 .track-lbl{position:absolute;pointer-events:auto;cursor:pointer;white-space:nowrap;}
-.track-lbl-pill{display:inline-block;padding:5px 14px;border-radius:14px;color:rgba(255,255,255,0.95);font-family:'Space Grotesk',sans-serif;font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:0 2px 6px rgba(0,0,0,0.2),inset 0 0.5px 0 rgba(255,255,255,0.15);background-size:100% 100%,400%;background-repeat:no-repeat;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+.track-lbl-pill{display:inline-block;padding:5px 14px;border-radius:14px;color:rgba(255,255,255,0.95);font-family:'Space Grotesk',sans-serif;font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:0 2px 6px rgba(0,0,0,0.2),inset 0 0.5px 0 rgba(255,255,255,0.15);background-size:100% 100%,400%;background-repeat:no-repeat;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);}
 .track-lbl.sel .track-lbl-pill{box-shadow:0 0 0 2px rgba(255,255,255,0.6),0 2px 6px rgba(0,0,0,0.2);}
-.disc-remove-btn{position:absolute;pointer-events:auto;width:28px;height:28px;border-radius:14px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,0.95);padding:0;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:0 2px 6px rgba(0,0,0,0.2),inset 0 0.5px 0 rgba(255,255,255,0.15);background-size:100% 100%,500%;background-position:center,70% 30%;background-repeat:no-repeat;}
+.disc-remove-btn{position:absolute;pointer-events:auto;width:32px;height:32px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,0.95);padding:0;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:0 2px 6px rgba(0,0,0,0.2),inset 0 0.5px 0 rgba(255,255,255,0.15);background-size:100% 100%,400%;background-repeat:no-repeat;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);}
 .disc-remove-btn:active{transform:translate(-50%,-50%) scale(0.92);}
 .disc-remove-btn svg{width:14px;height:14px;stroke:white;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.4));}
 .v-svg{overflow:visible;transform-origin:50% 50%;will-change:transform;touch-action:none;}
@@ -1571,7 +1571,7 @@ function App() {
     var id = 'cover-texture-style';
     var el = document.getElementById(id);
     if (!el) { el = document.createElement('style'); el.id = id; document.head.appendChild(el); }
-    el.textContent = '.track-lbl-pill,.disc-remove-btn{background-image:linear-gradient(rgba(40,30,20,0.55),rgba(40,30,20,0.45)),url(' + coverUrl + ') !important;}';
+    el.textContent = '.track-lbl-pill,.disc-remove-btn{background-image:linear-gradient(rgba(30,25,15,0.7),rgba(30,25,15,0.6)),url(' + coverUrl + ') !important;}';
     return function() { var s = document.getElementById(id); if (s) s.remove(); };
   }, [coverUrl]);
 
@@ -1885,7 +1885,7 @@ function App() {
         left: "50%",
         transform: "translate(-50%, -50%)"
       }, onClick: function(e) { e.stopPropagation(); setSt(ti); } },
-        React.createElement("span", { className: "track-lbl-pill", style: { backgroundPosition: 'center, ' + (ti * 25) + '% ' + (ti * 20) + '%', opacity: sel ? 1 : 0.75 } }, TN[ti])
+        React.createElement("span", { className: "track-lbl-pill", style: { backgroundPosition: 'center, ' + (ti * 25) + '% ' + (ti * 20) + '%' } }, TN[ti])
       );
     }),
     st >= 0 && React.createElement("button", { className: "disc-remove-btn", style: {
