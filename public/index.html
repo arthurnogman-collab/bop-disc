@@ -240,10 +240,10 @@ body{display:flex;justify-content:center;align-items:center;}
 .pwa-desktop-wrap{display:flex;flex-direction:column;align-items:center;width:100%;}
 
 /* Drum Pad Area */
-.drum-pad-area{display:flex;align-items:stretch;gap:8px;padding:0 20px;width:300px;position:relative;}
-.pad-more-btn{width:36px;flex-shrink:0;border-radius:12px;border:1.5px solid rgba(0,0,0,0.06);background:var(--chrome);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t3);font-size:18px;font-weight:700;letter-spacing:2px;box-shadow:0 1px 4px rgba(0,0,0,0.06);transition:all .12s;}
-.pad-more-btn:active{transform:scale(0.94);}
-.pad-more-btn.open{background:linear-gradient(180deg,#E0E0E8 0%,#EAEAF0 100%);box-shadow:inset 0 2px 4px rgba(0,0,0,0.1);color:var(--t1);}
+.drum-pad-area{display:flex;align-items:stretch;justify-content:center;gap:0;padding:0 20px;width:300px;position:relative;}
+.pad-more-btn{position:absolute;right:0;top:50%;transform:translateY(-50%);width:24px;height:48px;border:none;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t4);opacity:0.35;transition:opacity .15s;padding:0;}
+.pad-more-btn:active{opacity:0.6;}
+.pad-more-btn.open{opacity:0.6;}
 /* Sample menu overlay */
 .sample-menu-backdrop{position:absolute;inset:0;z-index:150;background:rgba(0,0,0,0.3);}
 .sample-menu{position:absolute;bottom:0;left:0;right:0;z-index:151;background:var(--bg);border-radius:20px 20px 0 0;padding:20px 24px;padding-bottom:max(24px,env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,0.15);transform:translateY(0);transition:transform .3s cubic-bezier(.16,1,.3,1);}
@@ -271,6 +271,15 @@ body{display:flex;justify-content:center;align-items:center;}
 .mic-btn.idle{background:var(--accent);color:#fff;}
 .mic-btn.recording{background:#FF3C50;color:#fff;animation:micPulse 1s infinite;}
 @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,60,80,0.4);}50%{box-shadow:0 0 0 12px rgba(255,60,80,0);}}
+/* Rotary knob controllers */
+.fx-knobs{display:flex;justify-content:center;gap:40px;padding:24px 0 16px;}
+.fx-knob-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.fx-knob{position:relative;width:88px;height:88px;border-radius:50%;background:linear-gradient(145deg,#E8E8EE,#D8D8DE);box-shadow:0 4px 12px rgba(0,0,0,0.12),inset 0 1px 0 rgba(255,255,255,0.6);cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;}
+.fx-knob-inner{position:absolute;inset:6px;border-radius:50%;background:linear-gradient(180deg,#F2F2F6 0%,#E4E4EA 100%);box-shadow:inset 0 2px 4px rgba(0,0,0,0.06),0 1px 0 rgba(255,255,255,0.8);}
+.fx-knob-indicator{position:absolute;top:10px;left:50%;width:3px;height:16px;margin-left:-1.5px;border-radius:2px;background:var(--accent);transform-origin:50% 34px;}
+.fx-knob-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t2);font-family:'Space Grotesk',sans-serif;}
+.fx-knob-value{font-size:18px;font-weight:700;color:var(--t1);font-family:'Space Grotesk',sans-serif;line-height:1;}
+.fx-knob-track{position:absolute;inset:-4px;border-radius:50%;pointer-events:none;}
 .drum-pad{flex:1;aspect-ratio:1;max-height:140px;border-radius:20px;background:linear-gradient(145deg,rgba(255,255,255,0.5),rgba(0,0,0,0.03));border:1.5px solid rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;touch-action:none;position:relative;overflow:hidden;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.8);transition:box-shadow .15s,background .15s;}
 .drum-pad.active{background:linear-gradient(145deg,rgba(255,255,255,0.3),rgba(0,0,0,0.06));box-shadow:inset 0 2px 8px rgba(0,0,0,0.1);}
 .drum-pad-wave{position:absolute;inset:12px;overflow:hidden;pointer-events:none;opacity:0.35;transition:opacity .15s;}
@@ -496,6 +505,8 @@ function App() {
   const [discs, setDiscs] = useState([{
     ts: [0, 0, 0, 0],
     fx: new Set(),
+    fxDelay: 0,
+    fxReverb: 0,
     lb: null,
     samps: [0, 0, 0, 0],
     cuts: [[0, 1], [0, 1], [0, 1], [0, 1]],
@@ -551,6 +562,7 @@ function App() {
   const [micRecording, setMicRecording] = useState(false);
   const micStreamRef = useRef(null);
   const micRecorderRef = useRef(null);
+  const knobDragRef = useRef(null); /* { knob: 'delay'|'reverb', startY, startVal } */
   const dr = useRef(false);
   const lr = useRef(null);
   const touchRef = useRef({
@@ -721,13 +733,13 @@ function App() {
     var beatTime = 60 / detectedBPMRef.current;
     var delayTime = beatTime / 2;
     var input = ctx.createGain(); input.gain.value = 1.0;
-    var dry = ctx.createGain(); dry.gain.value = 0.7;
-    var wet = ctx.createGain(); wet.gain.value = 0.45;
+    var dry = ctx.createGain(); dry.gain.value = 1.0;
+    var wet = ctx.createGain(); wet.gain.value = 0;
     var delay = ctx.createDelay(2.0); delay.delayTime.value = delayTime;
     var feedback = ctx.createGain(); feedback.gain.value = 0.35;
     var revDelay = ctx.createDelay(2.0); revDelay.delayTime.value = delayTime * 1.5;
     var revFeedback = ctx.createGain(); revFeedback.gain.value = 0.2;
-    var revWet = ctx.createGain(); revWet.gain.value = 0.25;
+    var revWet = ctx.createGain(); revWet.gain.value = 0;
     input.connect(dry); dry.connect(ctx.destination);
     input.connect(delay); delay.connect(feedback); feedback.connect(delay);
     delay.connect(wet); wet.connect(ctx.destination);
@@ -977,6 +989,19 @@ function App() {
       stopAudioPlayback();
     }
   }, [pl, disc, startAudioPlayback, stopAudioPlayback]);
+
+  /* Sync FX knob values to audio nodes in real-time */
+  useEffect(() => {
+    if (!fxNodesRef.current) return;
+    var c = fxNodesRef.current;
+    var dv = disc.fxDelay || 0;
+    var rv = disc.fxReverb || 0;
+    c.wet.gain.value = dv * 0.6;
+    c.feedback.gain.value = dv * 0.45;
+    c.revWet.gain.value = rv * 0.5;
+    c.revFeedback.gain.value = rv * 0.3;
+    c.dry.gain.value = 1.0 - (Math.max(dv, rv) * 0.3);
+  }, [disc.fxDelay, disc.fxReverb]);
 
   /* Load feed data from API */
   useEffect(() => {
@@ -2336,7 +2361,7 @@ function App() {
           )
         )
       ),
-      /* FX page */
+      /* FX page — rotary knobs for Delay & Reverb */
       sampleMenuPage === 'fx' && React.createElement(React.Fragment, null,
         React.createElement("div", { className: "sm-title" },
           React.createElement("button", { className: "sm-back", onClick: function() { setSampleMenuPage('main'); } },
@@ -2344,24 +2369,130 @@ function App() {
               React.createElement("path", { d: "M19 12H5" }), React.createElement("path", { d: "M12 19l-7-7 7-7" })
             )
           ),
-          "FX — " + (st >= 0 ? TN[st] : "")
+          "FX"
         ),
-        React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: "8px" } },
-          EFX.map(function(fx, i) {
-            var isOn = disc.fx && disc.fx.has && disc.fx.has(fx);
-            return React.createElement("button", {
-              key: i,
-              onClick: function() {
-                setDiscs(function(p) {
-                  var n = p.slice(); var d = Object.assign({}, n[ad]);
-                  var fxSet = new Set(d.fx || []);
-                  if (fxSet.has(fx)) fxSet.delete(fx); else fxSet.add(fx);
-                  d.fx = fxSet; n[ad] = d; return n;
-                });
+        React.createElement("div", { className: "fx-knobs" },
+          /* Delay knob */
+          (function() {
+            var val = disc.fxDelay || 0;
+            var angle = -135 + val * 270; /* -135 to +135 degrees */
+            return React.createElement("div", { className: "fx-knob-wrap" },
+              React.createElement("div", { className: "fx-knob-value" }, Math.round(val * 100) + "%"),
+              React.createElement("div", {
+                className: "fx-knob",
+                onTouchStart: function(e) {
+                  e.stopPropagation(); e.preventDefault();
+                  var touch = e.touches[0];
+                  knobDragRef.current = { knob: 'delay', startY: touch.clientY, startVal: val };
+                  function onMove(ev) {
+                    ev.preventDefault();
+                    if (!knobDragRef.current) return;
+                    var dy = knobDragRef.current.startY - ev.touches[0].clientY;
+                    var nv = Math.max(0, Math.min(1, knobDragRef.current.startVal + dy / 150));
+                    setDiscs(function(p) { var n = p.slice(); n[ad] = Object.assign({}, n[ad], { fxDelay: nv }); return n; });
+                  }
+                  function onEnd() {
+                    knobDragRef.current = null;
+                    document.removeEventListener('touchmove', onMove);
+                    document.removeEventListener('touchend', onEnd);
+                  }
+                  document.addEventListener('touchmove', onMove, { passive: false });
+                  document.addEventListener('touchend', onEnd);
+                },
+                onMouseDown: function(e) {
+                  e.stopPropagation(); e.preventDefault();
+                  knobDragRef.current = { knob: 'delay', startY: e.clientY, startVal: val };
+                  function onMove(ev) {
+                    ev.preventDefault();
+                    if (!knobDragRef.current) return;
+                    var dy = knobDragRef.current.startY - ev.clientY;
+                    var nv = Math.max(0, Math.min(1, knobDragRef.current.startVal + dy / 150));
+                    setDiscs(function(p) { var n = p.slice(); n[ad] = Object.assign({}, n[ad], { fxDelay: nv }); return n; });
+                  }
+                  function onUp() {
+                    knobDragRef.current = null;
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                  }
+                  document.addEventListener('mousemove', onMove);
+                  document.addEventListener('mouseup', onUp);
+                }
               },
-              style: { padding: "10px 16px", borderRadius: "10px", border: "1px solid " + (isOn ? "var(--accent)" : "rgba(0,0,0,0.06)"), background: isOn ? "rgba(212,43,64,0.08)" : "var(--surface)", color: isOn ? "var(--accent)" : "var(--t2)", fontSize: "12px", fontWeight: "600", fontFamily: "inherit", cursor: "pointer" }
-            }, fx);
-          })
+                React.createElement("div", { className: "fx-knob-inner" }),
+                React.createElement("div", { className: "fx-knob-indicator", style: { transform: "rotate(" + angle + "deg)" } }),
+                /* Arc track SVG */
+                React.createElement("svg", { className: "fx-knob-track", viewBox: "0 0 96 96" },
+                  React.createElement("circle", { cx: 48, cy: 48, r: 44, fill: "none", stroke: "rgba(0,0,0,0.06)", strokeWidth: 3,
+                    strokeDasharray: 3.14159 * 88 * 0.75 + " " + 3.14159 * 88 * 0.25,
+                    strokeDashoffset: -3.14159 * 88 * 0.375, strokeLinecap: "round" }),
+                  val > 0.01 && React.createElement("circle", { cx: 48, cy: 48, r: 44, fill: "none", stroke: "var(--accent)", strokeWidth: 3,
+                    strokeDasharray: (3.14159 * 88 * 0.75 * val) + " " + (3.14159 * 88),
+                    strokeDashoffset: -3.14159 * 88 * 0.375, strokeLinecap: "round", opacity: 0.8 })
+                )
+              ),
+              React.createElement("div", { className: "fx-knob-label" }, "Delay")
+            );
+          })(),
+          /* Reverb knob */
+          (function() {
+            var val = disc.fxReverb || 0;
+            var angle = -135 + val * 270;
+            return React.createElement("div", { className: "fx-knob-wrap" },
+              React.createElement("div", { className: "fx-knob-value" }, Math.round(val * 100) + "%"),
+              React.createElement("div", {
+                className: "fx-knob",
+                onTouchStart: function(e) {
+                  e.stopPropagation(); e.preventDefault();
+                  var touch = e.touches[0];
+                  knobDragRef.current = { knob: 'reverb', startY: touch.clientY, startVal: val };
+                  function onMove(ev) {
+                    ev.preventDefault();
+                    if (!knobDragRef.current) return;
+                    var dy = knobDragRef.current.startY - ev.touches[0].clientY;
+                    var nv = Math.max(0, Math.min(1, knobDragRef.current.startVal + dy / 150));
+                    setDiscs(function(p) { var n = p.slice(); n[ad] = Object.assign({}, n[ad], { fxReverb: nv }); return n; });
+                  }
+                  function onEnd() {
+                    knobDragRef.current = null;
+                    document.removeEventListener('touchmove', onMove);
+                    document.removeEventListener('touchend', onEnd);
+                  }
+                  document.addEventListener('touchmove', onMove, { passive: false });
+                  document.addEventListener('touchend', onEnd);
+                },
+                onMouseDown: function(e) {
+                  e.stopPropagation(); e.preventDefault();
+                  knobDragRef.current = { knob: 'reverb', startY: e.clientY, startVal: val };
+                  function onMove(ev) {
+                    ev.preventDefault();
+                    if (!knobDragRef.current) return;
+                    var dy = knobDragRef.current.startY - ev.clientY;
+                    var nv = Math.max(0, Math.min(1, knobDragRef.current.startVal + dy / 150));
+                    setDiscs(function(p) { var n = p.slice(); n[ad] = Object.assign({}, n[ad], { fxReverb: nv }); return n; });
+                  }
+                  function onUp() {
+                    knobDragRef.current = null;
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                  }
+                  document.addEventListener('mousemove', onMove);
+                  document.addEventListener('mouseup', onUp);
+                }
+              },
+                React.createElement("div", { className: "fx-knob-inner" }),
+                React.createElement("div", { className: "fx-knob-indicator", style: { transform: "rotate(" + angle + "deg)" } }),
+                React.createElement("svg", { className: "fx-knob-track", viewBox: "0 0 96 96" },
+                  React.createElement("circle", { cx: 48, cy: 48, r: 44, fill: "none", stroke: "rgba(0,0,0,0.06)", strokeWidth: 3,
+                    strokeDasharray: 3.14159 * 88 * 0.75 + " " + 3.14159 * 88 * 0.25,
+                    strokeDashoffset: -3.14159 * 88 * 0.375, strokeLinecap: "round" }),
+                  val > 0.01 && React.createElement("circle", { cx: 48, cy: 48, r: 44, fill: "none", stroke: "#7B52B0", strokeWidth: 3,
+                    strokeDasharray: (3.14159 * 88 * 0.75 * val) + " " + (3.14159 * 88),
+                    strokeDashoffset: -3.14159 * 88 * 0.375, strokeLinecap: "round", opacity: 0.8 })
+                )
+              ),
+              React.createElement("div", { className: "fx-knob-label" }, "Reverb")
+            );
+          })()
         )
       )
     )
@@ -2482,6 +2613,8 @@ function App() {
         const newDisc = {
           ts: [...feedSlide.s],
           fx: new Set(),
+          fxDelay: 0,
+          fxReverb: 0,
           lb: null,
           samps: [0, 0, 0, 0],
           cuts: [[0, 1], [0, 1], [0, 1], [0, 1]],
