@@ -54,6 +54,13 @@ body{display:flex;justify-content:center;align-items:center;}
 .main{flex:1;position:relative;overflow:hidden;min-height:0;z-index:1;}
 .disc-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-46%);display:flex;flex-direction:column;align-items:center;gap:10px;}
 .v-wrap{width:340px;height:340px;position:relative;flex-shrink:0;}
+.disc-overlay{position:absolute;inset:0;pointer-events:none;z-index:5;}
+.track-lbl{position:absolute;pointer-events:auto;cursor:pointer;white-space:nowrap;}
+.track-lbl-pill{display:inline-block;padding:3px 10px;border-radius:4px;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;}
+.track-lbl.sel .track-lbl-pill{box-shadow:0 0 0 2px rgba(255,255,255,0.6);}
+.disc-remove-btn{position:absolute;pointer-events:auto;width:28px;height:28px;border-radius:50%;border:1px solid rgba(0,0,0,0.1);background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);padding:0;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+.disc-remove-btn:active{transform:translateY(-50%) scale(0.92);}
+.disc-remove-btn svg{width:14px;height:14px;}
 .v-svg{overflow:visible;transform-origin:50% 50%;will-change:transform;touch-action:none;}
 .ring-hit{cursor:pointer;}
 .v-label-group{cursor:pointer;}
@@ -163,6 +170,7 @@ body{display:flex;justify-content:center;align-items:center;}
 .pg-disc{cursor:pointer;transition:transform .15s;}.pg-disc:active{transform:scale(0.95);}
 .pg-art{width:100%;aspect-ratio:1;border-radius:50%;position:relative;overflow:hidden;box-shadow:0 3px 12px rgba(0,0,0,0.15);}
 .pg-lbl{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:42%;height:42%;border-radius:50%;overflow:hidden;}
+.pg-name{font-size:11px;font-weight:600;color:var(--t2);text-align:center;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
 .pg-lbl img{width:100%;height:100%;object-fit:cover;display:block;}
 .pg-gr{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:.5px solid rgba(255,255,255,0.05);}
 .pg-add{width:100%;aspect-ratio:1;border-radius:50%;border:1.5px dashed var(--t4);display:flex;align-items:center;justify-content:center;opacity:0.35;}
@@ -1630,76 +1638,7 @@ function App() {
         setSt(ti);
       }
     }
-  })), mm && RINGS.map(([mr, sw], ti) => /*#__PURE__*/React.createElement("g", {
-    key: "lbl" + ti,
-    style: { pointerEvents: 'none' }
-  },
-    React.createElement("rect", {
-      x: CX - 23,
-      y: CY - mr - 8,
-      width: 46,
-      height: 16,
-      rx: 4,
-      fill: TC[ti],
-      opacity: st === ti ? 1 : 0.75
-    }),
-    React.createElement("text", {
-      x: CX,
-      y: CY - mr,
-      textAnchor: "middle",
-      dominantBaseline: "central",
-      fill: "#fff",
-      fontFamily: "Space Grotesk,sans-serif",
-      fontSize: "9",
-      fontWeight: "700",
-      letterSpacing: "1.2",
-      style: { textTransform: 'uppercase' }
-    }, TN[ti])
-  )), mm && st >= 0 && (function() {
-    var ringR = RINGS[st][0];
-    var btnR = 11;
-    var gap = 26;
-    var baseY = CY;
-    var bx = Math.min(CX + ringR, SVS - btnR - 2);
-    return React.createElement("g", { className: "track-actions" },
-      /* FX button */
-      React.createElement("g", {
-        className: "track-action-btn" + (padFx ? " active" : ""),
-        onClick: function(e) { e.stopPropagation(); togglePadFx(); },
-        style: { cursor: 'pointer' }
-      },
-        React.createElement("circle", { cx: bx, cy: baseY - gap, r: btnR, fill: padFx ? "var(--accent)" : "rgba(255,255,255,0.85)", stroke: padFx ? "var(--accent)" : "rgba(0,0,0,0.1)", strokeWidth: 1 }),
-        React.createElement("text", { x: bx, y: baseY - gap + 1, textAnchor: "middle", dominantBaseline: "central", fill: padFx ? "#fff" : "var(--t2)", fontSize: "9", fontWeight: "700", fontFamily: "Space Grotesk,sans-serif" }, "FX")
-      ),
-      /* Remove / Restore button */
-      React.createElement("g", {
-        className: "track-action-btn",
-        onClick: function(e) { e.stopPropagation(); removeOrRestoreTrack(); },
-        style: { cursor: 'pointer' }
-      },
-        React.createElement("circle", { cx: bx, cy: baseY, r: btnR, fill: "rgba(255,255,255,0.85)", stroke: "rgba(0,0,0,0.1)", strokeWidth: 1 }),
-        showBackBtn
-          ? React.createElement("g", { transform: "translate(" + (bx - 7) + "," + (baseY - 7) + ") scale(0.583)" },
-              React.createElement("path", { d: "M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8", fill: "none", stroke: "var(--t2)", strokeWidth: "2.5" }),
-              React.createElement("path", { d: "M21 3v5h-5", fill: "none", stroke: "var(--t2)", strokeWidth: "2.5" })
-            )
-          : React.createElement("g", { transform: "translate(" + (bx - 7) + "," + (baseY - 7) + ") scale(0.583)" },
-              React.createElement("path", { d: "M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6", fill: "none", stroke: "var(--t2)", strokeWidth: "2.5" })
-            )
-      ),
-      /* Wave / Info button */
-      React.createElement("g", {
-        className: "track-action-btn",
-        onClick: function(e) { e.stopPropagation(); },
-        style: { cursor: 'pointer' }
-      },
-        React.createElement("circle", { cx: bx, cy: baseY + gap, r: btnR, fill: "rgba(255,255,255,0.85)", stroke: "rgba(0,0,0,0.1)", strokeWidth: 1 }),
-        React.createElement("g", { transform: "translate(" + (bx - 7) + "," + (baseY + gap - 7) + ") scale(0.583)" },
-          React.createElement("path", { d: "M2 12c0 0 2-4 5-4s3 8 5 8 2-8 5-8 5 4 5 4", fill: "none", stroke: "var(--t2)", strokeWidth: "2.5" })
-        )
-      )
-    );
-  })(), /*#__PURE__*/React.createElement("g", {
+  })), /*#__PURE__*/React.createElement("g", {
     className: "v-label-group",
     onClick: e => {
       e.stopPropagation();
@@ -1803,7 +1742,36 @@ function App() {
     className: "playhead-line"
   }), /*#__PURE__*/React.createElement("div", {
     className: "playhead-tri"
-  }))), !mm && feedItem.slides.length > 1 && /*#__PURE__*/React.createElement("div", {
+  })),
+  /* Non-rotating track labels + remove button overlay */
+  mm && !pl && React.createElement("div", { className: "disc-overlay" },
+    RINGS.map(function(ring, ti) {
+      var mr = ring[0];
+      var pct = (mr / SVS) * 100;
+      var sel = st === ti;
+      return React.createElement("div", { key: "tlbl" + ti, className: "track-lbl" + (sel ? " sel" : ""), style: {
+        top: "calc(50% - " + pct + "%)",
+        left: "50%",
+        transform: "translate(-50%, -50%)"
+      }, onClick: function(e) { e.stopPropagation(); setSt(ti); } },
+        React.createElement("span", { className: "track-lbl-pill", style: { background: TC[ti], opacity: sel ? 1 : 0.75 } }, TN[ti])
+      );
+    }),
+    st >= 0 && React.createElement("button", { className: "disc-remove-btn", style: {
+      top: "50%",
+      right: Math.max(0, (SVS / 2 - RINGS[st][0]) / SVS * 100) + "%",
+      transform: "translateY(-50%)"
+    }, onClick: function(e) { e.stopPropagation(); removeOrRestoreTrack(); } },
+      showBackBtn
+        ? React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+            React.createElement("path", { d: "M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8" }),
+            React.createElement("path", { d: "M21 3v5h-5" })
+          )
+        : React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+            React.createElement("path", { d: "M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" })
+          )
+    )
+  )), !mm && feedItem.slides.length > 1 && /*#__PURE__*/React.createElement("div", {
     className: "dots"
   }, feedItem.slides.map((_, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
@@ -2224,7 +2192,7 @@ function App() {
         setSt(-1);
       }
     }
-  }, /*#__PURE__*/React.createElement("span", null, "EDIT")), user && /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("span", null, "REMIX")), user && /*#__PURE__*/React.createElement("button", {
     className: "vp-btn vp-shelf",
     onClick: () => setProf(true)
   }, /*#__PURE__*/React.createElement("svg", {
@@ -2347,7 +2315,7 @@ function App() {
   }, /*#__PURE__*/React.createElement("img", {
     src: C[Math.max(0, d.ts[0])],
     alt: ""
-  }))))), /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", { className: "pg-name" }, d.title || "Untitled"))), /*#__PURE__*/React.createElement("div", {
     className: "pg-disc",
     onClick: () => {
       addD();
@@ -2373,11 +2341,13 @@ function App() {
     y1: "12",
     x2: "19",
     y2: "12"
-  }))))) : /*#__PURE__*/React.createElement(React.Fragment, null, FEED.map((f, i) => /*#__PURE__*/React.createElement("div", {
+  }))))) : /*#__PURE__*/React.createElement(React.Fragment, null, feedData.filter(function(f, i) { return likedPosts[i]; }).map((f, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
-    className: "pg-disc"
+    className: "pg-disc",
+    onClick: () => { var idx = feedData.indexOf(f); if (idx >= 0) { setFi(idx); setProf(false); } }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "pg-art"
+    className: "pg-art",
+    style: { backgroundImage: "url(" + C[Math.max(0, (f.slides[0] || {s:[0]}).s[0])] + ")", backgroundSize: "cover", backgroundPosition: "center" }
   }, [35, 48, 60, 72].map((p, g) => /*#__PURE__*/React.createElement("div", {
     key: g,
     className: "pg-gr",
@@ -2388,9 +2358,9 @@ function App() {
   })), /*#__PURE__*/React.createElement("div", {
     className: "pg-lbl"
   }, /*#__PURE__*/React.createElement("img", {
-    src: C[f.slides[0].s[0]],
+    src: C[Math.max(0, (f.slides[0] || {s:[0]}).s[0])],
     alt: ""
-  })))))))), !user && /*#__PURE__*/React.createElement(GoogleSignInScreen, {
+  }))), /*#__PURE__*/React.createElement("div", { className: "pg-name" }, f.d || f.cr || "Untitled"))), feedData.filter(function(f, i) { return likedPosts[i]; }).length === 0 && /*#__PURE__*/React.createElement("div", { style: { gridColumn: "1/-1", textAlign: "center", color: "var(--t3)", fontSize: "13px", padding: "20px" } }, "No favorites yet")))), !user && /*#__PURE__*/React.createElement(GoogleSignInScreen, {
     setUser,
     setNeedsName,
     setDisplayName
