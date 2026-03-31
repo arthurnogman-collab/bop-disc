@@ -60,11 +60,11 @@ body{display:flex;justify-content:center;align-items:center;}
 .v-wrap{width:340px;height:340px;position:relative;flex-shrink:0;}
 .disc-overlay{position:absolute;inset:0;pointer-events:none;z-index:5;}
 .track-lbl{position:absolute;pointer-events:auto;cursor:pointer;white-space:nowrap;}
-.track-lbl-pill{display:inline-block;padding:3px 10px;border-radius:4px;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;}
-.track-lbl.sel .track-lbl-pill{box-shadow:0 0 0 2px rgba(255,255,255,0.6);}
-.disc-remove-btn{position:absolute;pointer-events:auto;width:28px;height:28px;border-radius:50%;border:1px solid rgba(0,0,0,0.1);background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);padding:0;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+.track-lbl-pill{display:inline-block;padding:5px 14px;border-radius:14px;color:rgba(255,255,255,0.95);font-family:'Space Grotesk',sans-serif;font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:0 2px 6px rgba(0,0,0,0.2),inset 0 0.5px 0 rgba(255,255,255,0.15);background-size:100% 100%,400%;background-repeat:no-repeat;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+.track-lbl.sel .track-lbl-pill{box-shadow:0 0 0 2px rgba(255,255,255,0.6),0 2px 6px rgba(0,0,0,0.2);}
+.disc-remove-btn{position:absolute;pointer-events:auto;width:28px;height:28px;border-radius:14px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,0.95);padding:0;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:0 2px 6px rgba(0,0,0,0.2),inset 0 0.5px 0 rgba(255,255,255,0.15);background-size:100% 100%,500%;background-position:center,70% 30%;background-repeat:no-repeat;}
 .disc-remove-btn:active{transform:translate(-50%,-50%) scale(0.92);}
-.disc-remove-btn svg{width:14px;height:14px;}
+.disc-remove-btn svg{width:14px;height:14px;stroke:white;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.4));}
 .v-svg{overflow:visible;transform-origin:50% 50%;will-change:transform;touch-action:none;}
 .ring-hit{cursor:pointer;}
 .v-label-group{cursor:pointer;}
@@ -330,6 +330,7 @@ body{display:flex;justify-content:center;align-items:center;}
 .pad-side-btn svg{width:18px;height:18px;}
 .vp-record{width:42px;padding:0;}
 .vp-record.recording{background:linear-gradient(180deg,#E0E0E8 0%,#EAEAF0 100%);box-shadow:inset 0 2px 4px rgba(0,0,0,0.1),inset 0 0 0 0.5px rgba(0,0,0,0.04);}
+.vp-record .led{background:#E55;}
 .rec-layer-arc{pointer-events:none;}
 
 </style>
@@ -1563,6 +1564,17 @@ function App() {
   var labelTitle = mm ? (discs[ad].title || 'Untitled') : (feedData[fi] ? (feedData[fi].d || 'Untitled') : 'Untitled');
   var labelArtist = mm ? (user ? (user.displayName || user.name || '') : '') : (feedData[fi] ? (feedData[fi].cr || '') : '');
 
+  /* Cover URL for textured UI elements */
+  var coverIdx = disc.ts.find(function(t) { return t >= 0; });
+  var coverUrl = coverIdx !== undefined ? C[coverIdx] : C[0];
+  useEffect(function() {
+    var id = 'cover-texture-style';
+    var el = document.getElementById(id);
+    if (!el) { el = document.createElement('style'); el.id = id; document.head.appendChild(el); }
+    el.textContent = '.track-lbl-pill,.disc-remove-btn{background-image:linear-gradient(rgba(40,30,20,0.55),rgba(40,30,20,0.45)),url(' + coverUrl + ') !important;}';
+    return function() { var s = document.getElementById(id); if (s) s.remove(); };
+  }, [coverUrl]);
+
   /* Grooves */
   const grooves = [];
   for (let i = 0; i < 30; i++) {
@@ -1873,7 +1885,7 @@ function App() {
         left: "50%",
         transform: "translate(-50%, -50%)"
       }, onClick: function(e) { e.stopPropagation(); setSt(ti); } },
-        React.createElement("span", { className: "track-lbl-pill", style: { background: TC[ti], opacity: sel ? 1 : 0.75 } }, TN[ti])
+        React.createElement("span", { className: "track-lbl-pill", style: { backgroundPosition: 'center, ' + (ti * 25) + '% ' + (ti * 20) + '%', opacity: sel ? 1 : 0.75 } }, TN[ti])
       );
     }),
     st >= 0 && React.createElement("button", { className: "disc-remove-btn", style: {
