@@ -68,6 +68,10 @@ body{display:flex;justify-content:center;align-items:center;}
 .v-svg{overflow:visible;transform-origin:50% 50%;will-change:transform;touch-action:none;}
 .ring-hit{cursor:pointer;}
 .v-label-group{cursor:pointer;}
+.loop-control{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:124px;height:124px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:6;touch-action:none;}
+.loop-dur-text{font-size:12px;font-weight:700;color:rgba(0,0,0,0.35);letter-spacing:0.3px;pointer-events:none;text-shadow:0 1px 4px rgba(255,255,255,0.6);}
+.loop-control.dragging .loop-dur-text{color:var(--accent);font-size:16px;transition:font-size .15s;}
+.loop-pie-svg{position:absolute;inset:0;pointer-events:none;}
 .cut-handle{cursor:grab;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25));}
 /* Playhead triangle — fixed at disc bottom, points up */
 .playhead{position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);z-index:10;display:flex;flex-direction:column;align-items:center;gap:0;pointer-events:none;}
@@ -537,7 +541,9 @@ function App() {
     samps: [0, 0, 0, 0],
     cuts: [[0, 1], [0, 1], [0, 1], [0, 1]],
     color: 0,
-    title: ''
+    title: '',
+    loopFrac: 1,
+    offsets: [0, 0, 0, 0]
   }]);
   const [editingTitle, setEditingTitle] = useState(false);
   const [prof, setProf] = useState(false);
@@ -589,6 +595,12 @@ function App() {
   const micStreamRef = useRef(null);
   const micRecorderRef = useRef(null);
   const knobDragRef = useRef(null); /* { knob: 'delay'|'reverb', startY, startVal } */
+  const [loopDrag, setLoopDrag] = useState(false);
+  const [loopDragFrac, setLoopDragFrac] = useState(1);
+  const loopFracRef = useRef(1);
+  const loopEditRef = useRef(null);
+  const loopTimerRef = useRef(null);
+  const loopDragFracRef = useRef(1);
   const dr = useRef(false);
   const lr = useRef(null);
   const touchRef = useRef({
@@ -658,7 +670,9 @@ function App() {
             const arrayBuffer = await response.arrayBuffer();
             const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
             audioBuffersRef.current[i] = audioBuffer;
-            audioDurationRef.current = Math.max(audioDurationRef.current, audioBuffer.duration);
+            /* Use drum track (index 0) as the reference duration */
+            if (i === 0) audioDurationRef.current = audioBuffer.duration;
+            else if (!audioDurationRef.current) audioDurationRef.current = audioBuffer.duration;
             // Create reversed buffer for scratch
             const rev = ctx.createBuffer(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate);
             for (let ch = 0; ch < audioBuffer.numberOfChannels; ch++) {
@@ -717,19 +731,25 @@ function App() {
     audioSourcesRef.current = {};
 
     // Start new sources for active tracks
+    var lf = discState.loopFrac || 1;
     for (let idx = 0; idx < 4; idx++) {
       if (discState.ts[idx] >= 0 && audioBuffersRef.current[idx]) {
         try {
           const src = ctx.createBufferSource();
-          src.buffer = audioBuffersRef.current[idx];
+          const buf = audioBuffersRef.current[idx];
+          src.buffer = buf;
           src.loop = true;
+          var loopEnd = buf.duration * lf;
+          src.loopStart = 0;
+          src.loopEnd = loopEnd;
 
           const gainNode = ctx.createGain();
           gainNode.gain.value = 0.25;
           src.connect(gainNode);
           gainNode.connect(ctx.destination);
 
-          src.start(0);
+          var trackOffset = discState.offsets ? (discState.offsets[idx] || 0) : 0;
+          src.start(0, trackOffset * loopEnd);
           audioSourcesRef.current[idx] = { source: src, gain: gainNode };
         } catch (e) {
           console.error('Audio playback error at ring', idx, ':', e);
@@ -805,15 +825,14 @@ function App() {
       } else {
         gain.connect(ctx.destination);
       }
-      const offset = scrubPos * buf.duration;
-      source.start(0, offset);
+      source.start(0, 0);
       padSourceRef.current = source;
       padGainRef.current = gain;
       setPadActive(true);
       padActiveRef.current = true;
       source.onended = () => { if (!continuous) { setPadActive(false); padActiveRef.current = false; } };
     } catch(e) { console.error('playPadSample error:', e); }
-  }, [st, padPitch, scrubPos, getOrCreateFxChain]);
+  }, [st, padPitch, getOrCreateFxChain]);
 
   const stopPadSample = useCallback(() => {
     if (padSourceRef.current) { try { padSourceRef.current.stop(); } catch(e) {} padSourceRef.current = null; }
@@ -885,15 +904,14 @@ function App() {
     if (!padTouchRef.current.direction && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
       padTouchRef.current.moved = true;
       padTouchRef.current.direction = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
-      if (padTouchRef.current.direction === 'h') padTouchRef.current.startScrub = scrubPosRef.current;
+      if (padTouchRef.current.direction === 'h') padTouchRef.current.startOffset = scrubPosRef.current;
     }
     if (padTouchRef.current.direction === 'h') {
       var rect = e.currentTarget.getBoundingClientRect();
-      /* Zoom-aware scrub: zoomed in = slower, zoomed out = faster. Also reduced base speed (0.4x) */
-      var delta = -dx / (rect.width * padZoomRef.current * 2.5);
-      var pos = (padTouchRef.current.startScrub || 0) + delta;
-      /* Wrap around: scrolling past end loops to start */
+      var delta = dx / (rect.width * 1.5);
+      var pos = (padTouchRef.current.startOffset || 0) + delta;
       pos = ((pos % 1) + 1) % 1;
+      scrubPosRef.current = pos;
       setScrubPos(pos);
     } else if (padTouchRef.current.direction === 'v') {
       const range = 200;
@@ -940,9 +958,20 @@ function App() {
       }
       activeArcIdxRef.current = -1;
     }
+    if (padTouchRef.current.direction === 'h' && padTouchRef.current.moved) {
+      /* Apply track offset to disc state */
+      var finalOffset = scrubPosRef.current;
+      setDiscs(function(p) {
+        var n = p.slice();
+        var d = Object.assign({}, n[ad], { offsets: (n[ad].offsets || [0,0,0,0]).slice() });
+        d.offsets[st] = finalOffset;
+        n[ad] = d;
+        return n;
+      });
+    }
     if (padTouchRef.current.direction === 'v') setShowPitch(false);
     padTouchRef.current = null;
-  }, [stopPadSample]);
+  }, [stopPadSample, ad, st]);
 
   const togglePadFx = useCallback(() => setPadFx(function(p) { var next = !p; padFxRef.current = next; return next; }), []);
 
@@ -1004,7 +1033,9 @@ function App() {
       lb: chainMix ? chainMix.label_url : null,
       samps: [0, 0, 0, 0],
       cuts: chainMix ? (chainMix.cuts || [[0,1],[0,1],[0,1],[0,1]]) : [[0, 1], [0, 1], [0, 1], [0, 1]],
-      color: chainMix ? (chainMix.disc_color || 0) : 0
+      color: chainMix ? (chainMix.disc_color || 0) : 0,
+      loopFrac: 1,
+      offsets: [0, 0, 0, 0]
     };
   }, [mm, discs, ad, chainMix, feedSlide]);
   const discColor = DISC_COLORS[disc.color || 0];
@@ -1031,6 +1062,11 @@ function App() {
     c.revFeedback.gain.value = rv * 0.3;
     c.dry.gain.value = 1.0 - (Math.max(dv, rv) * 0.3);
   }, [disc.fxDelay, disc.fxReverb]);
+
+  /* Sync loop fraction ref for RAF loop */
+  useEffect(() => {
+    loopFracRef.current = disc.loopFrac || 1;
+  }, [disc.loopFrac]);
 
   /* Load feed data from API */
   useEffect(() => {
@@ -1111,7 +1147,7 @@ function App() {
   /* RAF rotation engine */
   useEffect(() => {
     function targetSpeed() {
-      var dur = audioDurationRef.current || 6;
+      var dur = (audioDurationRef.current || 6) * (loopFracRef.current || 1);
       if (plRef.current) return 360 / dur;
       return 0;
     }
@@ -1459,6 +1495,60 @@ function App() {
       setLblPrompt('');
     }
   };
+  /* Loop duration long-press control */
+  var onLoopDown = function(e) {
+    if (!mm) return;
+    e.stopPropagation();
+    var touch = e.touches ? e.touches[0] : e;
+    var startY = touch.clientY;
+    var startFrac = disc.loopFrac || 1;
+    loopEditRef.current = { startY: startY, currentY: startY, startFrac: startFrac, activated: false };
+    loopDragFracRef.current = startFrac;
+    loopTimerRef.current = setTimeout(function() {
+      if (!loopEditRef.current) return;
+      loopEditRef.current.activated = true;
+      loopEditRef.current.startY = loopEditRef.current.currentY;
+      setLoopDrag(true);
+      setLoopDragFrac(startFrac);
+      loopDragFracRef.current = startFrac;
+      if (navigator.vibrate) navigator.vibrate(15);
+    }, 400);
+    function onMove(ev) {
+      var t = ev.touches ? ev.touches[0] : ev;
+      if (!loopEditRef.current) return;
+      loopEditRef.current.currentY = t.clientY;
+      if (loopEditRef.current.activated) {
+        ev.preventDefault();
+        var dy = t.clientY - loopEditRef.current.startY;
+        /* UP (negative dy) = shorter loop, DOWN (positive dy) = longer loop */
+        var newFrac = loopEditRef.current.startFrac + dy / 250;
+        newFrac = Math.max(0.05, Math.min(1, newFrac));
+        setLoopDragFrac(newFrac);
+        loopDragFracRef.current = newFrac;
+      }
+    }
+    function onUp(ev) {
+      clearTimeout(loopTimerRef.current);
+      if (loopEditRef.current && loopEditRef.current.activated) {
+        var finalFrac = loopDragFracRef.current;
+        setDiscs(function(p) {
+          var n = p.slice();
+          n[ad] = Object.assign({}, n[ad], { loopFrac: finalFrac });
+          return n;
+        });
+      }
+      setLoopDrag(false);
+      loopEditRef.current = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onUp);
+  };
   const onLblUpload = () => {
     setLblDlg(false);
     if (lr.current) lr.current.click();
@@ -1747,11 +1837,7 @@ function App() {
       }
     }
   })), /*#__PURE__*/React.createElement("g", {
-    className: "v-label-group",
-    onClick: e => {
-      e.stopPropagation();
-      onLbl();
-    }
+    className: "v-label-group"
   }, /*#__PURE__*/React.createElement("circle", {
     cx: CX,
     cy: CY,
@@ -1874,6 +1960,32 @@ function App() {
   }), /*#__PURE__*/React.createElement("div", {
     className: "playhead-tri"
   })),
+  /* Loop duration control — center overlay in mix mode */
+  mm && React.createElement("div", {
+    className: "loop-control" + (loopDrag ? " dragging" : ""),
+    onTouchStart: onLoopDown,
+    onMouseDown: onLoopDown
+  },
+    loopDrag && (function() {
+      var r = 56, cx = 62, cy = 62;
+      var frac = loopDragFrac;
+      var pieEl;
+      if (frac >= 0.999) {
+        pieEl = React.createElement("circle", { cx: cx, cy: cy, r: r, fill: "rgba(212,43,64,0.18)" });
+      } else {
+        var angle = frac * 2 * Math.PI;
+        var endX = cx + r * Math.sin(angle);
+        var endY = cy - r * Math.cos(angle);
+        var largeArc = frac > 0.5 ? 1 : 0;
+        var d = "M " + cx + " " + cy + " L " + cx + " " + (cy - r) + " A " + r + " " + r + " 0 " + largeArc + " 1 " + endX + " " + endY + " Z";
+        pieEl = React.createElement("path", { d: d, fill: "rgba(212,43,64,0.22)", stroke: "var(--accent)", strokeWidth: "1.5", strokeLinejoin: "round" });
+      }
+      return React.createElement("svg", { className: "loop-pie-svg", width: 124, height: 124, viewBox: "0 0 124 124" }, pieEl);
+    })(),
+    React.createElement("span", { className: "loop-dur-text" },
+      ((audioDurationRef.current || 6) * (loopDrag ? loopDragFrac : (disc.loopFrac || 1))).toFixed(1) + "s"
+    )
+  ),
   /* Non-rotating track labels + remove button overlay */
   mm && !pl && React.createElement("div", { className: "disc-overlay" },
     RINGS.map(function(ring, ti) {
@@ -1970,22 +2082,26 @@ function App() {
     React.createElement("div", { className: "pad-start-marker" }),
     React.createElement("div", { className: "drum-pad-wave" },
       (function() {
-        var dur = audioDurationRef.current || 6;
-        var windowSec = 2 / padZoom;
-        var widthMul = Math.max(1, dur / windowSec);
-        var widthPct = widthMul * 100;
-        var maxOffset = widthPct - 100;
-        var leftPct = -scrubPos * maxOffset;
         var trackColor = TC[st] || 'rgba(255,255,255,0.5)';
+        var lf = disc.loopFrac || 1;
+        var totalBars = waveformData.length > 0 ? waveformData.length : 200;
+        var activeBars = Math.round(totalBars * lf);
         var bars = waveformData.length > 0 ? waveformData : Array.from({length: 200}, function(_, i) { return 0.2 + Math.sin(i * 0.5 + (st || 0)) * 0.4 + Math.random() * 0.15; });
+        var trackOffset = disc.offsets ? (disc.offsets[st] || 0) : 0;
+        var offsetBarIdx = Math.round(trackOffset * activeBars);
         return React.createElement("div", {
           className: "drum-pad-wave-inner",
-          style: { width: widthPct + '%', left: leftPct + '%' }
+          style: { width: '100%', left: '0%' }
         },
           bars.map(function(peak, i) {
+            var inLoop = i < activeBars;
             return React.createElement("div", {
               key: i, className: "bar",
-              style: { height: Math.max(4, peak * 100) + '%', background: trackColor, opacity: 0.3 + peak * 0.6 }
+              style: {
+                height: Math.max(4, peak * 100) + '%',
+                background: inLoop ? trackColor : 'rgba(0,0,0,0.08)',
+                opacity: inLoop ? (i === offsetBarIdx ? 1 : 0.3 + peak * 0.6) : 0.15
+              }
             });
           })
         );
@@ -2690,7 +2806,9 @@ function App() {
           cuts: [[0, 1], [0, 1], [0, 1], [0, 1]],
           color: 0,
           title: '',
-          arcs: []
+          arcs: [],
+          loopFrac: 1,
+          offsets: [0, 0, 0, 0]
         };
         setDiscs([newDisc]);
         setAd(0);
