@@ -2944,6 +2944,7 @@ function App() {
     onClick: async () => {
       const newPl = !pl;
       setPl(newPl);
+      plRef.current = newPl; /* Sync immediately so RAF doesn't re-trigger on stale state */
       if (newPl && !mm && feedData[fi] && feedData[fi].id) {
         fetch('/api/mixes/' + feedData[fi].id + '/play', { method: 'POST' }).catch(() => {});
         /* Immediately load arcs from feedData so disc renders correctly from the start */
