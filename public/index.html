@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WAX">
-<meta name="theme-color" content="#EDEDF1">
+<meta name="theme-color" content="#E0E0E8">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Quicksand:wght@500;600;700&family=Shizuru&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -22,10 +22,18 @@
   --accent:#D42B40;--accent-glow:rgba(212,43,64,0.2);--accent-dim:rgba(212,43,64,0.08);
   --chrome:linear-gradient(180deg,#FBFBFD 0%,#E8E8F0 100%);
 }
-html,body{width:100%;height:100%;overflow:hidden;background:#EDEDF1;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+  background:
+    repeating-linear-gradient(180deg,rgba(255,255,255,0.04) 0px,transparent 1px,transparent 3px,rgba(0,0,0,0.02) 4px,transparent 5px),
+    radial-gradient(ellipse 100% 60% at 40% 0%,rgba(255,255,255,0.25) 0%,transparent 50%),
+    linear-gradient(180deg,#E8E8EE 0%,#DDDDE5 25%,#E2E2EA 50%,#D8D8E1 75%,#E4E4EC 100%);}
 body{display:flex;justify-content:center;align-items:center;}
-#root{width:375px;height:812px;position:relative;overflow:hidden;display:flex;flex-direction:column;background:linear-gradient(172deg,#F2F2F6 0%,#D8D9E2 6%,#EDECF2 12%,#CBCCD6 20%,#E8E8F0 30%,#D2D3DC 40%,#EAEAF0 48%,#CECFD8 56%,#E6E7EE 64%,#D0D1DA 74%,#ECEDF2 84%,#D5D6DE 92%,#F0F0F5 100%);}
-@media(max-width:400px){#root{width:100vw;height:100vh;height:100dvh;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);}}
+#root{width:375px;height:812px;position:relative;overflow:hidden;display:flex;flex-direction:column;
+  background:
+    repeating-linear-gradient(180deg,rgba(255,255,255,0.04) 0px,transparent 1px,transparent 3px,rgba(0,0,0,0.02) 4px,transparent 5px),
+    radial-gradient(ellipse 100% 60% at 40% 0%,rgba(255,255,255,0.25) 0%,transparent 50%),
+    linear-gradient(180deg,#E8E8EE 0%,#DDDDE5 25%,#E2E2EA 50%,#D8D8E1 75%,#E4E4EC 100%);}
+@media(max-width:400px){#root{width:100vw;height:100vh;height:100dvh;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);background:transparent;}}
 @media(min-width:401px){#root{border-radius:44px;box-shadow:0 20px 60px rgba(0,0,0,0.15),inset 0 0.5px 0 rgba(255,255,255,0.8);}}
 
 .top-bar{height:50px;flex-shrink:0;z-index:10;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(255,255,255,0.4) 0%,transparent 100%);border-bottom:none;box-shadow:none;}
@@ -95,9 +103,9 @@ body{display:flex;justify-content:center;align-items:center;}
 .fa-track{font-size:13px;color:var(--t3);margin-top:2px;font-weight:500;}
 /* Social counters (below dots) */
 .feed-social{position:absolute;top:calc(50% + 185px);left:50%;transform:translateX(-50%);display:inline-flex;align-items:center;justify-content:center;gap:20px;padding:4px 0;background:none;border-radius:0;}
-.fs-item{display:flex;flex-direction:row;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--t3);padding:0;cursor:pointer;letter-spacing:0.3px;opacity:0.5;}
-.fs-item svg{width:13px;height:13px;opacity:0.5;}
-.fs-item.liked{color:var(--accent);opacity:0.8;}.fs-item.liked svg{opacity:0.7;}
+.fs-item{display:flex;flex-direction:row;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--t2);padding:0;cursor:pointer;letter-spacing:0.3px;opacity:0.8;}
+.fs-item svg{width:13px;height:13px;opacity:0.7;}
+.fs-item.liked{color:var(--accent);opacity:1;}.fs-item.liked svg{opacity:0.9;}
 
 /* Color selector removed */
 
