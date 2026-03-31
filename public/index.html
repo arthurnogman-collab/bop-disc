@@ -16,17 +16,17 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-ms-user-select:none;touch-action:manipulation;}
 :root{
-  --bg:#EDEDF1;--bg2:#E3E3E9;--bg3:#D6D6DE;
+  --bg:#FAFAF8;--bg2:#E3E3E9;--bg3:#D6D6DE;
   --surface:rgba(255,255,255,0.6);--surface2:rgba(255,255,255,0.3);
   --t1:#18181F;--t2:#6A6A7C;--t3:#9A9AAC;--t4:#BCBCC8;
   --accent:#D42B40;--accent-glow:rgba(212,43,64,0.2);--accent-dim:rgba(212,43,64,0.08);
   --chrome:linear-gradient(180deg,#FBFBFD 0%,#E8E8F0 100%);
 }
 html,body{width:100%;height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;
-  background:#F5F5F7;}
+  background:#FAFAF8;}
 body{display:flex;justify-content:center;align-items:center;}
 #root{width:375px;height:812px;position:relative;overflow:hidden;display:flex;flex-direction:column;
-  background:#F5F5F7;}
+  background:#FAFAF8;}
 @media(max-width:400px){#root{width:100vw;height:100vh;height:100dvh;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);}}
 @media(min-width:401px){#root{border-radius:44px;box-shadow:0 20px 60px rgba(0,0,0,0.15),inset 0 0.5px 0 rgba(255,255,255,0.8);}}
 
@@ -57,11 +57,11 @@ body{display:flex;justify-content:center;align-items:center;}
 .dot.add-d{border:1.5px solid var(--t4);background:transparent;}
 
 .main{flex:1;position:relative;overflow:hidden;min-height:0;z-index:1;}
-.main::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(0,0,0,0.06) 0%,rgba(0,0,0,0.03) 40%,transparent 65%);pointer-events:none;z-index:0;}
+.main::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(0,0,0,0.03) 0%,rgba(0,0,0,0.015) 40%,transparent 65%);pointer-events:none;z-index:0;}
 .disc-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;transition:transform .3s ease;}
 .disc-center.remix-mode{transform:translate(-50%,-54%);gap:16px;}
 .v-wrap{width:340px;height:340px;position:relative;flex-shrink:0;
-  filter:drop-shadow(0 8px 24px rgba(0,0,0,0.18)) drop-shadow(0 2px 6px rgba(0,0,0,0.12));}
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,0.12)) drop-shadow(0 2px 4px rgba(0,0,0,0.08));}
 .disc-overlay{position:absolute;inset:0;pointer-events:none;z-index:5;}
 .track-lbl{position:absolute;pointer-events:auto;cursor:pointer;white-space:nowrap;}
 .track-lbl-pill{display:inline-block;padding:5px 14px;border-radius:14px;color:rgba(255,255,255,0.95);font-family:'Space Grotesk',sans-serif;font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:0 2px 6px rgba(0,0,0,0.2),inset 0 0.5px 0 rgba(255,255,255,0.15);background-size:100% 100%,400%;background-repeat:no-repeat;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);}
@@ -75,7 +75,7 @@ body{display:flex;justify-content:center;align-items:center;}
 .cut-handle{cursor:grab;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25));}
 /* Playhead triangle — fixed at disc bottom, points up */
 .playhead{position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);z-index:10;display:flex;flex-direction:column;align-items:center;pointer-events:none;}
-.playhead-notch{width:16px;height:8px;background:#F5F5F7;border-radius:8px 8px 0 0;box-shadow:none;}
+.playhead-notch{width:16px;height:8px;background:#FAFAF8;border-radius:8px 8px 0 0;box-shadow:none;}
 
 /* Timeline Editor */
 .timeline-editor{width:280px;padding:8px 0;}
@@ -209,14 +209,14 @@ body{display:flex;justify-content:center;align-items:center;}
 .rename-input::placeholder{color:var(--t4);font-weight:400;}
 .rename-actions{display:flex;gap:10px;}
 .rename-cancel{flex:1;height:40px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;color:var(--t2);letter-spacing:0.3px;
-  background:#F5F5F7;transition:all .12s;}
+  background:#FAFAF8;transition:all .12s;}
 .rename-cancel:active{transform:scale(0.97);opacity:0.7;}
 .rename-save{flex:1;height:40px;border-radius:10px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#fff;letter-spacing:0.3px;
   background:var(--t1);transition:all .12s;}
 .rename-save:active{transform:scale(0.97);opacity:0.8;}
 
 /* Onboarding Screen */
-.ob-screen{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
+.ob-screen{position:fixed;inset:0;z-index:1000;background:#FAFAF8;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
 .ob-icon{width:166px;height:166px;margin-bottom:16px;border-radius:36px;}
 .ob-title{font-family:'Shizuru',cursive;font-size:42px;font-weight:400;color:var(--t1);letter-spacing:3px;text-transform:none;line-height:1;margin-bottom:28px;}
 .ob-google-wrap{position:relative;width:100%;max-width:280px;margin-top:24px;}
@@ -233,7 +233,7 @@ body{display:flex;justify-content:center;align-items:center;}
 .ob-btn:disabled{opacity:0.3;}
 
 /* PWA Install Screen */
-.pwa-screen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;padding-bottom:60px;transition:opacity .4s,transform .4s;}
+.pwa-screen{position:fixed;inset:0;z-index:999;background:#FAFAF8;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;padding-bottom:60px;transition:opacity .4s,transform .4s;}
 .pwa-screen.hidden{opacity:0;transform:scale(1.04);pointer-events:none;}
 .pwa-icon{width:166px;height:166px;margin-bottom:16px;border-radius:36px;}
 .pwa-title{font-family:'Shizuru',cursive;font-size:42px;font-weight:400;color:var(--t1);letter-spacing:3px;text-transform:none;line-height:1;margin-bottom:28px;}
@@ -1667,13 +1667,13 @@ function App() {
     y2: "1"
   }, /*#__PURE__*/React.createElement("stop", {
     offset: "0%",
-    stopColor: "rgba(255,255,255,0.55)"
-  }), /*#__PURE__*/React.createElement("stop", {
-    offset: "15%",
     stopColor: "rgba(255,255,255,0.3)"
   }), /*#__PURE__*/React.createElement("stop", {
+    offset: "15%",
+    stopColor: "rgba(255,255,255,0.15)"
+  }), /*#__PURE__*/React.createElement("stop", {
     offset: "35%",
-    stopColor: "rgba(255,255,255,0.05)"
+    stopColor: "rgba(255,255,255,0.03)"
   }), /*#__PURE__*/React.createElement("stop", {
     offset: "60%",
     stopColor: "rgba(0,0,0,0.0)"
@@ -1687,10 +1687,10 @@ function App() {
     r: "60%"
   }, /*#__PURE__*/React.createElement("stop", {
     offset: "0%",
-    stopColor: "rgba(255,255,255,0.25)"
+    stopColor: "rgba(255,255,255,0.12)"
   }), /*#__PURE__*/React.createElement("stop", {
     offset: "40%",
-    stopColor: "rgba(255,255,255,0.06)"
+    stopColor: "rgba(255,255,255,0.03)"
   }), /*#__PURE__*/React.createElement("stop", {
     offset: "100%",
     stopColor: "rgba(0,0,0,0)"
@@ -1711,11 +1711,11 @@ function App() {
     stopOpacity: "1"
   }), /*#__PURE__*/React.createElement("stop", {
     offset: "85%",
-    stopColor: "#e8e8e8",
+    stopColor: "#f0f0f0",
     stopOpacity: "1"
   }), /*#__PURE__*/React.createElement("stop", {
     offset: "100%",
-    stopColor: "#c0c0c0",
+    stopColor: "#d8d8d8",
     stopOpacity: "1"
   }))), /*#__PURE__*/React.createElement("circle", {
     cx: CX,
@@ -1809,7 +1809,7 @@ function App() {
   /*#__PURE__*/React.createElement("circle", {
     cx: CX,
     cy: CY,
-    r: DISC_R - 1,
+    r: DISC_R,
     fill: "url(#spec)",
     style: {
       pointerEvents: 'none',
@@ -1820,7 +1820,7 @@ function App() {
   /*#__PURE__*/React.createElement("circle", {
     cx: CX,
     cy: CY,
-    r: DISC_R - 1,
+    r: DISC_R,
     fill: "url(#rlight)",
     style: {
       pointerEvents: 'none',
@@ -1831,7 +1831,7 @@ function App() {
   /*#__PURE__*/React.createElement("circle", {
     cx: CX,
     cy: CY,
-    r: DISC_R - 1,
+    r: DISC_R,
     fill: "url(#edgeVig)",
     style: {
       pointerEvents: 'none',
@@ -1842,10 +1842,10 @@ function App() {
   /*#__PURE__*/React.createElement("circle", {
     cx: CX,
     cy: CY,
-    r: DISC_R - 1,
+    r: DISC_R,
     fill: "none",
-    stroke: "rgba(255,255,255,0.25)",
-    strokeWidth: "2.5",
+    stroke: "rgba(255,255,255,0.15)",
+    strokeWidth: "2",
     style: {
       pointerEvents: 'none',
       mixBlendMode: 'overlay'
@@ -1857,8 +1857,8 @@ function App() {
     cy: CY,
     r: DISC_R,
     fill: "none",
-    stroke: "rgba(0,0,0,0.25)",
-    strokeWidth: "1.5"
+    stroke: "rgba(0,0,0,0.15)",
+    strokeWidth: "1"
   }),
   /* Outer highlight ring */
   /*#__PURE__*/React.createElement("circle", {
@@ -1866,7 +1866,7 @@ function App() {
     cy: CY,
     r: DISC_R + 0.8,
     fill: "none",
-    stroke: "rgba(255,255,255,0.12)",
+    stroke: "rgba(255,255,255,0.08)",
     strokeWidth: "0.5"
   }), RINGS.map(([mr, sw], ti) => /*#__PURE__*/React.createElement("circle", {
     key: "hit" + ti,
