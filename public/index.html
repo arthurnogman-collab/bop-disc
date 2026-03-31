@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Wax</title>
+<title>WAX</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Wax">
+<meta name="apple-mobile-web-app-title" content="WAX">
 <meta name="theme-color" content="#EDEDF1">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Quicksand:wght@500;600;700&family=Shizuru&display=swap" rel="stylesheet">
@@ -223,6 +223,7 @@ body{display:flex;justify-content:center;align-items:center;}
 .pwa-dismiss{width:100%;padding:14px;border-radius:14px;border:none;background:var(--t1);color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:0.2px;}
 .pwa-install-native{width:100%;max-width:300px;padding:15px;border-radius:14px;border:none;background:var(--t1);color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:0.3px;}
 .pwa-install-native:hover{opacity:0.9;}
+.pwa-caption{font-size:14px;color:var(--t3);text-align:center;margin-bottom:24px;line-height:1.5;max-width:280px;}
 .pwa-msg{font-size:13px;color:var(--t3);text-align:center;margin-bottom:28px;line-height:1.5;max-width:280px;}
 .pwa-desktop-wrap{display:flex;flex-direction:column;align-items:center;width:100%;}
 
@@ -354,7 +355,7 @@ function GoogleSignInScreen({ setUser, setNeedsName, setDisplayName }) {
     alt: "Wax"
   }), /*#__PURE__*/React.createElement("div", {
     className: "ob-title"
-  }, "wax"), /*#__PURE__*/React.createElement("div", {
+  }, "WAX"), /*#__PURE__*/React.createElement("div", {
     className: "ob-google-wrap"
   }, /*#__PURE__*/React.createElement("div", {
     ref: googleButtonRef
@@ -2406,11 +2407,12 @@ ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(
 
 <div class="pwa-screen" id="pwaScreen" oncontextmenu="return false">
   <img src="/wax.png" class="pwa-icon" alt="Wax"/>
-  <div class="pwa-title">wax</div>
+  <div class="pwa-title">WAX</div>
+  <div class="pwa-caption">Follow the instructions to install WAX</div>
 
   <!-- iOS steps -->
   <div id="iosWrap" style="display:none">
-  <div class="pwa-msg">Wax only works in app mode</div>
+  <div class="pwa-msg">WAX only works in app mode</div>
   <div class="pwa-steps" id="iosSteps">
     <div class="pwa-step">
       <div class="pwa-step-icon">
@@ -2443,13 +2445,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(
 
   <!-- Android install button -->
   <div id="androidWrap" style="display:none" class="pwa-desktop-wrap">
-    <div class="pwa-msg">Wax only works in app mode</div>
+    <div class="pwa-msg">WAX only works in app mode</div>
     <button class="pwa-install-native" id="androidInstallBtn" onclick="triggerAndroidInstall()">Install</button>
   </div>
 
   <!-- Desktop install -->
   <div id="desktopWrap" style="display:none" class="pwa-desktop-wrap">
-    <div class="pwa-msg">Wax only works in app mode.<br>Install it to your device to continue.</div>
+    <div class="pwa-msg">WAX only works in app mode.<br>Install it to your device to continue.</div>
     <button class="pwa-install-native" id="desktopInstallBtn" onclick="triggerDesktopInstall()">Install</button>
   </div>
 
