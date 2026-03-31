@@ -1295,7 +1295,10 @@ function App() {
                   gn.connect(ctx.destination);
                 }
                 var arcOffset = (a.scrubPos !== undefined ? a.scrubPos : 0) * buf.duration;
-                src.start(0, arcOffset);
+                /* If playhead is already partway through this arc, advance audio to match */
+                var timeIntoArc = (dist / 360) * dur2 * (a.pitch || 1.0);
+                var startPos = (arcOffset + timeIntoArc) % buf.duration;
+                src.start(0, startPos);
                 playbackSourcesRef.current[ai] = { source: src, gain: gn };
               }
             } catch(e) {}
