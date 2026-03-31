@@ -52,7 +52,8 @@ body{display:flex;justify-content:center;align-items:center;}
 .dot.add-d{border:1.5px solid var(--t4);background:transparent;}
 
 .main{flex:1;position:relative;overflow:hidden;min-height:0;z-index:1;}
-.disc-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-46%);display:flex;flex-direction:column;align-items:center;gap:10px;}
+.disc-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-46%);display:flex;flex-direction:column;align-items:center;gap:10px;transition:transform .3s ease;}
+.disc-center.remix-mode{transform:translate(-50%,-54%);gap:16px;}
 .v-wrap{width:340px;height:340px;position:relative;flex-shrink:0;}
 .disc-overlay{position:absolute;inset:0;pointer-events:none;z-index:5;}
 .track-lbl{position:absolute;pointer-events:auto;cursor:pointer;white-space:nowrap;}
@@ -243,10 +244,16 @@ body{display:flex;justify-content:center;align-items:center;}
 .drum-pad.active .drum-pad-wave{opacity:0.7;}
 .drum-pad-wave-inner{position:absolute;top:0;bottom:0;display:flex;align-items:center;}
 .drum-pad-wave-inner .bar{flex:1;border-radius:1px;min-width:1px;}
-.drum-pad .pad-groove{position:absolute;left:16px;right:16px;top:50%;height:1px;background:rgba(0,0,0,0.04);pointer-events:none;}
-.drum-pad .pad-playhead{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:rgba(0,0,0,0.12);pointer-events:none;}
-.drum-pad .pad-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:var(--t4);letter-spacing:8px;text-transform:uppercase;pointer-events:none;font-family:'Space Grotesk',sans-serif;text-indent:8px;transition:opacity .15s;}
-.drum-pad.active .pad-label{opacity:0;}
+.drum-pad .pad-groove{position:absolute;left:16px;right:16px;top:50%;height:1px;background:rgba(0,0,0,0.08);pointer-events:none;opacity:0;transition:opacity .15s;}
+.drum-pad.active .pad-groove{opacity:1;}
+.drum-pad .pad-playhead{position:absolute;left:50%;top:12px;bottom:12px;width:1.5px;margin-left:-0.75px;background:rgba(0,0,0,0.15);pointer-events:none;opacity:0;transition:opacity .15s;}
+.drum-pad.active .pad-playhead{opacity:1;}
+.drum-pad .pad-start-marker{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.2);background:rgba(255,255,255,0.6);pointer-events:none;opacity:0;transition:opacity .15s;}
+.drum-pad.active .pad-start-marker{opacity:1;}
+.drum-pad .pad-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;letter-spacing:10px;text-transform:uppercase;pointer-events:none;font-family:'Space Grotesk',sans-serif;text-indent:10px;transition:opacity .15s;
+  color:transparent;background:linear-gradient(180deg,rgba(0,0,0,0.06) 0%,rgba(0,0,0,0.12) 100%);-webkit-background-clip:text;background-clip:text;
+  text-shadow:0 1px 1px rgba(255,255,255,0.7),0 -1px 0 rgba(0,0,0,0.04);}
+.drum-pad.active .pad-label{opacity:0.3;}
 .drum-pad .pad-zoom-badge{position:absolute;top:8px;right:10px;font-size:8px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:0.5px;pointer-events:none;font-family:'Space Grotesk',sans-serif;}
 .pitch-dial{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);pointer-events:none;opacity:0;transition:opacity .15s;z-index:10;}
 .pitch-dial.visible{opacity:1;}
@@ -1733,7 +1740,7 @@ function App() {
   }, feedData[fi].cr), /*#__PURE__*/React.createElement("div", {
     className: "fa-track"
   }, feedData[fi].d)), /*#__PURE__*/React.createElement("div", {
-    className: "disc-center"
+    className: "disc-center" + (mm ? " remix-mode" : "")
   }, /*#__PURE__*/React.createElement("div", {
     className: "v-wrap"
   }, discSvg, /*#__PURE__*/React.createElement("div", {
@@ -1831,10 +1838,12 @@ function App() {
     onMouseMove: onPadTouchMove,
     onMouseUp: onPadTouchEnd
   },
-    /* Center groove line */
+    /* Center groove line — only visible when active */
     React.createElement("div", { className: "pad-groove" }),
-    /* Center playhead */
+    /* Vertical center line — only visible when active */
     React.createElement("div", { className: "pad-playhead" }),
+    /* Center start marker — only visible when active */
+    React.createElement("div", { className: "pad-start-marker" }),
     React.createElement("div", { className: "drum-pad-wave" },
       (function() {
         var dur = audioDurationRef.current || 6;
@@ -2176,7 +2185,7 @@ function App() {
         setChainIndex(0); chainIndexRef.current = 0;
         setMM(true);
         setPl(false);
-        setSt(-1); /* no default track — user selects from disc */
+        setSt(3); /* default to Vocal track */
       } else {
         // Exiting mix: save recArcs to current disc, then exit
         setDiscs(function(p) {
