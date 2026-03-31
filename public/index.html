@@ -55,6 +55,7 @@ body{display:flex;justify-content:center;align-items:center;}
 .dot.add-d{border:1.5px solid var(--t4);background:transparent;}
 
 .main{flex:1;position:relative;overflow:hidden;min-height:0;z-index:1;}
+.main::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(180,170,200,0.15) 0%,rgba(180,170,200,0.05) 50%,transparent 70%);pointer-events:none;z-index:0;}
 .disc-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;transition:transform .3s ease;}
 .disc-center.remix-mode{transform:translate(-50%,-54%);gap:16px;}
 .v-wrap{width:340px;height:340px;position:relative;flex-shrink:0;}
@@ -93,10 +94,10 @@ body{display:flex;justify-content:center;align-items:center;}
 .fa-name{font-size:15px;font-weight:700;color:var(--t1);letter-spacing:-0.2px;}
 .fa-track{font-size:13px;color:var(--t3);margin-top:2px;font-weight:500;}
 /* Social counters (below dots) */
-.feed-social{position:absolute;top:calc(50% + 182px);left:50%;transform:translateX(-50%);display:inline-flex;align-items:center;justify-content:center;gap:16px;padding:6px 20px;background:rgba(0,0,0,0.04);border-radius:14px;}
-.fs-item{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;font-weight:600;color:var(--t3);padding:2px 8px;cursor:pointer;letter-spacing:0.5px;}
-.fs-item svg{width:16px;height:16px;opacity:0.4;}
-.fs-item.liked{color:var(--accent);}.fs-item.liked svg{opacity:0.7;}
+.feed-social{position:absolute;top:calc(50% + 185px);left:50%;transform:translateX(-50%);display:inline-flex;align-items:center;justify-content:center;gap:20px;padding:4px 0;background:none;border-radius:0;}
+.fs-item{display:flex;flex-direction:row;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--t3);padding:0;cursor:pointer;letter-spacing:0.3px;opacity:0.5;}
+.fs-item svg{width:13px;height:13px;opacity:0.5;}
+.fs-item.liked{color:var(--accent);opacity:0.8;}.fs-item.liked svg{opacity:0.7;}
 
 /* Color selector removed */
 
