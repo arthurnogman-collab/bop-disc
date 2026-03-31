@@ -316,10 +316,21 @@ app.post('/api/comments', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields: userId, mixId, text' });
     }
 
+    // userId might be a DB integer or a Google string ID from older clients
+    let dbUserId = parseInt(userId, 10);
+    if (isNaN(dbUserId)) {
+      // Look up by google_id
+      const lookup = await pool.query('SELECT id FROM wax_users WHERE google_id = $1', [String(userId)]);
+      if (lookup.rows.length === 0) {
+        return res.status(400).json({ error: 'User not found' });
+      }
+      dbUserId = lookup.rows[0].id;
+    }
+
     const result = await pool.query(
       `INSERT INTO wax_comments (user_id, mix_id, text) VALUES ($1, $2, $3)
        RETURNING *`,
-      [userId, mixId, text]
+      [dbUserId, mixId, text]
     );
 
     res.json(result.rows[0]);
