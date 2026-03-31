@@ -391,6 +391,13 @@ app.post('/api/generate-label', async (req, res) => {
   }
 });
 
+// Client-side debug log collection (visible in Render deploy logs)
+app.post('/api/client-log', (req, res) => {
+  const { tag, data } = req.body;
+  console.log(`[CLIENT ${tag || 'LOG'}]`, typeof data === 'string' ? data : JSON.stringify(data));
+  res.json({ ok: true });
+});
+
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
