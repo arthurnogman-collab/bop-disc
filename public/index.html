@@ -809,6 +809,7 @@ function App() {
   }, []);
 
   const stopAudioPlayback = React.useCallback(() => {
+    console.log('[STOP AUDIO] activeArcs=' + playbackActiveArcsRef.current.size + ' sources=' + Object.keys(playbackSourcesRef.current).length + ' rot=' + rotRef.current.toFixed(1));
     const ctx = audioContextRef.current;
     if (!ctx) return;
     Object.values(audioSourcesRef.current).forEach(({ source }) => {
@@ -1306,6 +1307,7 @@ function App() {
                 /* If playhead is already partway through this arc, advance audio to match */
                 var timeIntoArc = (dist / 360) * dur2 * (a.pitch || 1.0);
                 var startPos = (arcOffset + timeIntoArc) % buf.duration;
+                console.log('[ARC PLAY] arc#' + ai + ' dist=' + dist.toFixed(1) + '° span=' + a.span.toFixed(1) + '° scrubPos=' + (a.scrubPos||0).toFixed(3) + ' arcOffset=' + arcOffset.toFixed(2) + 's timeIntoArc=' + timeIntoArc.toFixed(2) + 's startPos=' + startPos.toFixed(2) + 's bufDur=' + buf.duration.toFixed(2) + 's dur2=' + dur2.toFixed(2) + 's rot=' + rotRef.current.toFixed(1));
                 src.start(0, startPos);
                 playbackSourcesRef.current[ai] = { source: src, gain: gn };
               }
@@ -2943,6 +2945,7 @@ function App() {
     className: "vp-btn vp-play" + (pl ? " pressed" : ""),
     onClick: async () => {
       const newPl = !pl;
+      console.log('[PLAY BTN] newPl=' + newPl + ' mm=' + mm + ' rot=' + rotRef.current.toFixed(1) + ' activeArcs=' + playbackActiveArcsRef.current.size + ' sources=' + Object.keys(playbackSourcesRef.current).length);
       setPl(newPl);
       plRef.current = newPl; /* Sync immediately so RAF doesn't re-trigger on stale state */
       if (newPl && !mm && feedData[fi] && feedData[fi].id) {
