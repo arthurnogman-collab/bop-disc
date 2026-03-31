@@ -1058,7 +1058,7 @@ function App() {
   useEffect(() => {
     function targetSpeed() {
       var dur = audioDurationRef.current || 6;
-      if (recordingRef.current || plRef.current) return 360 / dur;
+      if (plRef.current) return 360 / dur;
       return 0;
     }
     function tick(ts) {
