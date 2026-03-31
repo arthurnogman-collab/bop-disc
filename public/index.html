@@ -2954,6 +2954,14 @@ function App() {
       sendLog('PLAY BTN', 'newPl=' + newPl + ' mm=' + mm + ' rot=' + rotRef.current.toFixed(1) + ' activeArcs=' + playbackActiveArcsRef.current.size + ' sources=' + Object.keys(playbackSourcesRef.current).length + ' arcs=' + JSON.stringify(recArcsRef.current.map(function(a,i){return {i:i,start:a.startAngle.toFixed(1),span:a.span.toFixed(1),track:a.track,scrub:(a.scrubPos||0).toFixed(3)};})));
       setPl(newPl);
       plRef.current = newPl; /* Sync immediately so RAF doesn't re-trigger on stale state */
+      /* FLIP mode: reset disc to 0° on play so arcs trigger immediately */
+      if (newPl && mm && recArcsRef.current.length > 0) {
+        rotRef.current = 0;
+        angVelRef.current = 0;
+        if (svgRef.current) svgRef.current.style.transform = 'rotate(0deg)';
+        stopAudioPlayback(); /* Clear stale tracking so all arcs re-trigger cleanly */
+        sendLog('FLIP PLAY RESET', 'reset rot to 0, arcs=' + recArcsRef.current.length);
+      }
       if (newPl && !mm && feedData[fi] && feedData[fi].id) {
         fetch('/api/mixes/' + feedData[fi].id + '/play', { method: 'POST' }).catch(() => {});
         /* Immediately load arcs from feedData so disc renders correctly from the start */
