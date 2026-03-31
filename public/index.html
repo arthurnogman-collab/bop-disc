@@ -952,6 +952,28 @@ function App() {
           return !overlap;
         });
         if (filtered.length !== recArcsRef.current.length) {
+          /* Stop any active playback sources for removed arcs */
+          for (var ri = 0; ri < recArcsRef.current.length; ri++) {
+            if (filtered.indexOf(recArcsRef.current[ri]) === -1) {
+              playbackActiveArcsRef.current.delete(ri);
+              var rps = playbackSourcesRef.current[ri];
+              if (rps) { try { rps.source.stop(); } catch(e) {} delete playbackSourcesRef.current[ri]; }
+            }
+          }
+          /* Rebuild playback tracking with new indices */
+          var newActive = new Set();
+          var newSources = {};
+          filtered.forEach(function(arc, ni) {
+            for (var oi = 0; oi < recArcsRef.current.length; oi++) {
+              if (recArcsRef.current[oi] === arc && playbackActiveArcsRef.current.has(oi)) {
+                newActive.add(ni);
+                if (playbackSourcesRef.current[oi]) newSources[ni] = playbackSourcesRef.current[oi];
+                break;
+              }
+            }
+          });
+          playbackActiveArcsRef.current = newActive;
+          playbackSourcesRef.current = newSources;
           recArcsRef.current = filtered;
           setRecArcs(filtered);
         }
@@ -1181,6 +1203,8 @@ function App() {
         for (var ai = 0; ai < arcs2.length; ai++) {
           var a = arcs2[ai];
           if (!a || a.span < 1) continue;
+          /* Skip playback for arcs on the track being actively recorded to */
+          if (recordingRef.current && activeArcIdxRef.current >= 0 && a.track === arcs2[activeArcIdxRef.current]?.track && ai !== activeArcIdxRef.current) continue;
           var dist = ((a.startAngle - playAngle) + 360) % 360;
           var inside = dist <= a.span && dist >= 0;
           var wasIn = playbackActiveArcsRef.current.has(ai);
