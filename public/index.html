@@ -389,7 +389,7 @@ const {
 const ALBUMS = [
   { artist: "Easy Peelers", title: "Polymorph", dir: "Easy Peelers-Polymorph", hasVocal: false },
   { artist: "Bootsy Collins", title: "Worth My While", dir: "Bootsy Collins-Worth My While", hasVocal: true },
-  { artist: "Crazy P", title: "Never Gonna Reach You", dir: "Crazy P-Never Gonna Reach You", hasVocal: true },
+  { artist: "Crazy P", title: "Never Gonna Reach Me", dir: "Crazy P-Never Gonna Reach You", hasVocal: true },
   { artist: "Wu-Tang Clan", title: "C.R.E.A.M", dir: "Wu-Tang Clan - C.R.E.A.M", hasVocal: true },
 ];
 const C = ALBUMS.map(function(a) { return '/albums/' + a.dir + '/cover.jpg'; });
@@ -1978,19 +1978,46 @@ function App() {
   React.createElement("circle", { cx: CX, cy: CY, r: LABEL_R, fill: "#FFFFFF" }),
   /* Thin edge ring */
   React.createElement("circle", { cx: CX, cy: CY, r: LABEL_R - 3, fill: "none", stroke: "#E0E0E0", strokeWidth: "0.5" }),
-  /* Arched text paths */
-  React.createElement("defs", null,
-    React.createElement("path", { id: "titleArc", d: "M " + (CX - 48) + " " + (CY + 4) + " A 48 48 0 0 1 " + (CX + 48) + " " + (CY + 4), fill: "none" }),
-    React.createElement("path", { id: "artistArc", d: "M " + (CX - 44) + " " + (CY + 4) + " A 44 44 0 0 0 " + (CX + 44) + " " + (CY + 4), fill: "none" })
-  ),
-  /* Title - arched on top */
-  React.createElement("text", { fontFamily: "'Space Grotesk',sans-serif", fontSize: "11", fontWeight: "700", fill: "#1A1A1E", letterSpacing: "2", textTransform: "uppercase" },
-    React.createElement("textPath", { href: "#titleArc", startOffset: "50%", textAnchor: "middle" }, labelTitle.toUpperCase())
-  ),
-  /* Artist - arched on bottom */
-  React.createElement("text", { fontFamily: "'Space Grotesk',sans-serif", fontSize: "8", fontWeight: "400", fill: "#888", letterSpacing: "1.5" },
-    React.createElement("textPath", { href: "#artistArc", startOffset: "50%", textAnchor: "middle" }, labelArtist.toUpperCase())
-  ),
+  /* Arched text paths — dynamic arc sweep for longer titles */
+  (function() {
+    var tR = 48, aR = 44;
+    var tLen = labelTitle.length;
+    var aLen = labelArtist.length;
+    /* Compute sweep: ~12° per char, min 160°, max 310° */
+    var tSweep = Math.min(310, Math.max(160, tLen * 12));
+    var aSweep = Math.min(310, Math.max(140, aLen * 10));
+    /* Font size: shrink slightly for long titles */
+    var tFont = tLen > 18 ? 9 : tLen > 13 ? 10 : 11;
+    var aFont = aLen > 16 ? 7 : 8;
+    /* Title arc (top half, clockwise from left to right) */
+    var tHalf = (tSweep / 2) * Math.PI / 180;
+    var tsx = CX + tR * Math.cos(-Math.PI/2 - tHalf);
+    var tsy = (CY + 4) + tR * Math.sin(-Math.PI/2 - tHalf);
+    var tex = CX + tR * Math.cos(-Math.PI/2 + tHalf);
+    var tey = (CY + 4) + tR * Math.sin(-Math.PI/2 + tHalf);
+    var tLarge = tSweep > 180 ? 1 : 0;
+    var titleD = "M " + tsx + " " + tsy + " A " + tR + " " + tR + " 0 " + tLarge + " 1 " + tex + " " + tey;
+    /* Artist arc (bottom half, counter-clockwise from left to right) */
+    var aHalf = (aSweep / 2) * Math.PI / 180;
+    var asx = CX + aR * Math.cos(Math.PI/2 + aHalf);
+    var asy = (CY + 4) + aR * Math.sin(Math.PI/2 + aHalf);
+    var aex = CX + aR * Math.cos(Math.PI/2 - aHalf);
+    var aey = (CY + 4) + aR * Math.sin(Math.PI/2 - aHalf);
+    var aLarge = aSweep > 180 ? 1 : 0;
+    var artistD = "M " + asx + " " + asy + " A " + aR + " " + aR + " 0 " + aLarge + " 0 " + aex + " " + aey;
+    return React.createElement(React.Fragment, null,
+      React.createElement("defs", null,
+        React.createElement("path", { id: "titleArc", d: titleD, fill: "none" }),
+        React.createElement("path", { id: "artistArc", d: artistD, fill: "none" })
+      ),
+      React.createElement("text", { fontFamily: "'Space Grotesk',sans-serif", fontSize: tFont, fontWeight: "700", fill: "#1A1A1E", letterSpacing: "2", textTransform: "uppercase" },
+        React.createElement("textPath", { href: "#titleArc", startOffset: "50%", textAnchor: "middle" }, labelTitle.toUpperCase())
+      ),
+      React.createElement("text", { fontFamily: "'Space Grotesk',sans-serif", fontSize: aFont, fontWeight: "400", fill: "#888", letterSpacing: "1.5" },
+        React.createElement("textPath", { href: "#artistArc", startOffset: "50%", textAnchor: "middle" }, labelArtist.toUpperCase())
+      )
+    );
+  })(),
   /* Inner ring around spindle */
   React.createElement("circle", { cx: CX, cy: CY, r: 12, fill: "none", stroke: "#E8E8E8", strokeWidth: "0.4" }),
   /* Spindle hole */
