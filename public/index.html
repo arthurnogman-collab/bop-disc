@@ -245,6 +245,31 @@ body{display:flex;justify-content:center;align-items:center;}
 .pad-more-btn:active{opacity:0.6;}
 .pad-more-btn.open{opacity:0.6;}
 /* Sample menu overlay */
+/* Comments bottom sheet */
+.comments-backdrop{position:absolute;inset:0;z-index:180;background:rgba(0,0,0,0.35);transition:opacity .25s;}
+.comments-sheet{position:absolute;bottom:0;left:0;right:0;z-index:181;background:var(--bg);border-radius:20px 20px 0 0;
+  display:flex;flex-direction:column;max-height:75vh;box-shadow:0 -8px 30px rgba(0,0,0,0.18);
+  transform:translateY(0);transition:transform .3s cubic-bezier(.16,1,.3,1);
+  padding-bottom:max(8px,env(safe-area-inset-bottom));}
+.comments-sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--t4);margin:10px auto 0;flex-shrink:0;cursor:grab;}
+.comments-sheet-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px;flex-shrink:0;}
+.comments-sheet-title{font-size:15px;font-weight:700;color:var(--t1);}
+.comments-sheet-count{font-size:12px;font-weight:500;color:var(--t3);}
+.comments-list{flex:1;overflow-y:auto;padding:0 20px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+.comment-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04);}
+.comment-item:last-child{border-bottom:none;}
+.comment-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif;}
+.comment-body{flex:1;min-width:0;}
+.comment-author{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:2px;}
+.comment-text{font-size:13px;color:var(--t2);line-height:1.45;word-wrap:break-word;}
+.comment-time{font-size:10px;color:var(--t4);margin-top:3px;}
+.comments-empty{text-align:center;padding:32px 0;color:var(--t3);font-size:13px;}
+.comments-input-wrap{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:10px 20px;border-top:1px solid rgba(0,0,0,0.06);background:var(--bg);}
+.comments-input{flex:1;padding:10px 14px;font-size:13px;border:1px solid rgba(0,0,0,0.08);border-radius:20px;background:var(--surface);font-family:inherit;outline:none;box-sizing:border-box;}
+.comments-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(212,43,64,0.08);}
+.comments-send{width:34px;height:34px;border-radius:50%;border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:0.4;transition:opacity .15s;}
+.comments-send.active{opacity:1;}
 .sample-menu-backdrop{position:absolute;inset:0;z-index:150;background:rgba(0,0,0,0.3);}
 .sample-menu{position:absolute;bottom:0;left:0;right:0;z-index:151;background:var(--bg);border-radius:20px 20px 0 0;padding:20px 24px;padding-bottom:max(24px,env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,0.15);transform:translateY(0);transition:transform .3s cubic-bezier(.16,1,.3,1);}
 .sample-menu-handle{width:36px;height:4px;border-radius:2px;background:var(--t4);margin:0 auto 16px;}
@@ -2155,51 +2180,89 @@ function App() {
       setPublishLoading(false);
     },
     style: { flex: 1, padding: '10px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', opacity: (publishName.trim() && !publishLoading) ? 1 : 0.5 }
-  }, publishLoading ? 'Publishing...' : 'Publish'))))), commentDlg && /*#__PURE__*/React.createElement("div", {
-    style: { position: 'absolute', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' },
-    onClick: () => setCommentDlg(false)
-  }, /*#__PURE__*/React.createElement("div", {
-    style: { background: 'var(--bg)', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '360px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 12px 40px rgba(0,0,0,0.2)' },
-    onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React.createElement("div", {
-    style: { fontSize: '16px', fontWeight: '700', color: 'var(--t1)', marginBottom: '16px' }
-  }, "Comments"), /*#__PURE__*/React.createElement("div", {
-    style: { flex: 1, overflowY: 'auto', marginBottom: '16px', paddingRight: '8px' }
-  }, (comments[fi] || []).map((c, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: { marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)' }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: { fontWeight: '600', fontSize: '13px', color: 'var(--t1)', marginBottom: '4px' }
-  }, c.display_name || c.name || 'Anonymous'), /*#__PURE__*/React.createElement("div", {
-    style: { fontSize: '13px', color: 'var(--t2)', lineHeight: '1.4' }
-  }, c.text)))), /*#__PURE__*/React.createElement("div", {
-    style: { display: 'flex', gap: '8px' }
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "text",
-    placeholder: "Add comment...",
-    value: commentText,
-    onChange: e => setCommentText(e.target.value),
-    style: { flex: 1, padding: '10px 12px', fontSize: '13px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', background: 'white', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }
-  }), /*#__PURE__*/React.createElement("button", {
-    disabled: !commentText.trim() || commentLoading,
-    onClick: async () => {
-      setCommentLoading(true);
-      try {
-        await fetch('/api/comments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id, mixId: feedData[fi].id, text: commentText.trim() })
-        });
-        const cmts = await fetch('/api/comments/' + feedData[fi].id).then(r => r.json());
-        setComments(p => ({ ...p, [fi]: cmts }));
-        setCommentText('');
-      } catch (e) {
-        console.error('Comment error:', e);
-      }
-      setCommentLoading(false);
-    },
-    style: { padding: '10px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', opacity: (commentText.trim() && !commentLoading) ? 1 : 0.5 }
-  }, "Send")))),
+  }, publishLoading ? 'Publishing...' : 'Publish'))))),
+  /* Comments bottom sheet — YouTube Music style */
+  commentDlg && React.createElement(React.Fragment, null,
+    React.createElement("div", { className: "comments-backdrop", onClick: function() { setCommentDlg(false); } }),
+    React.createElement("div", { className: "comments-sheet", onClick: function(e) { e.stopPropagation(); } },
+      React.createElement("div", { className: "comments-sheet-handle" }),
+      React.createElement("div", { className: "comments-sheet-header" },
+        React.createElement("div", { className: "comments-sheet-title" }, "Comments"),
+        React.createElement("div", { className: "comments-sheet-count" },
+          (comments[fi] || []).length > 0 ? (comments[fi].length + (comments[fi].length === 1 ? " comment" : " comments")) : ""
+        )
+      ),
+      React.createElement("div", { className: "comments-list" },
+        (comments[fi] || []).length === 0
+          ? React.createElement("div", { className: "comments-empty" }, "No comments yet. Be the first!")
+          : (comments[fi] || []).map(function(c, i) {
+              var initials = (c.display_name || c.name || 'A')[0].toUpperCase();
+              return React.createElement("div", { key: i, className: "comment-item" },
+                React.createElement("div", { className: "comment-avatar",
+                  style: c.picture ? { backgroundImage: "url(" + c.picture + ")", backgroundSize: "cover", backgroundPosition: "center", color: "transparent" } : {}
+                }, initials),
+                React.createElement("div", { className: "comment-body" },
+                  React.createElement("div", { className: "comment-author" }, c.display_name || c.name || 'Anonymous'),
+                  React.createElement("div", { className: "comment-text" }, c.text),
+                  c.created_at && React.createElement("div", { className: "comment-time" },
+                    (function() {
+                      var d = new Date(c.created_at);
+                      var now = new Date();
+                      var diff = Math.floor((now - d) / 1000);
+                      if (diff < 60) return "just now";
+                      if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+                      if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+                      if (diff < 604800) return Math.floor(diff / 86400) + "d ago";
+                      return d.toLocaleDateString();
+                    })()
+                  )
+                )
+              );
+            })
+      ),
+      React.createElement("div", { className: "comments-input-wrap" },
+        React.createElement("input", {
+          className: "comments-input",
+          type: "text",
+          placeholder: "Add a comment...",
+          value: commentText,
+          onChange: function(e) { setCommentText(e.target.value); },
+          onKeyDown: function(e) {
+            if (e.key === 'Enter' && commentText.trim() && !commentLoading && user) {
+              e.target.blur();
+              document.querySelector('.comments-send').click();
+            }
+          }
+        }),
+        React.createElement("button", {
+          className: "comments-send" + (commentText.trim() && !commentLoading && user ? " active" : ""),
+          disabled: !commentText.trim() || commentLoading || !user,
+          onClick: async function() {
+            if (!user) return;
+            setCommentLoading(true);
+            try {
+              await fetch('/api/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, mixId: feedData[fi].id, text: commentText.trim() })
+              });
+              var cmts = await fetch('/api/comments/' + feedData[fi].id).then(function(r) { return r.json(); });
+              setComments(function(p) { return Object.assign({}, p, { [fi]: cmts }); });
+              setCommentText('');
+            } catch (e) {
+              console.error('Comment error:', e);
+            }
+            setCommentLoading(false);
+          }
+        },
+          React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", width: "16", height: "16" },
+            React.createElement("line", { x1: "22", y1: "2", x2: "11", y2: "13" }),
+            React.createElement("polygon", { points: "22 2 15 22 11 13 2 9 22 2" })
+          )
+        )
+      )
+    )
+  ),
   /* Sample Options Menu */
   sampleMenu && mm && React.createElement(React.Fragment, null,
     React.createElement("div", { className: "sample-menu-backdrop", onClick: function() { setSampleMenu(false); } }),
