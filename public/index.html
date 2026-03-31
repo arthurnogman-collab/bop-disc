@@ -1834,14 +1834,14 @@ function App() {
       ? React.createElement("input", {
           className: "edit-title-input",
           value: discs[ad].title || '',
-          placeholder: "Untitled Mix",
+          placeholder: "Untitled",
           autoFocus: true,
           onChange: function(e) { var v = e.target.value; setDiscs(function(p) { var n = p.slice(); n[ad] = Object.assign({}, n[ad], { title: v }); return n; }); },
           onBlur: function() { setEditingTitle(false); },
           onKeyDown: function(e) { if (e.key === 'Enter') { e.target.blur(); } },
           onClick: function(e) { e.stopPropagation(); }
         })
-      : React.createElement("span", {className: "edit-title-text"}, discs[ad].title || "Untitled Mix")
+      : React.createElement("span", {className: "edit-title-text"}, discs[ad].title || "Untitled")
   ),
   /* Share button */
   React.createElement("button", {className: "edit-top-btn", onClick: function() { setShareDlg(true); setPublishedUrl(''); }},
@@ -2131,16 +2131,16 @@ function App() {
     style: { background: 'var(--bg)', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '320px', boxShadow: '0 12px 40px rgba(0,0,0,0.2)' }
   }, publishedUrl ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: { fontSize: '16px', fontWeight: '700', color: 'var(--t1)', marginBottom: '16px', textAlign: 'center' }
-  }, "Mix Published!"), /*#__PURE__*/React.createElement("div", {
+  }, "Flip Published!"), /*#__PURE__*/React.createElement("div", {
     style: { fontSize: '13px', color: 'var(--t2)', marginBottom: '20px', padding: '12px', background: 'var(--surface)', borderRadius: '10px', wordBreak: 'break-all' }
   }, publishedUrl), /*#__PURE__*/React.createElement("button", {
     onClick: () => { navigator.clipboard.writeText(publishedUrl).then(() => { alert('Link copied!'); setPublishDlg(false); }); },
     style: { width: '100%', padding: '12px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit' }
   }, "Copy Link")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: { fontSize: '16px', fontWeight: '700', color: 'var(--t1)', marginBottom: '16px', textAlign: 'center' }
-  }, "Publish Mix"), /*#__PURE__*/React.createElement("input", {
+  }, "Publish Flip"), /*#__PURE__*/React.createElement("input", {
     type: "text",
-    placeholder: "Mix name",
+    placeholder: "Flip name",
     value: publishName,
     onChange: e => setPublishName(e.target.value),
     autoFocus: true,
@@ -2584,14 +2584,14 @@ function App() {
         )
       : React.createElement(React.Fragment, null,
           React.createElement("div", { style: { fontSize: '16px', fontWeight: '700', color: 'var(--t1)', marginBottom: '12px', textAlign: 'center' } }, "Share"),
-          React.createElement("div", { style: { fontSize: '13px', color: 'var(--t3)', marginBottom: '20px', textAlign: 'center' } }, "Publish your mix to get a shareable link"),
+          React.createElement("div", { style: { fontSize: '13px', color: 'var(--t3)', marginBottom: '20px', textAlign: 'center' } }, "Publish your flip to get a shareable link"),
           React.createElement("button", {
             disabled: publishLoading || !user,
             onClick: async function() {
               if (!user) { alert('Please sign in first.'); return; }
               setPublishLoading(true);
               try {
-                var title = discs[ad].title || 'Untitled Mix';
+                var title = discs[ad].title || 'Untitled';
                 var res = await fetch('/api/mixes', {
                   method: 'POST', headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ userId: user.id, title: title, tracks: discs[ad].ts, cuts: discs[ad].cuts, effects: Array.from(discs[ad].fx || []), labelUrl: discs[ad].lb, discColor: discs[ad].color, parentMixId: editSourceMixId, arcs: recArcsRef.current })
@@ -2718,7 +2718,7 @@ function App() {
         setSt(-1);
       }
     }
-  }, /*#__PURE__*/React.createElement("span", null, "REMIX")), user && /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("span", null, "FLIP")), user && /*#__PURE__*/React.createElement("button", {
     className: "vp-btn vp-shelf",
     onClick: () => setProf(true)
   }, /*#__PURE__*/React.createElement("svg", {

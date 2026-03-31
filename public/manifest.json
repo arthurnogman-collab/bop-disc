@@ -1,7 +1,7 @@
 {
   "name": "WAX",
   "short_name": "WAX",
-  "description": "Remix app — mix tracks from classic records",
+  "description": "Flip app — flip tracks from classic records",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#EDEDF1",
