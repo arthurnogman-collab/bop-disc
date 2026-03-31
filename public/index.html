@@ -1781,28 +1781,26 @@ function App() {
   },
   /* Base circle */
   React.createElement("circle", { cx: CX, cy: CY, r: LABEL_R, fill: "#FFFFFF" }),
-  /* Decorative rings */
-  React.createElement("circle", { cx: CX, cy: CY, r: LABEL_R - 4, fill: "none", stroke: "#C4956A", strokeWidth: "0.6" }),
-  React.createElement("circle", { cx: CX, cy: CY, r: LABEL_R - 7, fill: "none", stroke: "#C4956A", strokeWidth: "0.3" }),
-  /* WAX icon at top */
-  React.createElement("foreignObject", { x: CX - 9, y: CY - 46, width: 18, height: 18 },
-    React.createElement("div", { xmlns: "http://www.w3.org/1999/xhtml", style: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' } },
-      React.createElement("img", { src: "/wax.png", style: { width: '100%', height: '100%', objectFit: 'contain' } })
-    )
+  /* Thin edge ring */
+  React.createElement("circle", { cx: CX, cy: CY, r: LABEL_R - 3, fill: "none", stroke: "#E0E0E0", strokeWidth: "0.5" }),
+  /* Arched text paths */
+  React.createElement("defs", null,
+    React.createElement("path", { id: "titleArc", d: "M " + (CX - 48) + " " + (CY + 4) + " A 48 48 0 0 1 " + (CX + 48) + " " + (CY + 4), fill: "none" }),
+    React.createElement("path", { id: "artistArc", d: "M " + (CX - 44) + " " + (CY + 4) + " A 44 44 0 0 0 " + (CX + 44) + " " + (CY + 4), fill: "none" })
   ),
-  /* Line under icon */
-  React.createElement("line", { x1: CX - 20, y1: CY - 25, x2: CX + 20, y2: CY - 25, stroke: "#C4956A", strokeWidth: "0.4" }),
-  /* Track title */
-  React.createElement("text", { x: CX, y: CY - 5, textAnchor: "middle", fontFamily: "Georgia,serif", fontSize: "11", fontWeight: "700", fill: "#2A1A00" }, labelTitle),
-  /* Artist name */
-  React.createElement("text", { x: CX, y: CY + 9, textAnchor: "middle", fontFamily: "system-ui,sans-serif", fontSize: "7.5", fontWeight: "400", fill: "#5A3D1A" }, labelArtist),
-  /* Line below artist */
-  React.createElement("line", { x1: CX - 18, y1: CY + 16, x2: CX + 18, y2: CY + 16, stroke: "#C4956A", strokeWidth: "0.4" }),
-  /* RPM text */
-  React.createElement("text", { x: CX, y: CY + 28, textAnchor: "middle", fontFamily: "system-ui,sans-serif", fontSize: "5.5", fill: "#8B6914" }, "33\u2153 RPM"),
+  /* Title - arched on top */
+  React.createElement("text", { fontFamily: "'Space Grotesk',sans-serif", fontSize: "11", fontWeight: "700", fill: "#1A1A1E", letterSpacing: "2", textTransform: "uppercase" },
+    React.createElement("textPath", { href: "#titleArc", startOffset: "50%", textAnchor: "middle" }, labelTitle.toUpperCase())
+  ),
+  /* Artist - arched on bottom */
+  React.createElement("text", { fontFamily: "'Space Grotesk',sans-serif", fontSize: "8", fontWeight: "400", fill: "#888", letterSpacing: "1.5" },
+    React.createElement("textPath", { href: "#artistArc", startOffset: "50%", textAnchor: "middle" }, labelArtist.toUpperCase())
+  ),
+  /* Inner ring around spindle */
+  React.createElement("circle", { cx: CX, cy: CY, r: 12, fill: "none", stroke: "#E8E8E8", strokeWidth: "0.4" }),
   /* Spindle hole */
   React.createElement("circle", { cx: CX, cy: CY, r: 4, fill: "#1A1A1E" }),
-  React.createElement("circle", { cx: CX, cy: CY, r: 4.5, fill: "none", stroke: "rgba(0,0,0,0.15)", strokeWidth: "0.5" })
+  React.createElement("circle", { cx: CX, cy: CY, r: 4.8, fill: "none", stroke: "#D0D0D0", strokeWidth: "0.6" })
   ));
   const feedArtist = mm ? SONGS[Math.max(0, discs[ad].ts[0])] || SONGS[0] : SONGS[feedSlide.s[0]];
   const slideCount = mm ? discs.length : feedItem.slides.length;
