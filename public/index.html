@@ -101,6 +101,17 @@ body{display:flex;justify-content:center;align-items:center;}
 .fs-item{display:flex;flex-direction:row;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--t2);padding:0;cursor:pointer;letter-spacing:0.3px;opacity:0.8;}
 .fs-item svg{width:13px;height:13px;opacity:0.7;}
 .fs-item.liked{color:var(--accent);opacity:1;}.fs-item.liked svg{opacity:0.9;}
+.fs-item.delete-btn{opacity:0.4;}.fs-item.delete-btn:active{opacity:0.7;}
+.delete-dlg-backdrop{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.25);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;}
+.delete-dlg{background:#fff;border-radius:18px;padding:24px 20px 16px;width:280px;box-shadow:0 8px 40px rgba(0,0,0,0.12);text-align:center;}
+.delete-dlg-icon{width:44px;height:44px;border-radius:50%;background:rgba(220,38,38,0.08);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+.delete-dlg-icon svg{width:22px;height:22px;color:#dc2626;}
+.delete-dlg-title{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:6px;}
+.delete-dlg-sub{font-size:12px;color:var(--t3);margin-bottom:20px;line-height:1.4;}
+.delete-dlg-actions{display:flex;gap:8px;}
+.delete-dlg-actions button{flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;}
+.delete-dlg-cancel{background:rgba(0,0,0,0.04);color:var(--t2);}
+.delete-dlg-confirm{background:#dc2626;color:#fff;}
 
 /* Color selector removed */
 
@@ -592,6 +603,8 @@ function App() {
   const [publishName, setPublishName] = useState('');
   const [publishLoading, setPublishLoading] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState('');
+  const [deleteDlg, setDeleteDlg] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [commentDlg, setCommentDlg] = useState(false);
   const [comments, setComments] = useState({});
   const [commentText, setCommentText] = useState('');
@@ -1128,6 +1141,7 @@ function App() {
           for (var ti = 0; ti < tracks.length; ti++) { if (tracks[ti] >= 0) { aIdx = tracks[ti]; break; } }
           return {
             id: m.id,
+            user_id: m.user_id || m.creator_id || null,
             parent_mix_id: m.parent_mix_id || null,
             cr: m.display_name || m.name || 'Unknown',
             d: m.title,
@@ -2255,7 +2269,16 @@ function App() {
     strokeWidth: "1.8"
   }, /*#__PURE__*/React.createElement("polygon", {
     points: "5 3 19 12 5 21 5 3"
-  })), fmtK(feedData[fi].plays))), /*#__PURE__*/React.createElement("input", {
+  })), fmtK(feedData[fi].plays)),
+  /* Delete button — only for user's own posts */
+  user && feedData[fi] && feedData[fi].user_id === user.id && React.createElement("div", {
+    className: "fs-item delete-btn",
+    onClick: function() { setDeleteDlg(true); }
+  }, React.createElement("svg", {
+    viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8"
+  }, React.createElement("polyline", { points: "3 6 5 6 21 6" }),
+    React.createElement("path", { d: "M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" })
+  ))), /*#__PURE__*/React.createElement("input", {
     ref: lr,
     type: "file",
     accept: "image/*",
@@ -2346,7 +2369,7 @@ function App() {
           var pubAlbumIdx = 0;
           for (var pti = 0; pti < pubTracks.length; pti++) { if (pubTracks[pti] >= 0) { pubAlbumIdx = pubTracks[pti]; break; } }
           pubAlbumIdx = Math.min(pubAlbumIdx, ALBUMS.length - 1);
-          setFeedData(prev => [{ ...mix, cr: user.displayName || user.name, d: publishName.trim(), albumIdx: pubAlbumIdx, slides: [{ s: pubTracks }], parent_mix_id: editSourceMixId, arcs: recArcsRef.current, cuts: mix.cuts, effects: mix.effects, disc_color: mix.disc_color, label_url: mix.label_url, plays: 0, likes: 0, comments: 0 }, ...prev]);
+          setFeedData(prev => [{ ...mix, user_id: user.id, cr: user.displayName || user.name, d: publishName.trim(), albumIdx: pubAlbumIdx, slides: [{ s: pubTracks }], parent_mix_id: editSourceMixId, arcs: recArcsRef.current, cuts: mix.cuts, effects: mix.effects, disc_color: mix.disc_color, label_url: mix.label_url, plays: 0, likes: 0, comments: 0 }, ...prev]);
           setEditSourceMixId(null);
         }
       } catch (e) {
@@ -2356,6 +2379,50 @@ function App() {
     },
     style: { flex: 1, padding: '10px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', opacity: (publishName.trim() && !publishLoading) ? 1 : 0.5 }
   }, publishLoading ? 'Publishing...' : 'Publish'))))),
+  /* Delete confirmation dialog */
+  deleteDlg && React.createElement("div", { className: "delete-dlg-backdrop", onClick: function() { if (!deleteLoading) setDeleteDlg(false); } },
+    React.createElement("div", { className: "delete-dlg", onClick: function(e) { e.stopPropagation(); } },
+      React.createElement("div", { className: "delete-dlg-icon" },
+        React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.5" },
+          React.createElement("polyline", { points: "3 6 5 6 21 6" }),
+          React.createElement("path", { d: "M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" })
+        )
+      ),
+      React.createElement("div", { className: "delete-dlg-title" }, "Delete this Flip?"),
+      React.createElement("div", { className: "delete-dlg-sub" }, "This can\u2019t be undone. Your recording and all likes and comments will be removed."),
+      React.createElement("div", { className: "delete-dlg-actions" },
+        React.createElement("button", { className: "delete-dlg-cancel", onClick: function() { setDeleteDlg(false); } }, "Cancel"),
+        React.createElement("button", {
+          className: "delete-dlg-confirm",
+          disabled: deleteLoading,
+          onClick: async function() {
+            var item = feedData[fi];
+            if (!item || !item.id || !user) return;
+            setDeleteLoading(true);
+            try {
+              var res = await fetch('/api/mixes/' + item.id, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id })
+              });
+              var data = await res.json();
+              if (data.deleted) {
+                stopAudioPlayback();
+                setPl(false);
+                setRecArcs([]); recArcsRef.current = [];
+                setFeedData(function(prev) { return prev.filter(function(f) { return f.id !== item.id; }); });
+                if (fi >= feedData.length - 1 && fi > 0) setFi(fi - 1);
+              } else {
+                alert(data.error || 'Could not delete');
+              }
+            } catch (e) { alert('Error: ' + e.message); }
+            setDeleteLoading(false);
+            setDeleteDlg(false);
+          }
+        }, deleteLoading ? 'Deleting...' : 'Delete')
+      )
+    )
+  ),
   /* Comments bottom sheet — YouTube Music style */
   commentDlg && React.createElement(React.Fragment, null,
     React.createElement("div", { className: "comments-backdrop", onClick: function() { setCommentDlg(false); } }),
@@ -2789,7 +2856,7 @@ function App() {
                   var sAlbumIdx = 0;
                   for (var sti = 0; sti < sTracks.length; sti++) { if (sTracks[sti] >= 0) { sAlbumIdx = sTracks[sti]; break; } }
                   sAlbumIdx = Math.min(sAlbumIdx, ALBUMS.length - 1);
-                  setFeedData(function(prev) { return [Object.assign({}, mix, { cr: user.displayName || user.name, d: title, albumIdx: sAlbumIdx, slides: [{ s: sTracks }], parent_mix_id: editSourceMixId, arcs: recArcsRef.current, cuts: mix.cuts, effects: mix.effects, disc_color: mix.disc_color, label_url: mix.label_url, plays: 0, likes: 0, comments: 0 })].concat(prev); });
+                  setFeedData(function(prev) { return [Object.assign({}, mix, { user_id: user.id, cr: user.displayName || user.name, d: title, albumIdx: sAlbumIdx, slides: [{ s: sTracks }], parent_mix_id: editSourceMixId, arcs: recArcsRef.current, cuts: mix.cuts, effects: mix.effects, disc_color: mix.disc_color, label_url: mix.label_url, plays: 0, likes: 0, comments: 0 })].concat(prev); });
                   setEditSourceMixId(null);
                 }
               } catch (e) { alert('Error: ' + e.message); }

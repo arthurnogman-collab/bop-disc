@@ -166,6 +166,30 @@ app.post('/api/mixes', async (req, res) => {
   }
 });
 
+// DELETE /api/mixes/:id - delete a mix (owner only)
+app.delete('/api/mixes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'Missing userId' });
+
+    // Verify ownership
+    const check = await pool.query('SELECT user_id FROM wax_mixes WHERE id = $1', [id]);
+    if (check.rows.length === 0) return res.status(404).json({ error: 'Mix not found' });
+    if (check.rows[0].user_id !== userId) return res.status(403).json({ error: 'Not authorized' });
+
+    // Delete related data first, then the mix
+    await pool.query('DELETE FROM wax_comments WHERE mix_id = $1', [id]);
+    await pool.query('DELETE FROM wax_likes WHERE mix_id = $1', [id]);
+    await pool.query('DELETE FROM wax_mixes WHERE id = $1', [id]);
+
+    res.json({ deleted: true });
+  } catch (err) {
+    console.error('Delete mix error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/mixes/:id/play - increment play count
 app.post('/api/mixes/:id/play', async (req, res) => {
   try {
