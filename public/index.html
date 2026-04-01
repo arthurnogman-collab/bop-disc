@@ -1355,8 +1355,6 @@ function App() {
         for (var ai = 0; ai < arcs2.length; ai++) {
           var a = arcs2[ai];
           if (!a || a.span < 1) continue;
-          /* Skip arcs whose track is removed (-1) in the current disc */
-          if (discTsRef.current && discTsRef.current[a.track] < 0) continue;
           /* Skip playback for ALL arcs on the track being actively recorded (pad handles audio) */
           if (recordingRef.current && activeArcIdxRef.current >= 0 && a.track === arcs2[activeArcIdxRef.current]?.track) continue;
           var dist = ((a.startAngle - playAngle) + 360) % 360;
