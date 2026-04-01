@@ -792,6 +792,13 @@ function App() {
     });
     audioSourcesRef.current = {};
 
+    // Calculate audio offset from current disc rotation
+    var dur = audioDurationRef.current || 6;
+    var rot = ((rotRef.current % 360) + 360) % 360;
+    var offset = (rot / 360) * dur;
+
+    sendLog('START AUDIO', 'rot=' + rotRef.current.toFixed(1) + ' offset=' + offset.toFixed(3) + 's dur=' + dur.toFixed(2) + 's');
+
     // Start new sources for active tracks
     for (let idx = 0; idx < 4; idx++) {
       if (discState.ts[idx] >= 0 && audioBuffersRef.current[idx]) {
@@ -805,7 +812,7 @@ function App() {
           src.connect(gainNode);
           gainNode.connect(ctx.destination);
 
-          src.start(0);
+          src.start(0, offset);
           audioSourcesRef.current[idx] = { source: src, gain: gainNode };
         } catch (e) {
           console.error('Audio playback error at ring', idx, ':', e);
@@ -2954,14 +2961,6 @@ function App() {
       sendLog('PLAY BTN', 'newPl=' + newPl + ' mm=' + mm + ' rot=' + rotRef.current.toFixed(1) + ' activeArcs=' + playbackActiveArcsRef.current.size + ' sources=' + Object.keys(playbackSourcesRef.current).length + ' arcs=' + JSON.stringify(recArcsRef.current.map(function(a,i){return {i:i,start:a.startAngle.toFixed(1),span:a.span.toFixed(1),track:a.track,scrub:(a.scrubPos||0).toFixed(3)};})));
       setPl(newPl);
       plRef.current = newPl; /* Sync immediately so RAF doesn't re-trigger on stale state */
-      /* FLIP mode: reset disc to 0° on play so arcs trigger immediately */
-      if (newPl && mm && recArcsRef.current.length > 0) {
-        rotRef.current = 0;
-        angVelRef.current = 0;
-        if (svgRef.current) svgRef.current.style.transform = 'rotate(0deg)';
-        stopAudioPlayback(); /* Clear stale tracking so all arcs re-trigger cleanly */
-        sendLog('FLIP PLAY RESET', 'reset rot to 0, arcs=' + recArcsRef.current.length);
-      }
       if (newPl && !mm && feedData[fi] && feedData[fi].id) {
         fetch('/api/mixes/' + feedData[fi].id + '/play', { method: 'POST' }).catch(() => {});
         /* Immediately load arcs from feedData so disc renders correctly from the start */
