@@ -809,7 +809,8 @@ function App() {
   const startAudioPlayback = React.useCallback((discState) => {
     const ctx = audioContextRef.current;
     if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
+    /* Resume context if not running — also handled in click handler for iOS gesture requirement */
+    if (ctx.state !== 'running') ctx.resume();
 
     // Stop existing
     Object.values(audioSourcesRef.current).forEach(({ source }) => {
@@ -826,7 +827,7 @@ function App() {
     audioPlayCtxTimeRef.current = ctx.currentTime;
     audioPlayOffsetRef.current = offset;
 
-    sendLog('START AUDIO', 'rot=' + rotRef.current.toFixed(1) + ' offset=' + offset.toFixed(3) + 's dur=' + dur.toFixed(2) + 's ctxTime=' + ctx.currentTime.toFixed(3));
+    sendLog('START AUDIO', 'rot=' + rotRef.current.toFixed(1) + ' offset=' + offset.toFixed(3) + 's dur=' + dur.toFixed(2) + 's ctxTime=' + ctx.currentTime.toFixed(3) + ' ctxState=' + ctx.state);
 
     // Start new sources for active tracks
     for (let idx = 0; idx < 4; idx++) {
@@ -1691,6 +1692,7 @@ function App() {
         setChainIndex(0); chainIndexRef.current = 0;
         rotRef.current = 0; angVelRef.current = 0;
         if (svgRef.current) svgRef.current.style.transform = 'rotate(0deg)';
+        if (audioContextRef.current && audioContextRef.current.state !== 'running') audioContextRef.current.resume();
         setFi(fi + 1); setFsi(0); setPl(true);
         var nxt = feedData[fi + 1];
         if (nxt && nxt.arcs) { recArcsRef.current = nxt.arcs; setRecArcs(nxt.arcs); }
@@ -1723,6 +1725,7 @@ function App() {
         setChainIndex(0); chainIndexRef.current = 0;
         rotRef.current = 0; angVelRef.current = 0;
         if (svgRef.current) svgRef.current.style.transform = 'rotate(0deg)';
+        if (audioContextRef.current && audioContextRef.current.state !== 'running') audioContextRef.current.resume();
         setFi(fi - 1); setFsi(0); setPl(true);
         var prv = feedData[fi - 1];
         if (prv && prv.arcs) { recArcsRef.current = prv.arcs; setRecArcs(prv.arcs); }
@@ -1883,6 +1886,8 @@ function App() {
           setFsi(0);
           /* Auto-play the new feed item */
           if (true) {
+            /* Resume AudioContext in gesture handler for iOS */
+            if (audioContextRef.current && audioContextRef.current.state !== 'running') audioContextRef.current.resume();
             setPl(true);
             var nextItem = feedData[newFi];
             if (nextItem && nextItem.arcs && nextItem.arcs.length > 0) {
@@ -3146,7 +3151,12 @@ function App() {
     className: "vp-btn vp-play" + (pl ? " pressed" : ""),
     onClick: async () => {
       const newPl = !pl;
-      sendLog('PLAY BTN', 'newPl=' + newPl + ' mm=' + mm + ' rot=' + rotRef.current.toFixed(1) + ' activeArcs=' + playbackActiveArcsRef.current.size + ' sources=' + Object.keys(playbackSourcesRef.current).length + ' arcs=' + JSON.stringify(recArcsRef.current.map(function(a,i){return {i:i,start:a.startAngle.toFixed(1),span:a.span.toFixed(1),track:a.track,scrub:(a.scrubPos||0).toFixed(3)};})));
+      /* CRITICAL: Resume AudioContext directly in click handler — iOS requires user gesture */
+      if (newPl && audioContextRef.current && audioContextRef.current.state !== 'running') {
+        sendLog('CTX RESUME', 'state=' + audioContextRef.current.state + ' resuming in gesture handler');
+        audioContextRef.current.resume();
+      }
+      sendLog('PLAY BTN', 'newPl=' + newPl + ' mm=' + mm + ' rot=' + rotRef.current.toFixed(1) + ' ctxState=' + (audioContextRef.current ? audioContextRef.current.state : 'none') + ' activeArcs=' + playbackActiveArcsRef.current.size + ' sources=' + Object.keys(playbackSourcesRef.current).length + ' arcs=' + JSON.stringify(recArcsRef.current.map(function(a,i){return {i:i,start:a.startAngle.toFixed(1),span:a.span.toFixed(1),track:a.track,scrub:(a.scrubPos||0).toFixed(3)};})));
       setPl(newPl);
       plRef.current = newPl; /* Sync immediately so RAF doesn't re-trigger on stale state */
       if (newPl && !mm && feedData[fi] && feedData[fi].id) {
