@@ -415,15 +415,20 @@ const CX = 170,
   CY = 170,
   SVS = 340;
 const EFX = ["reverb", "delay", "pitch shift", "chop", "lo-fi", "chorus", "flanger", "distort"];
-const FEED = ALBUMS.map(function(a, i) {
-  return {
-    cr: a.artist,
-    d: a.title,
-    albumIdx: i,
-    slides: [{ s: a.hasVocal ? [i, i, i, i] : [i, i, i, -1] }],
-    plays: 0, likes: 0, comments: 0
-  };
-});
+const FEED = (function() {
+  /* Bootsy Collins first for new users, then the rest */
+  var order = [1, 0, 2, 3];
+  return order.map(function(i) {
+    var a = ALBUMS[i];
+    return {
+      cr: a.artist,
+      d: a.title,
+      albumIdx: i,
+      slides: [{ s: a.hasVocal ? [i, i, i, i] : [i, i, i, -1] }],
+      plays: 0, likes: 0, comments: 0
+    };
+  });
+})();
 function fmtK(n) {
   return n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : String(n);
 }
@@ -680,6 +685,7 @@ function App() {
   const scratchRevGainRef = useRef(null);
   const [waveformData, setWaveformData] = useState([]);
   const [audioLoaded, setAudioLoaded] = useState(false);
+  const [audioLoadGen, setAudioLoadGen] = useState(0);
   /* BPM from track metadata & metronome */
   const detectedBPMRef = useRef(TRACK_BPM);
   const metronomeNextRef = useRef(0);
@@ -739,6 +745,7 @@ function App() {
     }
     loadedAlbumDirRef.current = album.dir;
     setAudioLoaded(true);
+    setAudioLoadGen(function(g) { return g + 1; });
   }, []);
 
   // Load audio for initial album
@@ -746,6 +753,14 @@ function App() {
     var albumIdx = feedData[fi] ? (feedData[fi].albumIdx || 0) : 0;
     loadAlbumAudio(albumIdx);
   }, []);
+
+  // Auto-play feed on initial load once audio is ready
+  useEffect(() => {
+    if (audioLoaded && !mm && !pl) {
+      setPl(true);
+      plRef.current = true;
+    }
+  }, [audioLoaded]);
 
   // Reload audio when switching to a different album in feed
   useEffect(() => {
@@ -1131,14 +1146,14 @@ function App() {
   const discColor = DISC_COLORS[disc.color || 0];
   const po = mm && st >= 0;
 
-  /* Play/stop audio based on pl state */
+  /* Play/stop audio based on pl state (audioLoadGen triggers restart when new album loads) */
   useEffect(() => {
     if (pl) {
       startAudioPlayback(disc);
     } else {
       stopAudioPlayback();
     }
-  }, [pl, disc, startAudioPlayback, stopAudioPlayback]);
+  }, [pl, disc, audioLoadGen, startAudioPlayback, stopAudioPlayback]);
 
   /* Sync FX knob values to audio nodes in real-time */
   useEffect(() => {
