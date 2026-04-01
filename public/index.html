@@ -2413,61 +2413,61 @@ function App() {
     React.createElement("div", { className: "pad-start-marker" }),
     React.createElement("div", { className: "drum-pad-wave" },
       (function() {
-        var raw = waveformData.length > 0 ? waveformData : Array.from({length: 200}, function(_, i) { return 0.3 + Math.abs(Math.sin(i * 0.2)) * 0.4 + Math.abs(Math.sin(i * 0.55)) * 0.25 + Math.abs(Math.cos(i * 0.08)) * 0.15; });
-        /* Downsample and smooth */
-        var step = Math.max(1, Math.floor(raw.length / 80));
-        var bars = [];
-        for (var i = 0; i < raw.length; i += step) {
-          var sum = 0, cnt = 0;
-          for (var j = i; j < Math.min(i + step, raw.length); j++) { sum += raw[j]; cnt++; }
-          bars.push(sum / cnt);
-        }
         var dur = audioDurationRef.current || 6;
         var windowSec = 2 / padZoom;
         var widthMul = Math.max(1, dur / windowSec);
         var widthPct = widthMul * 100;
         var maxOffset = widthPct - 100;
         var leftPct = -scrubPos * maxOffset;
-        var n = bars.length;
         var vw = 400;
-        var vh = 100;
+        var vh = 140;
         var mid = vh / 2;
-        /* Build smooth mirrored waveform path */
-        var pts = bars.map(function(p, i) { return { x: (i / (n - 1)) * vw, y: Math.min(p, 1) * mid * 0.9 }; });
-        /* Top outline: left to right */
-        var d = 'M 0 ' + mid;
-        for (var i = 0; i < pts.length; i++) {
-          var ty = mid - pts[i].y;
-          if (i === 0) { d += ' L ' + pts[i].x + ' ' + ty; }
-          else {
-            var cpx = (pts[i - 1].x + pts[i].x) / 2;
-            d += ' C ' + cpx + ' ' + (mid - pts[i - 1].y) + ' ' + cpx + ' ' + ty + ' ' + pts[i].x + ' ' + ty;
+        /* Build realistic single-line waveform from audio data or fallback */
+        var raw = waveformData.length > 0 ? waveformData : null;
+        var bN = 300;
+        var wPts = [];
+        if (raw && raw.length > 0) {
+          /* Use real audio peaks — convert amplitude envelope to oscillating waveform */
+          for (var wi = 0; wi <= bN; wi++) {
+            var t = wi / bN;
+            var ri = Math.min(Math.floor(t * raw.length), raw.length - 1);
+            var amp = raw[ri];
+            /* Oscillate using layered frequencies, modulated by real amplitude */
+            var osc = Math.sin(t * Math.PI * 14) * 0.5
+                    + Math.sin(t * Math.PI * 7) * 0.7
+                    + Math.sin(t * Math.PI * 21) * 0.2
+                    + Math.sin(t * Math.PI * 3.5) * 0.35
+                    + Math.sin(t * Math.PI * 42) * 0.1;
+            osc = osc / 1.85; /* normalize */
+            var env = Math.sin(t * Math.PI); /* fade edges */
+            var y = osc * amp * env * mid * 0.7;
+            wPts.push({ x: t * vw, y: y });
+          }
+        } else {
+          /* Fallback: synthetic waveform */
+          for (var wi = 0; wi <= bN; wi++) {
+            var t = wi / bN;
+            var y = Math.sin(t * Math.PI * 14) * 0.35
+                  + Math.sin(t * Math.PI * 7) * 0.55
+                  + Math.sin(t * Math.PI * 21) * 0.15
+                  + Math.sin(t * Math.PI * 3.5) * 0.3
+                  + Math.sin(t * Math.PI * 42) * 0.08;
+            var env = Math.sin(t * Math.PI);
+            y *= env * mid * 0.65;
+            wPts.push({ x: t * vw, y: y });
           }
         }
-        /* Bridge to bottom at right edge */
-        d += ' L ' + vw + ' ' + mid;
-        /* Bottom outline: right to left (mirror) */
-        for (var i = pts.length - 1; i >= 0; i--) {
-          var by = mid + pts[i].y;
-          if (i === pts.length - 1) { d += ' L ' + pts[i].x + ' ' + by; }
-          else {
-            var cpx = (pts[i + 1].x + pts[i].x) / 2;
-            d += ' C ' + cpx + ' ' + (mid + pts[i + 1].y) + ' ' + cpx + ' ' + by + ' ' + pts[i].x + ' ' + by;
-          }
+        /* Build smooth cubic bezier path */
+        var d = 'M ' + wPts[0].x + ' ' + (mid + wPts[0].y);
+        for (var wi = 1; wi < wPts.length; wi++) {
+          var cpx = (wPts[wi - 1].x + wPts[wi].x) / 2;
+          d += ' C ' + cpx + ' ' + (mid + wPts[wi - 1].y) + ' ' + cpx + ' ' + (mid + wPts[wi].y) + ' ' + wPts[wi].x + ' ' + (mid + wPts[wi].y);
         }
-        d += ' Z';
         return React.createElement("div", {
           style: { position: 'absolute', top: 0, bottom: 0, width: widthPct + '%', left: leftPct + '%' }
         },
           React.createElement("svg", { viewBox: "0 0 " + vw + " " + vh, preserveAspectRatio: "none", style: { width: '100%', height: '100%' } },
-            React.createElement("defs", null,
-              React.createElement("linearGradient", { id: "waveGrad", x1: "0", y1: "0", x2: "0", y2: "1" },
-                React.createElement("stop", { offset: "0%", stopColor: "rgba(140,140,148,0.5)" }),
-                React.createElement("stop", { offset: "50%", stopColor: "rgba(140,140,148,0.2)" }),
-                React.createElement("stop", { offset: "100%", stopColor: "rgba(140,140,148,0.5)" })
-              )
-            ),
-            React.createElement("path", { d: d, fill: "url(#waveGrad)", stroke: "rgba(130,130,138,0.5)", strokeWidth: "1.2", strokeLinejoin: "round" })
+            React.createElement("path", { d: d, fill: "none", stroke: "rgba(0,0,0,0.22)", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round" })
           )
         );
       })()
