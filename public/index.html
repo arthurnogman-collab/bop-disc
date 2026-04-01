@@ -711,42 +711,52 @@ function App() {
 
   // Load audio stems for a specific album
   const loadedAlbumDirRef = useRef(null);
+  const albumLoadIdRef = useRef(0); /* guards against stale concurrent loads */
   const loadAlbumAudio = useCallback(async function(albumIdx) {
     var album = ALBUMS[albumIdx];
     if (!album || loadedAlbumDirRef.current === album.dir) return;
+    /* Claim a unique load ID so concurrent calls don't corrupt shared state */
+    var myLoadId = ++albumLoadIdRef.current;
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
     var ctx = audioContextRef.current;
     var trackNames = ['drums', 'base', 'mids', 'vocal'];
-    audioDurationRef.current = 0;
+    var localDuration = 0;
+    var localBuffers = {};
+    var localReversed = {};
     for (var i = 0; i < trackNames.length; i++) {
-      if (!album.hasVocal && trackNames[i] === 'vocal') {
-        delete audioBuffersRef.current[i];
-        delete reversedBuffersRef.current[i];
-        continue;
-      }
+      if (!album.hasVocal && trackNames[i] === 'vocal') continue;
       try {
         var url = '/albums/' + album.dir + '/' + trackNames[i] + '/main.mp3';
         var response = await fetch(url);
         if (!response.ok) { console.warn('Failed to fetch track', i, trackNames[i], response.status); continue; }
+        /* Abort if a newer load started while we were fetching */
+        if (albumLoadIdRef.current !== myLoadId) return;
         var arrayBuffer = await response.arrayBuffer();
         var audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-        audioBuffersRef.current[i] = audioBuffer;
-        audioDurationRef.current = Math.max(audioDurationRef.current, audioBuffer.duration);
+        if (albumLoadIdRef.current !== myLoadId) return;
+        localBuffers[i] = audioBuffer;
+        localDuration = Math.max(localDuration, audioBuffer.duration);
         var rev = ctx.createBuffer(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate);
         for (var ch = 0; ch < audioBuffer.numberOfChannels; ch++) {
           var fwd = audioBuffer.getChannelData(ch);
           var dst = rev.getChannelData(ch);
           for (var j = 0; j < fwd.length; j++) dst[j] = fwd[fwd.length - 1 - j];
         }
-        reversedBuffersRef.current[i] = rev;
+        localReversed[i] = rev;
       } catch (e) {
         console.warn('Error loading track', i, trackNames[i], ':', e);
       }
     }
+    /* Final check: only commit if still the latest load */
+    if (albumLoadIdRef.current !== myLoadId) return;
+    /* Commit all at once — no partial/mixed state */
+    audioBuffersRef.current = localBuffers;
+    reversedBuffersRef.current = localReversed;
+    audioDurationRef.current = localDuration;
     loadedAlbumDirRef.current = album.dir;
-    sendLog('ALBUM LOADED', 'dir=' + album.dir + ' duration=' + audioDurationRef.current.toFixed(3) + 's buffers=' + Object.keys(audioBuffersRef.current).join(','));
+    sendLog('ALBUM LOADED', 'dir=' + album.dir + ' duration=' + localDuration.toFixed(3) + 's buffers=' + Object.keys(localBuffers).join(','));
     setAudioLoaded(true);
     setAudioLoadGen(function(g) { return g + 1; });
   }, []);
