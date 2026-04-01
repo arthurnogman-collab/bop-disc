@@ -746,6 +746,7 @@ function App() {
       }
     }
     loadedAlbumDirRef.current = album.dir;
+    sendLog('ALBUM LOADED', 'dir=' + album.dir + ' duration=' + audioDurationRef.current.toFixed(3) + 's buffers=' + Object.keys(audioBuffersRef.current).join(','));
     setAudioLoaded(true);
     setAudioLoadGen(function(g) { return g + 1; });
   }, []);
@@ -1215,7 +1216,7 @@ function App() {
     setRecArcs(curArcs); recArcsRef.current = curArcs;
   }, [fi]);
 
-  /* Keep screen awake while in mix mode or playing & resume audio after sleep */
+  /* Keep screen awake & recover audio after phone sleep / tab switch */
   useEffect(() => {
     var wakeLock = null;
     async function acquire() {
@@ -1225,25 +1226,43 @@ function App() {
         }
       } catch(e) {}
     }
-    if (mm || pl) {
-      acquire();
-      /* Re-acquire on visibility change (browser releases on tab switch) */
-      var onVis = function() {
-        if (document.visibilityState === 'visible') {
-          if (mm || pl) acquire();
-          /* Resume AudioContext if it was suspended after phone sleep */
-          var ctx = audioContextRef.current;
-          if (ctx && ctx.state === 'suspended') {
-            ctx.resume();
-          }
+    if (mm || pl) acquire();
+    var onVis = function() {
+      if (document.visibilityState === 'visible') {
+        if (mm || pl) acquire();
+        var ctx = audioContextRef.current;
+        if (ctx && ctx.state === 'suspended') {
+          ctx.resume().then(function() {
+            sendLog('WAKE RESUME', 'ctx resumed, pl=' + plRef.current);
+            /* After sleep, iOS kills all BufferSource nodes.
+               Force a full audio restart by toggling pl off/on. */
+            if (plRef.current) {
+              setPl(false);
+              plRef.current = false;
+              /* Short delay so useEffect fires stopAudioPlayback, then restart */
+              setTimeout(function() {
+                setPl(true);
+                plRef.current = true;
+              }, 100);
+            }
+          });
+        } else if (ctx && plRef.current) {
+          /* Context wasn't suspended but sources may still be dead (Android) */
+          sendLog('WAKE CHECK', 'ctx state=' + ctx.state + ' pl=' + plRef.current);
+          setPl(false);
+          plRef.current = false;
+          setTimeout(function() {
+            setPl(true);
+            plRef.current = true;
+          }, 100);
         }
-      };
-      document.addEventListener('visibilitychange', onVis);
-      return function() {
-        document.removeEventListener('visibilitychange', onVis);
-        if (wakeLock) { try { wakeLock.release(); } catch(e) {} }
-      };
-    }
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return function() {
+      document.removeEventListener('visibilitychange', onVis);
+      if (wakeLock) { try { wakeLock.release(); } catch(e) {} }
+    };
   }, [mm, pl]);
 
   /* Sync pl to ref so RAF always has latest */
