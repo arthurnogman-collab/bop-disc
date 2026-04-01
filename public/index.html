@@ -1211,8 +1211,21 @@ function App() {
             comments: m.comment_count || 0
           };
         });
-        /* Keep default album entries (Bootsy first), append user mixes after */
-        setFeedData(FEED.concat(mapped));
+        /* Replace default entries with their DB counterparts (which have IDs for chains),
+           keep remaining defaults that don't have DB matches, append user flips after */
+        var dbAlbumIds = {}; /* albumIdx → mapped entry */
+        var userFlips = [];
+        mapped.forEach(function(m) {
+          if (!m.parent_mix_id && !dbAlbumIds[m.albumIdx]) {
+            dbAlbumIds[m.albumIdx] = m; /* original album entry from DB */
+          } else {
+            userFlips.push(m);
+          }
+        });
+        var baseEntries = FEED.map(function(f) {
+          return dbAlbumIds[f.albumIdx] || f; /* replace with DB version if available */
+        });
+        setFeedData(baseEntries.concat(userFlips));
       }
       setFeedLoading(false);
     }).catch(() => setFeedLoading(false));
