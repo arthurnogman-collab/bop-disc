@@ -706,6 +706,8 @@ function App() {
   const audioSourcesRef = useRef({});
   const audioDurationRef = useRef(0);
   const audioStartTimeRef = useRef(0);
+  const audioPlayCtxTimeRef = useRef(0); /* audioContext.currentTime when playback started */
+  const audioPlayOffsetRef = useRef(0);  /* offset into the loop when playback started */
 
   // Load audio stems for a specific album
   const loadedAlbumDirRef = useRef(null);
@@ -812,7 +814,11 @@ function App() {
     var rot = ((rotRef.current % 360) + 360) % 360;
     var offset = (rot / 360) * dur;
 
-    sendLog('START AUDIO', 'rot=' + rotRef.current.toFixed(1) + ' offset=' + offset.toFixed(3) + 's dur=' + dur.toFixed(2) + 's');
+    // Store timing so RAF can derive rotation from audio clock
+    audioPlayCtxTimeRef.current = ctx.currentTime;
+    audioPlayOffsetRef.current = offset;
+
+    sendLog('START AUDIO', 'rot=' + rotRef.current.toFixed(1) + ' offset=' + offset.toFixed(3) + 's dur=' + dur.toFixed(2) + 's ctxTime=' + ctx.currentTime.toFixed(3));
 
     // Start new sources for active tracks
     for (let idx = 0; idx < 4; idx++) {
@@ -1264,25 +1270,29 @@ function App() {
 
   /* RAF rotation engine */
   useEffect(() => {
-    function targetSpeed() {
-      var dur = audioDurationRef.current || 6;
-      if (plRef.current) return 360 / dur;
-      return 0;
-    }
     function tick(ts) {
       if (!lastTRef.current) lastTRef.current = ts;
       var dt = Math.min((ts - lastTRef.current) / 1000, 0.1);
       lastTRef.current = ts;
-      var tgt = targetSpeed();
-      var diff = tgt - angVelRef.current;
-      var rate = diff < 0 ? 150 : 300;
-      if (Math.abs(diff) > 0.5) {
-        angVelRef.current += Math.sign(diff) * Math.min(Math.abs(diff), rate * dt);
-      } else {
-        angVelRef.current = tgt;
-      }
       if (!discDragRef.current) {
-        rotRef.current = (rotRef.current + angVelRef.current * dt) % 360;
+        if (plRef.current && audioContextRef.current) {
+          /* Derive rotation directly from audio clock — always perfectly in sync */
+          var dur = audioDurationRef.current || 6;
+          var elapsed = audioContextRef.current.currentTime - audioPlayCtxTimeRef.current;
+          var audioPos = ((audioPlayOffsetRef.current + elapsed) % dur + dur) % dur;
+          rotRef.current = (audioPos / dur) * 360;
+          angVelRef.current = 360 / dur;
+        } else {
+          /* Not playing — decelerate to stop */
+          if (Math.abs(angVelRef.current) > 0.5) {
+            var decel = angVelRef.current > 0 ? -150 : 150;
+            angVelRef.current += decel * dt;
+            if (Math.abs(angVelRef.current) < 1) angVelRef.current = 0;
+          } else {
+            angVelRef.current = 0;
+          }
+          rotRef.current = (rotRef.current + angVelRef.current * dt) % 360;
+        }
         if (svgRef.current) svgRef.current.style.transform = `rotate(${rotRef.current}deg)`;
       }
       /* Grow active recording arc */
