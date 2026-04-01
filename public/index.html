@@ -1211,7 +1211,8 @@ function App() {
             comments: m.comment_count || 0
           };
         });
-        setFeedData(mapped);
+        /* Keep default album entries (Bootsy first), append user mixes after */
+        setFeedData(FEED.concat(mapped));
       }
       setFeedLoading(false);
     }).catch(() => setFeedLoading(false));
@@ -1241,31 +1242,31 @@ function App() {
       if (document.visibilityState === 'visible') {
         if (mm || pl) acquire();
         var ctx = audioContextRef.current;
-        if (ctx && ctx.state === 'suspended') {
-          ctx.resume().then(function() {
-            sendLog('WAKE RESUME', 'ctx resumed, pl=' + plRef.current);
-            /* After sleep, iOS kills all BufferSource nodes.
-               Force a full audio restart by toggling pl off/on. */
-            if (plRef.current) {
-              setPl(false);
-              plRef.current = false;
-              /* Short delay so useEffect fires stopAudioPlayback, then restart */
-              setTimeout(function() {
-                setPl(true);
-                plRef.current = true;
-              }, 100);
-            }
-          });
-        } else if (ctx && plRef.current) {
-          /* Context wasn't suspended but sources may still be dead (Android) */
-          sendLog('WAKE CHECK', 'ctx state=' + ctx.state + ' pl=' + plRef.current);
+        if (!ctx || !plRef.current) return;
+        sendLog('WAKE', 'ctx state=' + ctx.state + ' pl=' + plRef.current);
+        /* Always resume context first (handles suspended, interrupted, etc.) */
+        ctx.resume().then(function() {
+          sendLog('WAKE RESUMED', 'ctx state=' + ctx.state);
+          if (!plRef.current) return;
+          /* After sleep, source nodes are dead. Restart playback. */
           setPl(false);
           plRef.current = false;
           setTimeout(function() {
-            setPl(true);
-            plRef.current = true;
-          }, 100);
-        }
+            /* Verify context is actually running before restarting */
+            if (ctx.state === 'running') {
+              setPl(true);
+              plRef.current = true;
+            } else {
+              /* Context still not running — leave paused so button matches */
+              sendLog('WAKE FAIL', 'ctx still ' + ctx.state + ', staying paused');
+            }
+          }, 150);
+        }).catch(function() {
+          /* resume() rejected — set paused so button matches reality */
+          sendLog('WAKE FAIL', 'resume rejected');
+          setPl(false);
+          plRef.current = false;
+        });
       }
     };
     document.addEventListener('visibilitychange', onVis);
