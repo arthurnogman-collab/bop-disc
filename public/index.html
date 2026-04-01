@@ -1224,6 +1224,7 @@ function App() {
     setChainIndex(0); chainIndexRef.current = 0;
     /* Load arcs for current feed item */
     var curArcs = feedData[fi]?.arcs || [];
+    sendLog('FI CHANGE', 'fi=' + fi + ' id=' + (feedData[fi]?.id || 'default') + ' arcs=' + curArcs.length + ' mm=' + mm);
     setRecArcs(curArcs); recArcsRef.current = curArcs;
   }, [fi]);
 
@@ -2161,6 +2162,7 @@ function App() {
   })), mm && React.createElement("div", {className: "edit-top"},
   /* Back button */
   React.createElement("button", {className: "edit-top-btn", onClick: function() {
+    sendLog('FLIP EXIT', 'arcs=' + recArcsRef.current.length + ' fi=' + fi + ' feedArcs=' + (feedData[fi]?.arcs?.length || 0));
     setDiscs(function(p) { var n = p.slice(); n[ad] = Object.assign({}, n[ad], { arcs: recArcsRef.current.slice() }); return n; });
     setMM(false); setPl(false); setEditingTitle(false); setRecording(false); setSt(-1); setEditSourceMixId(null);
   }},
@@ -2478,10 +2480,8 @@ function App() {
       if (!user) { alert('Please sign in to publish.'); return; }
       setPublishLoading(true);
       try {
-        const res = await fetch('/api/mixes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        var pubArcs = recArcsRef.current.slice();
+        var pubPayload = {
             userId: user.id,
             title: publishName.trim(),
             tracks: discs[0].ts,
@@ -2490,10 +2490,16 @@ function App() {
             labelUrl: discs[0].lb,
             discColor: discs[0].color,
             parentMixId: editSourceMixId,
-            arcs: recArcsRef.current
-          })
+            arcs: pubArcs
+        };
+        sendLog('PUBLISH 1 REQ', JSON.stringify({ tracks: pubPayload.tracks, parentMixId: pubPayload.parentMixId, arcsCount: pubArcs.length, arcs: pubArcs.map(function(a,i){return {i:i,start:a.startAngle?.toFixed(1),span:a.span?.toFixed(1),track:a.track};}) }));
+        const res = await fetch('/api/mixes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pubPayload)
         });
         const mix = await res.json();
+        sendLog('PUBLISH 1 RES', JSON.stringify({ id: mix.id, tracks: mix.tracks, arcs: mix.arcs?.length, parent_mix_id: mix.parent_mix_id }));
         if (mix.id) {
           const url = window.location.origin + '?mix=' + mix.id;
           setPublishedUrl(url);
@@ -2501,7 +2507,9 @@ function App() {
           var pubAlbumIdx = 0;
           for (var pti = 0; pti < pubTracks.length; pti++) { if (pubTracks[pti] >= 0) { pubAlbumIdx = pubTracks[pti]; break; } }
           pubAlbumIdx = Math.min(pubAlbumIdx, ALBUMS.length - 1);
-          setFeedData(prev => [{ ...mix, user_id: user.id, cr: user.displayName || user.name, d: publishName.trim(), albumIdx: pubAlbumIdx, slides: [{ s: pubTracks }], parent_mix_id: editSourceMixId, arcs: recArcsRef.current, cuts: mix.cuts, effects: mix.effects, disc_color: mix.disc_color, label_url: mix.label_url, plays: 0, likes: 0, comments: 0 }, ...prev]);
+          var feedEntry = { ...mix, user_id: user.id, cr: user.displayName || user.name, d: publishName.trim(), albumIdx: pubAlbumIdx, slides: [{ s: pubTracks }], parent_mix_id: editSourceMixId, arcs: pubArcs, cuts: mix.cuts, effects: mix.effects, disc_color: mix.disc_color, label_url: mix.label_url, plays: 0, likes: 0, comments: 0 };
+          sendLog('PUBLISH 1 FEED', JSON.stringify({ id: feedEntry.id, tracks: feedEntry.slides[0].s, arcsCount: feedEntry.arcs?.length, parentMixId: feedEntry.parent_mix_id, albumIdx: feedEntry.albumIdx }));
+          setFeedData(prev => [feedEntry, ...prev]);
           setEditSourceMixId(null);
         }
       } catch (e) {
@@ -2978,11 +2986,15 @@ function App() {
               setPublishLoading(true);
               try {
                 var title = discs[ad].title || 'Untitled';
+                var pubArcs2 = recArcsRef.current.slice();
+                var pubPayload2 = { userId: user.id, title: title, tracks: discs[ad].ts, cuts: discs[ad].cuts, effects: Array.from(discs[ad].fx || []), labelUrl: discs[ad].lb, discColor: discs[ad].color, parentMixId: editSourceMixId, arcs: pubArcs2 };
+                sendLog('PUBLISH 2 REQ', JSON.stringify({ tracks: pubPayload2.tracks, parentMixId: pubPayload2.parentMixId, arcsCount: pubArcs2.length, arcs: pubArcs2.map(function(a,i){return {i:i,start:a.startAngle?.toFixed(1),span:a.span?.toFixed(1),track:a.track};}) }));
                 var res = await fetch('/api/mixes', {
                   method: 'POST', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId: user.id, title: title, tracks: discs[ad].ts, cuts: discs[ad].cuts, effects: Array.from(discs[ad].fx || []), labelUrl: discs[ad].lb, discColor: discs[ad].color, parentMixId: editSourceMixId, arcs: recArcsRef.current })
+                  body: JSON.stringify(pubPayload2)
                 });
                 var mix = await res.json();
+                sendLog('PUBLISH 2 RES', JSON.stringify({ id: mix.id, tracks: mix.tracks, arcs: mix.arcs?.length, parent_mix_id: mix.parent_mix_id }));
                 if (mix.id) {
                   var url = window.location.origin + '?mix=' + mix.id;
                   setPublishedUrl(url);
@@ -2990,7 +3002,9 @@ function App() {
                   var sAlbumIdx = 0;
                   for (var sti = 0; sti < sTracks.length; sti++) { if (sTracks[sti] >= 0) { sAlbumIdx = sTracks[sti]; break; } }
                   sAlbumIdx = Math.min(sAlbumIdx, ALBUMS.length - 1);
-                  setFeedData(function(prev) { return [Object.assign({}, mix, { user_id: user.id, cr: user.displayName || user.name, d: title, albumIdx: sAlbumIdx, slides: [{ s: sTracks }], parent_mix_id: editSourceMixId, arcs: recArcsRef.current, cuts: mix.cuts, effects: mix.effects, disc_color: mix.disc_color, label_url: mix.label_url, plays: 0, likes: 0, comments: 0 })].concat(prev); });
+                  var feedEntry2 = Object.assign({}, mix, { user_id: user.id, cr: user.displayName || user.name, d: title, albumIdx: sAlbumIdx, slides: [{ s: sTracks }], parent_mix_id: editSourceMixId, arcs: pubArcs2, cuts: mix.cuts, effects: mix.effects, disc_color: mix.disc_color, label_url: mix.label_url, plays: 0, likes: 0, comments: 0 });
+                  sendLog('PUBLISH 2 FEED', JSON.stringify({ id: feedEntry2.id, tracks: feedEntry2.slides[0].s, arcsCount: feedEntry2.arcs?.length, parentMixId: feedEntry2.parent_mix_id, albumIdx: feedEntry2.albumIdx }));
+                  setFeedData(function(prev) { return [feedEntry2].concat(prev); });
                   setEditSourceMixId(null);
                 }
               } catch (e) { alert('Error: ' + e.message); }
@@ -3088,6 +3102,7 @@ function App() {
           title: '',
           arcs: []
         };
+        sendLog('FLIP ENTER', 'fi=' + fi + ' feedId=' + (feedData[fi]?.id || 'none') + ' ts=' + JSON.stringify(newDisc.ts) + ' origTs=' + JSON.stringify(feedSlide.s) + ' feedArcs=' + JSON.stringify(feedData[fi]?.arcs?.length || 0));
         setDiscs([newDisc]);
         setAd(0);
         setRecArcs([]);
@@ -3101,6 +3116,7 @@ function App() {
         setSt(3); /* default to Vocal track */
       } else {
         // Exiting mix: save recArcs to current disc, then exit
+        sendLog('FLIP EXIT BTN', 'arcs=' + recArcsRef.current.length + ' fi=' + fi + ' feedArcs=' + (feedData[fi]?.arcs?.length || 0));
         setDiscs(function(p) {
           var n = p.slice();
           n[ad] = Object.assign({}, n[ad], { arcs: recArcsRef.current.slice() });
