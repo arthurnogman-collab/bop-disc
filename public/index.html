@@ -2423,10 +2423,9 @@ function App() {
   })), fmtK(feedData[fi].likes + (likedPosts[fi] ? 1 : 0))), /*#__PURE__*/React.createElement("div", {
     className: "fs-item",
     onClick: () => {
-      if (!feedData[fi] || !feedData[fi].id) return; /* No comments on default entries */
       setCommentDlg(true);
       setCommentText('');
-      if (!comments[fi]) {
+      if (!comments[fi] && feedData[fi] && feedData[fi].id) {
         fetch('/api/comments/' + feedData[fi].id).then(r => r.json()).then(cmts => {
           setComments(p => ({ ...p, [fi]: cmts }));
         }).catch(() => {});
