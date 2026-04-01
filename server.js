@@ -211,22 +211,51 @@ app.post('/api/mixes/:id/play', async (req, res) => {
   }
 });
 
-// GET /api/mixes/:id/chain - returns the full remix chain (root first)
+// GET /api/mixes/:id/chain - returns full chain as circular linked list
+// Walks up to root, then down through children. Returns array ordered
+// so the requested mix is first, then continues through the chain.
 app.get('/api/mixes/:id/chain', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(`
-      WITH RECURSIVE chain AS (
+    // Walk UP to root (ancestors)
+    const ancestors = await pool.query(`
+      WITH RECURSIVE up AS (
         SELECT id, parent_mix_id, title, tracks, cuts, effects, arcs, disc_color, label_url, plays, 0 as depth
         FROM wax_mixes WHERE id = $1
         UNION ALL
-        SELECT m.id, m.parent_mix_id, m.title, m.tracks, m.cuts, m.effects, m.arcs, m.disc_color, m.label_url, m.plays, c.depth + 1
-        FROM wax_mixes m JOIN chain c ON m.id = c.parent_mix_id
-        WHERE c.depth < 50
+        SELECT m.id, m.parent_mix_id, m.title, m.tracks, m.cuts, m.effects, m.arcs, m.disc_color, m.label_url, m.plays, u.depth + 1
+        FROM wax_mixes m JOIN up u ON m.id = u.parent_mix_id
+        WHERE u.depth < 50
       )
-      SELECT * FROM chain ORDER BY depth DESC
+      SELECT * FROM up ORDER BY depth DESC
     `, [id]);
-    res.json(result.rows);
+
+    // Find root ID
+    const rootId = ancestors.rows.length > 0 ? ancestors.rows[0].id : parseInt(id);
+
+    // Walk DOWN from root (descendants via parent_mix_id)
+    const descendants = await pool.query(`
+      WITH RECURSIVE down AS (
+        SELECT id, parent_mix_id, title, tracks, cuts, effects, arcs, disc_color, label_url, plays, 0 as depth
+        FROM wax_mixes WHERE id = $1
+        UNION ALL
+        SELECT m.id, m.parent_mix_id, m.title, m.tracks, m.cuts, m.effects, m.arcs, m.disc_color, m.label_url, m.plays, d.depth + 1
+        FROM wax_mixes m JOIN down d ON m.parent_mix_id = d.id
+        WHERE d.depth < 50
+      )
+      SELECT * FROM down ORDER BY depth ASC
+    `, [rootId]);
+
+    // Build full chain (root → child → grandchild → ...)
+    const fullChain = descendants.rows;
+
+    // Rotate so requested mix is first (circular linked list start)
+    const startIdx = fullChain.findIndex(m => m.id === parseInt(id));
+    const rotated = startIdx > 0
+      ? fullChain.slice(startIdx).concat(fullChain.slice(0, startIdx))
+      : fullChain;
+
+    res.json(rotated);
   } catch (err) {
     console.error('Get chain error:', err);
     res.status(500).json({ error: err.message });

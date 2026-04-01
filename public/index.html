@@ -708,6 +708,7 @@ function App() {
   const audioStartTimeRef = useRef(0);
   const audioPlayCtxTimeRef = useRef(0); /* audioContext.currentTime when playback started */
   const audioPlayOffsetRef = useRef(0);  /* offset into the loop when playback started */
+  const prevRotRef = useRef(0); /* previous frame rotation for wrap detection */
 
   // Load audio stems for a specific album
   const loadedAlbumDirRef = useRef(null);
@@ -1419,21 +1420,21 @@ function App() {
           }
         }
       }
-      /* Chain playback: advance to next mix when disc completes a full rotation */
+      /* Chain playback: advance to next mix when disc completes a full rotation (wrap 360→0) */
       if (plRef.current && chainMixesRef.current && chainMixesRef.current.length > 1) {
-        var totalRot = Math.abs(rotRef.current - chainStartRotRef.current);
-        if (totalRot < 0) totalRot += 360;
-        if (totalRot >= 360) {
-          chainStartRotRef.current = rotRef.current;
+        var wrapped = prevRotRef.current > 300 && rotRef.current < 60;
+        if (wrapped) {
           var nextIdx = (chainIndexRef.current + 1) % chainMixesRef.current.length;
           chainIndexRef.current = nextIdx;
-          /* Update chain arcs and disc via state (will trigger re-render + audio restart) */
           var nextMix = chainMixesRef.current[nextIdx];
+          /* Clear playback tracking so arcs re-trigger cleanly */
+          playbackActiveArcsRef.current.clear();
           if (nextMix && nextMix.arcs) {
             recArcsRef.current = nextMix.arcs;
           } else {
             recArcsRef.current = [];
           }
+          sendLog('CHAIN ADV', 'idx=' + nextIdx + '/' + chainMixesRef.current.length + ' id=' + (nextMix?.id || '?') + ' arcs=' + (nextMix?.arcs?.length || 0));
           /* Use setTimeout to avoid state updates inside RAF */
           setTimeout(function() {
             setChainIndex(nextIdx);
@@ -1442,6 +1443,7 @@ function App() {
           }, 0);
         }
       }
+      prevRotRef.current = rotRef.current;
       rafRef.current = requestAnimationFrame(tick);
     }
     rafRef.current = requestAnimationFrame(tick);
@@ -2168,6 +2170,10 @@ function App() {
   React.createElement("button", {className: "edit-top-btn", onClick: function() {
     sendLog('FLIP EXIT', 'arcs=' + recArcsRef.current.length + ' fi=' + fi + ' feedArcs=' + (feedData[fi]?.arcs?.length || 0));
     setDiscs(function(p) { var n = p.slice(); n[ad] = Object.assign({}, n[ad], { arcs: recArcsRef.current.slice() }); return n; });
+    /* Restore original feed arcs so the source record isn't mutated */
+    var origArcs = feedData[fi]?.arcs || [];
+    recArcsRef.current = origArcs;
+    setRecArcs(origArcs);
     setMM(false); setPl(false); setEditingTitle(false); setRecording(false); setSt(-1); setEditSourceMixId(null);
   }},
     React.createElement("svg", {viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2"},
@@ -3128,6 +3134,10 @@ function App() {
           n[ad] = Object.assign({}, n[ad], { arcs: recArcsRef.current.slice() });
           return n;
         });
+        /* Restore original feed arcs so the source record isn't mutated */
+        var origArcs2 = feedData[fi]?.arcs || [];
+        recArcsRef.current = origArcs2;
+        setRecArcs(origArcs2);
         setMM(false);
         setPl(false);
         setEditingTitle(false);
