@@ -391,11 +391,20 @@ app.post('/api/generate-label', async (req, res) => {
   }
 });
 
-// Client-side debug log collection (visible in Render deploy logs)
+// Client-side debug log collection — stored in memory + printed
+const debugLogs = [];
 app.post('/api/client-log', (req, res) => {
   const { tag, data } = req.body;
-  console.log(`[CLIENT ${tag || 'LOG'}]`, typeof data === 'string' ? data : JSON.stringify(data));
+  const entry = { ts: new Date().toISOString(), tag: tag || 'LOG', data };
+  debugLogs.push(entry);
+  if (debugLogs.length > 200) debugLogs.shift();
+  console.log(`[CLIENT ${entry.tag}]`, typeof data === 'string' ? data : JSON.stringify(data));
   res.json({ ok: true });
+});
+
+// GET recent debug logs
+app.get('/api/debug-logs', (req, res) => {
+  res.json(debugLogs);
 });
 
 // Health check
