@@ -1161,6 +1161,8 @@ function App() {
     };
   }, [mm, discs, ad, chainMix, feedSlide]);
   const discColor = DISC_COLORS[disc.color || 0];
+  const discTsRef = useRef(disc.ts);
+  discTsRef.current = disc.ts; /* always up to date for RAF */
   const po = mm && st >= 0;
 
   /* Play/stop audio based on pl state (audioLoadGen triggers restart when new album loads) */
@@ -1349,6 +1351,8 @@ function App() {
         for (var ai = 0; ai < arcs2.length; ai++) {
           var a = arcs2[ai];
           if (!a || a.span < 1) continue;
+          /* Skip arcs whose track is removed (-1) in the current disc */
+          if (discTsRef.current && discTsRef.current[a.track] < 0) continue;
           /* Skip playback for ALL arcs on the track being actively recorded (pad handles audio) */
           if (recordingRef.current && activeArcIdxRef.current >= 0 && a.track === arcs2[activeArcIdxRef.current]?.track) continue;
           var dist = ((a.startAngle - playAngle) + 360) % 360;
@@ -2480,7 +2484,7 @@ function App() {
       if (!user) { alert('Please sign in to publish.'); return; }
       setPublishLoading(true);
       try {
-        var pubArcs = recArcsRef.current.slice();
+        var pubArcs = recArcsRef.current.filter(function(a) { return a && a.span > 1; });
         var pubPayload = {
             userId: user.id,
             title: publishName.trim(),
@@ -2510,6 +2514,7 @@ function App() {
           var feedEntry = { ...mix, user_id: user.id, cr: user.displayName || user.name, d: publishName.trim(), albumIdx: pubAlbumIdx, slides: [{ s: pubTracks }], parent_mix_id: editSourceMixId, arcs: pubArcs, cuts: mix.cuts, effects: mix.effects, disc_color: mix.disc_color, label_url: mix.label_url, plays: 0, likes: 0, comments: 0 };
           sendLog('PUBLISH 1 FEED', JSON.stringify({ id: feedEntry.id, tracks: feedEntry.slides[0].s, arcsCount: feedEntry.arcs?.length, parentMixId: feedEntry.parent_mix_id, albumIdx: feedEntry.albumIdx }));
           setFeedData(prev => [feedEntry, ...prev]);
+          setFi(0); /* Jump to newly published mix at index 0 */
           setEditSourceMixId(null);
         }
       } catch (e) {
@@ -2986,7 +2991,7 @@ function App() {
               setPublishLoading(true);
               try {
                 var title = discs[ad].title || 'Untitled';
-                var pubArcs2 = recArcsRef.current.slice();
+                var pubArcs2 = recArcsRef.current.filter(function(a) { return a && a.span > 1; });
                 var pubPayload2 = { userId: user.id, title: title, tracks: discs[ad].ts, cuts: discs[ad].cuts, effects: Array.from(discs[ad].fx || []), labelUrl: discs[ad].lb, discColor: discs[ad].color, parentMixId: editSourceMixId, arcs: pubArcs2 };
                 sendLog('PUBLISH 2 REQ', JSON.stringify({ tracks: pubPayload2.tracks, parentMixId: pubPayload2.parentMixId, arcsCount: pubArcs2.length, arcs: pubArcs2.map(function(a,i){return {i:i,start:a.startAngle?.toFixed(1),span:a.span?.toFixed(1),track:a.track};}) }));
                 var res = await fetch('/api/mixes', {
@@ -3005,6 +3010,7 @@ function App() {
                   var feedEntry2 = Object.assign({}, mix, { user_id: user.id, cr: user.displayName || user.name, d: title, albumIdx: sAlbumIdx, slides: [{ s: sTracks }], parent_mix_id: editSourceMixId, arcs: pubArcs2, cuts: mix.cuts, effects: mix.effects, disc_color: mix.disc_color, label_url: mix.label_url, plays: 0, likes: 0, comments: 0 });
                   sendLog('PUBLISH 2 FEED', JSON.stringify({ id: feedEntry2.id, tracks: feedEntry2.slides[0].s, arcsCount: feedEntry2.arcs?.length, parentMixId: feedEntry2.parent_mix_id, albumIdx: feedEntry2.albumIdx }));
                   setFeedData(function(prev) { return [feedEntry2].concat(prev); });
+                  setFi(0); /* Jump to newly published mix at index 0 */
                   setEditSourceMixId(null);
                 }
               } catch (e) { alert('Error: ' + e.message); }
