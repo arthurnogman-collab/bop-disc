@@ -1147,7 +1147,10 @@ function App() {
     }
   }, [st, ad, discs]);
 
-  const feedItem = feedData[fi];
+  var safeFi = Math.min(fi, feedData.length - 1);
+  if (safeFi < 0) safeFi = 0;
+  if (safeFi !== fi) setFi(safeFi);
+  const feedItem = feedData[safeFi] || feedData[0];
   const feedSlide = feedItem.slides[fsi] || feedItem.slides[0];
   const chainMix = (!mm && chainMixes && chainMixes[chainIndex]) || null;
   var disc = useMemo(function() {
@@ -2396,6 +2399,7 @@ function App() {
   })), fmtK(feedData[fi].likes + (likedPosts[fi] ? 1 : 0))), /*#__PURE__*/React.createElement("div", {
     className: "fs-item",
     onClick: () => {
+      if (!feedData[fi] || !feedData[fi].id) return; /* No comments on default entries */
       setCommentDlg(true);
       setCommentText('');
       if (!comments[fi]) {
@@ -2633,7 +2637,7 @@ function App() {
           className: "comments-send" + (commentText.trim() && !commentLoading ? " active" : ""),
           disabled: !commentText.trim() || commentLoading,
           onClick: async function() {
-            if (!user) return;
+            if (!user || !feedData[fi] || !feedData[fi].id) return;
             setCommentLoading(true);
             try {
               await fetch('/api/comments', {
