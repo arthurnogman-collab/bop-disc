@@ -642,6 +642,8 @@ function App() {
   const chainMixesRef = useRef(null);
   const chainIndexRef = useRef(0);
   const chainStartRotRef = useRef(0);
+  const chainAdvancingRef = useRef(false); /* guard to prevent useEffect double-restart during chain advance */
+  const chainLogTRef = useRef(0); /* throttle chain debug logs to once per 2 seconds */
   const [sampleMenu, setSampleMenu] = useState(false);
   const [sampleMenuPage, setSampleMenuPage] = useState('main'); /* main | loadSample | recordSample | fx */
   const [shareDlg, setShareDlg] = useState(false);
@@ -1184,6 +1186,11 @@ function App() {
 
   /* Play/stop audio based on pl state (audioLoadGen triggers restart when new album loads) */
   useEffect(() => {
+    /* Skip if chain advance already restarted audio directly in RAF */
+    if (chainAdvancingRef.current) {
+      sendLog('SKIP AUDIO RESTART', 'chainAdvancing guard active');
+      return;
+    }
     if (pl) {
       startAudioPlayback(disc);
     } else {
@@ -1447,6 +1454,11 @@ function App() {
           }
         }
       }
+      /* Periodic chain status log (every 2s) */
+      if (plRef.current && ts - chainLogTRef.current > 2000) {
+        chainLogTRef.current = ts;
+        sendLog('CHAIN STATUS', 'chain=' + (chainMixesRef.current ? chainMixesRef.current.length : 'null') + ' idx=' + chainIndexRef.current + ' rot=' + rotRef.current.toFixed(1) + ' prevRot=' + prevRotRef.current.toFixed(1) + ' dur=' + (audioDurationRef.current || 0).toFixed(2));
+      }
       /* Chain playback: advance to next mix when disc completes a full rotation (wrap 360→0) */
       if (plRef.current && chainMixesRef.current && chainMixesRef.current.length > 1) {
         var wrapped = prevRotRef.current > 300 && rotRef.current < 60;
@@ -1454,19 +1466,61 @@ function App() {
           var nextIdx = (chainIndexRef.current + 1) % chainMixesRef.current.length;
           chainIndexRef.current = nextIdx;
           var nextMix = chainMixesRef.current[nextIdx];
+          var nextTs = nextMix ? nextMix.tracks : [0,0,0,0];
+          sendLog('CHAIN ADV', 'idx=' + nextIdx + '/' + chainMixesRef.current.length + ' id=' + (nextMix?.id || '?') + ' arcs=' + (nextMix?.arcs?.length || 0) + ' tracks=' + JSON.stringify(nextTs));
           /* Clear playback tracking so arcs re-trigger cleanly */
           playbackActiveArcsRef.current.clear();
+          /* Stop all arc playback sources */
+          Object.values(playbackSourcesRef.current).forEach(function(ps) { try { ps.source.stop(); } catch(e) {} });
+          playbackSourcesRef.current = {};
+          /* Update arcs ref immediately */
           if (nextMix && nextMix.arcs) {
             recArcsRef.current = nextMix.arcs;
           } else {
             recArcsRef.current = [];
           }
-          sendLog('CHAIN ADV', 'idx=' + nextIdx + '/' + chainMixesRef.current.length + ' id=' + (nextMix?.id || '?') + ' arcs=' + (nextMix?.arcs?.length || 0));
-          /* Use setTimeout to avoid state updates inside RAF */
+          /* Immediately restart audio with the new chain mix's tracks —
+             don't wait for React re-render which may be too slow */
+          var cCtx = audioContextRef.current;
+          if (cCtx) {
+            /* Stop old stems */
+            Object.values(audioSourcesRef.current).forEach(function(s) { try { s.source.stop(); } catch(e) {} });
+            audioSourcesRef.current = {};
+            /* Reset rotation to start of loop */
+            audioPlayCtxTimeRef.current = cCtx.currentTime;
+            audioPlayOffsetRef.current = 0;
+            rotRef.current = 0;
+            /* Start new stems based on next mix's tracks */
+            for (var ci = 0; ci < 4; ci++) {
+              if (nextTs[ci] >= 0 && audioBuffersRef.current[ci]) {
+                try {
+                  var cSrc = cCtx.createBufferSource();
+                  cSrc.buffer = audioBuffersRef.current[ci];
+                  cSrc.loop = true;
+                  var cGain = cCtx.createGain();
+                  cGain.gain.value = 0.25;
+                  cSrc.connect(cGain);
+                  if (padFxRef.current && fxNodesRef.current) {
+                    cGain.connect(fxNodesRef.current.input);
+                  } else {
+                    cGain.connect(cCtx.destination);
+                  }
+                  cSrc.start(0, 0);
+                  audioSourcesRef.current[ci] = { source: cSrc, gain: cGain };
+                } catch(ce) {}
+              }
+            }
+            /* Update discTsRef so rendering uses new tracks before React re-renders */
+            discTsRef.current = nextTs;
+          }
+          /* Schedule React state update for visual changes */
+          chainAdvancingRef.current = true; /* guard to prevent useEffect double-restart */
           setTimeout(function() {
             setChainIndex(nextIdx);
             if (nextMix && nextMix.arcs) setRecArcs(nextMix.arcs);
             else setRecArcs([]);
+            /* Clear the guard after a tick so React doesn't re-restart audio */
+            setTimeout(function() { chainAdvancingRef.current = false; }, 50);
           }, 0);
         }
       }
@@ -1640,7 +1694,19 @@ function App() {
         setFi(fi + 1); setFsi(0); setPl(true);
         var nxt = feedData[fi + 1];
         if (nxt && nxt.arcs) { recArcsRef.current = nxt.arcs; setRecArcs(nxt.arcs); }
-        if (nxt && nxt.id) { fetch('/api/mixes/' + nxt.id + '/play', { method: 'POST' }).catch(function(){}); }
+        if (nxt && nxt.id) {
+          fetch('/api/mixes/' + nxt.id + '/play', { method: 'POST' }).catch(function(){});
+          fetch('/api/mixes/' + nxt.id + '/chain').then(function(r) { return r.json(); }).then(function(chain) {
+            if (chain && chain.length > 1) {
+              sendLog('FWD CHAIN', 'len=' + chain.length + ' ids=' + chain.map(function(c){return c.id;}).join(','));
+              setChainMixes(chain); chainMixesRef.current = chain;
+              setChainIndex(0); chainIndexRef.current = 0;
+              var chainArcs = chain[0].arcs || [];
+              recArcsRef.current = chainArcs;
+              setRecArcs(chainArcs);
+            }
+          }).catch(function(){});
+        }
       }
     }
   };
@@ -1660,7 +1726,19 @@ function App() {
         setFi(fi - 1); setFsi(0); setPl(true);
         var prv = feedData[fi - 1];
         if (prv && prv.arcs) { recArcsRef.current = prv.arcs; setRecArcs(prv.arcs); }
-        if (prv && prv.id) { fetch('/api/mixes/' + prv.id + '/play', { method: 'POST' }).catch(function(){}); }
+        if (prv && prv.id) {
+          fetch('/api/mixes/' + prv.id + '/play', { method: 'POST' }).catch(function(){});
+          fetch('/api/mixes/' + prv.id + '/chain').then(function(r) { return r.json(); }).then(function(chain) {
+            if (chain && chain.length > 1) {
+              sendLog('REV CHAIN', 'len=' + chain.length + ' ids=' + chain.map(function(c){return c.id;}).join(','));
+              setChainMixes(chain); chainMixesRef.current = chain;
+              setChainIndex(0); chainIndexRef.current = 0;
+              var chainArcs = chain[0].arcs || [];
+              recArcsRef.current = chainArcs;
+              setRecArcs(chainArcs);
+            }
+          }).catch(function(){});
+        }
       }
     }
   };
@@ -1812,8 +1890,10 @@ function App() {
               setRecArcs(nextItem.arcs);
             }
             if (nextItem && nextItem.id) {
+              sendLog('SWIPE CHAIN FETCH', 'mixId=' + nextItem.id);
               fetch('/api/mixes/' + nextItem.id + '/play', { method: 'POST' }).catch(function() {});
               fetch('/api/mixes/' + nextItem.id + '/chain').then(function(r) { return r.json(); }).then(function(chain) {
+                sendLog('SWIPE CHAIN RESP', 'len=' + (chain ? chain.length : 0) + ' ids=' + (chain ? chain.map(function(c){return c.id;}).join(',') : 'null'));
                 if (chain && chain.length > 1) {
                   setChainMixes(chain); chainMixesRef.current = chain;
                   setChainIndex(0); chainIndexRef.current = 0;
@@ -3070,6 +3150,7 @@ function App() {
       setPl(newPl);
       plRef.current = newPl; /* Sync immediately so RAF doesn't re-trigger on stale state */
       if (newPl && !mm && feedData[fi] && feedData[fi].id) {
+        sendLog('PLAY CHAIN FETCH', 'mixId=' + feedData[fi].id + ' fi=' + fi + ' title=' + (feedData[fi].d || '?'));
         fetch('/api/mixes/' + feedData[fi].id + '/play', { method: 'POST' }).catch(() => {});
         /* Immediately load arcs from feedData so disc renders correctly from the start */
         var immediateArcs = feedData[fi].arcs || [];
@@ -3080,6 +3161,7 @@ function App() {
         try {
           const chainRes = await fetch('/api/mixes/' + feedData[fi].id + '/chain');
           const chain = await chainRes.json();
+          sendLog('CHAIN RESPONSE', 'len=' + (chain ? chain.length : 0) + ' ids=' + (chain ? chain.map(function(c){return c.id;}).join(',') : 'null') + ' tracks=' + (chain ? chain.map(function(c){return JSON.stringify(c.tracks);}).join(' | ') : 'null'));
           if (chain && chain.length > 1) {
             setChainMixes(chain); chainMixesRef.current = chain;
             setChainIndex(0); chainIndexRef.current = 0;
@@ -3088,10 +3170,12 @@ function App() {
             var chainArcs = chain[0].arcs || [];
             recArcsRef.current = chainArcs;
             setRecArcs(chainArcs);
+            sendLog('CHAIN SET', 'len=' + chain.length + ' chainMixesRef=' + (chainMixesRef.current ? chainMixesRef.current.length : 'null'));
+          } else {
+            sendLog('CHAIN SINGLE', 'no chain needed, len=' + (chain ? chain.length : 0));
           }
-          /* Single mix — no chain needed, arcs already loaded above */
         } catch (e) {
-          /* Keep current arcs on error */
+          sendLog('CHAIN ERROR', e.message);
         }
       } else if (!newPl) {
         /* Stop all audio so resume re-triggers at correct disc position */
