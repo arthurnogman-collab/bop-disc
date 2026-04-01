@@ -1092,7 +1092,26 @@ function App() {
     padTouchRef.current = null;
   }, [stopPadSample]);
 
-  const togglePadFx = useCallback(() => setPadFx(function(p) { var next = !p; padFxRef.current = next; return next; }), []);
+  const togglePadFx = useCallback(() => setPadFx(function(p) {
+    var next = !p;
+    padFxRef.current = next;
+    var ctx = audioContextRef.current;
+    if (!ctx) return next;
+    var dest = next ? getOrCreateFxChain(ctx).input : ctx.destination;
+    /* Reconnect currently playing pad sample */
+    if (padGainRef.current) {
+      padGainRef.current.disconnect();
+      padGainRef.current.connect(dest);
+    }
+    /* Reconnect all active arc playback gain nodes */
+    Object.values(playbackSourcesRef.current).forEach(function(ps) {
+      if (ps && ps.gain) {
+        ps.gain.disconnect();
+        ps.gain.connect(dest);
+      }
+    });
+    return next;
+  }), [getOrCreateFxChain]);
 
   /* Determine button mode: check if track has arcs or is modified from original */
   var trackHasArcs = mm && st >= 0 && recArcs.some(function(a) { return a && a.track === st; });
