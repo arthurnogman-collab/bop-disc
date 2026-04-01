@@ -768,13 +768,7 @@ function App() {
     loadAlbumAudio(albumIdx);
   }, []);
 
-  // Auto-play feed on initial load once audio is ready
-  useEffect(() => {
-    if (audioLoaded && !mm && !pl) {
-      setPl(true);
-      plRef.current = true;
-    }
-  }, [audioLoaded]);
+  /* No auto-play on initial load — iOS/Android require user gesture for AudioContext */
 
   // Reload audio when switching to a different album in feed
   useEffect(() => {
